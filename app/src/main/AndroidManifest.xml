@@ -17,8 +17,9 @@
         android:theme="@style/Theme.YoutubeTranspose"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".Activity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
