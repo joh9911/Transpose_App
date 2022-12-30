@@ -18,6 +18,8 @@ class Activity: AppCompatActivity() {
     lateinit var page: LinearLayout
     lateinit var translateRight: Animation
     lateinit var translateLeft: Animation
+    lateinit var translateUp: Animation
+    lateinit var translateDown: Animation
 
     var isPageOpen = false
 
@@ -34,6 +36,11 @@ class Activity: AppCompatActivity() {
         translateLeft = AnimationUtils.loadAnimation(this,R.anim.translate_left)
         translateLeft.duration = 500
         translateRight.duration = 500
+
+        translateUp = AnimationUtils.loadAnimation(this,R.anim.translate_up)
+        translateDown = AnimationUtils.loadAnimation(this,R.anim.translate_down)
+        translateUp.duration = 500
+        translateDown.duration = 500
         val listener = object: Animation.AnimationListener{
             override fun onAnimationStart(p0: Animation?) {}
             override fun onAnimationEnd(p0: Animation?) {
@@ -52,9 +59,17 @@ class Activity: AppCompatActivity() {
 
         translateRight.setAnimationListener(listener)
         translateLeft.setAnimationListener(listener)
+        translateUp.setAnimationListener(listener)
+        translateDown.setAnimationListener(listener)
         val button = binding.transposeBackButton
         button.setOnClickListener {
-            page.startAnimation(translateRight)
+            page.startAnimation(translateDown)
+        }
+
+        val floatButton = binding.floatButton
+        floatButton.setOnClickListener{
+            page.visibility = View.VISIBLE
+            page.startAnimation(translateUp)
         }
     }
 

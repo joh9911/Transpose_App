@@ -1,17 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/drawer_background">
+    <ImageButton
+        android:id="@+id/transpose_back_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/ic_baseline_arrow_back_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHeight_percent="0.05"
+        app:layout_constraintWidth_percent="0.2"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintVertical_bias="0.03" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Transpose"
         android:textColor="@color/white"
-        android:textSize="50dp"
+        android:textSize="30dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -32,12 +45,14 @@
             android:layout_height="wrap_content"
             android:text="피치"
             android:textColor="@color/white"
-            android:textSize="30dp"/>
+            android:textSize="20dp"/>
 
-        <EditText
+        <TextView
+            android:id="@+id/pitch_value"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="+0"
+            android:textSize="20dp"
             android:textAlignment="center"
             android:textColor="@color/white"
             android:background="@drawable/bottom_border"
@@ -51,40 +66,41 @@
         android:layout_height="wrap_content"
         android:text="+"
         android:textColor="@color/white"
-        android:textSize="50dp"
+        android:textSize="30dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.36"
+        app:layout_constraintHorizontal_bias="0.4"
         app:layout_constraintVertical_bias="0.2"/>
-    <SeekBar
+    <abak.tr.com.boxedverticalseekbar.BoxedVertical
         android:id="@+id/pitch_seek_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:rotation="270"
-        android:max="20"
-        android:min="0"
-        android:progress="10"
-        android:translationX="-55dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_width="3dp"
+        android:layout_height="0dp"
+        app:max="10"
+        app:min="-10"
+        app:step="1"
+        app:defaultValue="0"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintVertical_bias="0.55"
-        app:layout_constraintHorizontal_bias="0.35"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.4"
+        app:layout_constraintVertical_bias="0.6"
+        app:layout_constraintHeight_percent="0.6"/>
+
     <TextView
         android:id="@+id/pitch_minus_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="-"
         android:textColor="@color/white"
-        android:textSize="50dp"
+        android:textSize="30dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.36"
+        app:layout_constraintHorizontal_bias="0.4"
         app:layout_constraintVertical_bias="0.9"/>
 
     <LinearLayout
@@ -97,17 +113,20 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHorizontal_bias="0.7"
         >
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="템포"
             android:textColor="@color/white"
-            android:textSize="30dp"/>
+            android:textSize="20dp"/>
 
-        <EditText
+        <TextView
+            android:id="@+id/tempo_value"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="+0"
+            android:textSize="20dp"
             android:textAlignment="center"
             android:textColor="@color/white"
             android:background="@drawable/bottom_border"
@@ -120,44 +139,40 @@
         android:layout_height="wrap_content"
         android:text="+"
         android:textColor="@color/white"
-        android:textSize="50dp"
+        android:textSize="30dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.89"
+        app:layout_constraintHorizontal_bias="0.9"
         app:layout_constraintVertical_bias="0.2"/>
-    <SeekBar
+    <abak.tr.com.boxedverticalseekbar.BoxedVertical
         android:id="@+id/tempo_seek_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:rotation="270"
-        android:max="20"
-        android:min="0"
-        android:progress="10"
-        android:translationX="150dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_width="3dp"
+        android:layout_height="0dp"
+        app:max="10"
+        app:min="-10"
+        app:step="1"
+        app:defaultValue="0"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintVertical_bias="0.55"
-        app:layout_constraintHorizontal_bias="0.35"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.88"
+        app:layout_constraintVertical_bias="0.6"
+        app:layout_constraintHeight_percent="0.6"/>
     <TextView
         android:id="@+id/tempo_minus_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="-"
         android:textColor="@color/white"
-        android:textSize="50dp"
+        android:textSize="30dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.88"
+        app:layout_constraintHorizontal_bias="0.9"
         app:layout_constraintVertical_bias="0.9"/>
-
-
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
