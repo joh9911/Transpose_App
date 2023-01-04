@@ -2,11 +2,16 @@ package com.example.youtube_transpose
 
 import android.content.Context
 import android.graphics.Rect
+import android.transition.Transition
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.constraintlayout.motion.widget.MotionScene
+import androidx.constraintlayout.widget.ConstraintSet
+import java.lang.Math.abs
 
 class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) : MotionLayout(context, attributeSet) {
 
@@ -14,18 +19,25 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
     private val mainContainerView by lazy {
         findViewById<View>(R.id.mainContainerLayout)
     }
+    private val playerMotionLayout by lazy {
+        findViewById<MotionLayout>(R.id.player_motion_layout)
+    }
+
     private val hitRect = Rect()
 
+
     init {
+        playerMotionLayout.transitionToState(R.id.end)
         setTransitionListener(object : TransitionListener {
-            override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {}
+            override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {
+            }
 
             override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {}
 
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                Log.d("ㅐㅜ","ㅁㄴㅇㄹ")
                 motionTouchStarted = false
             }
-
             override fun onTransitionTrigger(motionLayout: MotionLayout?, triggerId: Int, positive: Boolean, progress: Float) {}
         })
     }
@@ -53,6 +65,7 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
                 mainContainerView.getHitRect(hitRect)
                 return hitRect.contains(e1.x.toInt(), e1.y.toInt())
             }
+
         }
     }
 
@@ -61,6 +74,7 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
     }
 
     override fun onInterceptTouchEvent(event: MotionEvent?): Boolean {
-        return gestureDetector.onTouchEvent(event)
+        return !onTouchEvent(event!!)
+//        return gestureDetector.onTouchEvent(event)
     }
 }
