@@ -17,11 +17,13 @@ import com.example.youtube_transpose.databinding.ActivityMainBinding
 import com.example.youtube_transpose.databinding.FragmentPlayerBinding
 import com.example.youtube_transpose.databinding.MainBinding
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
+import com.google.android.exoplayer2.util.FlacConstants
 import com.google.android.exoplayer2.util.MimeTypes
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
@@ -52,11 +54,23 @@ class PlayerFragment(melonData: VideoData): Fragment() {
         fbinding = FragmentPlayerBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        Log.d("프레그먼트","onccreateview")
+        initView()
         initMotionLayout()
         initYoutubeDL()
         initListener()
-
         return view
+    }
+    fun initView(){
+        binding.bottomPlayerCloseButton.setOnClickListener {
+            getActivity()?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
+        }
+        binding.bottomTitleTextView.text = melonData.title
+    }
+    fun setPitch(value: Int){
+        val value = value*0.05.toFloat()
+        val param = PlaybackParameters(1f, 1f + value)
+        player?.playbackParameters = param
     }
     private fun initListener(){
         playerView = binding.playerView
@@ -70,7 +84,6 @@ class PlayerFragment(melonData: VideoData): Fragment() {
         val youtubeUrl = "https://www.youtube.com/watch?v=${melonData.videoId}"
         binding.bottomTitleTextView.text = melonData.title
         val url = youtubeUrl.trim()
-//        val url = etUrl.text.toString().trim()
         if (TextUtils.isEmpty(url)){
             Toast.makeText(activity, "url오류", Toast.LENGTH_SHORT).show()
         }
