@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:motion="http://schemas.android.com/apk/res-auto">
+    xmlns:motion="http://schemas.android.com/apk/res-auto"
+    >
 
     <Transition
         motion:constraintSetEnd="@+id/end"
         motion:constraintSetStart="@id/start"
-        motion:duration="1000">
+        motion:duration="100"
+        motion:layoutDuringTransition="honorRequest"
+        motion:transitionFlags="beginOnFirstDraw"
+        >
         <KeyFrameSet>
             <KeyAttribute
                 motion:motionTarget="@+id/bottomTitleTextView"
                 motion:framePosition="10"
                 android:alpha="0.0" />
             <KeyAttribute
-                motion:motionTarget="@+id/bottomPlayerControlButton"
+                motion:motionTarget="@+id/bottomPlayerCloseButton"
                 motion:framePosition="10"
                 android:alpha="0.0" />
             <KeyPosition
@@ -44,7 +48,7 @@
             android:id="@+id/mainContainerLayout"
             android:layout_width="0dp"
             android:layout_height="56dp"
-            android:layout_marginBottom="56dp"
+
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"
             motion:layout_constraintStart_toStartOf="parent"
@@ -85,7 +89,7 @@
             motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintStart_toStartOf="parent" />
         <Constraint
-            android:id="@+id/bottomPlayerControlButton"
+            android:id="@+id/bottomPlayerCloseButton"
             motion:layout_constraintEnd_toEndOf="@id/mainContainerLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
