@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +24,7 @@ import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.Player
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import io.opencensus.resource.Resource
 import okhttp3.ResponseBody
 import retrofit2.*
 
@@ -49,7 +51,7 @@ class Activity: AppCompatActivity() {
         findViewById<MotionLayout>(R.id.player_motion_layout)
     }
 
-    var intentSearch = "cookie" // 이거 검색한 텍스트
+
     val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
     val suggestionKeywords = ArrayList<String>()
     val playListVideoData = ArrayList<VideoData>()
@@ -126,6 +128,7 @@ class Activity: AppCompatActivity() {
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
                     if(fragment.isVisible && fragment is PlayerFragment) {
+                        Log.d("여기는","들어가는데?")
                         val fragment2 = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
                         fragment2.setPitch(p0?.progress!!)
                     }
@@ -179,10 +182,10 @@ class Activity: AppCompatActivity() {
             override fun onClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    intentSearch = suggestionKeywords[position]
+                    val searchWord = suggestionKeywords[position]
                     suggestionKeywords.clear()
                     searchAdapter.notifyDataSetChanged()
-                    supportFragmentManager.beginTransaction().replace(binding.searchResultFragment.id,SearchResultFragment(intentSearch)).commit()
+                    supportFragmentManager.beginTransaction().replace(binding.searchResultFragment.id,SearchResultFragment(searchWord)).commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
@@ -255,7 +258,7 @@ class Activity: AppCompatActivity() {
                         call: Call<PlayListSearchData>,
                         response: Response<PlayListSearchData>
                     ) {
-                        Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
+//                        Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
                         val thumbnail = response.body()?.items?.get(0)?.snippet?.thumbnails?.medium?.url!!
                         val title = response.body()?.items?.get(0)?.snippet?.title!!
                         val description = response.body()?.items?.get(0)?.snippet?.description!!
@@ -376,9 +379,11 @@ class Activity: AppCompatActivity() {
         val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
         (menu.findItem(R.id.youtube_search_icon).actionView as SearchView).apply {
             setSearchableInfo(searchManager.getSearchableInfo(componentName))
+            val searchView = this
             val searchAutoComplete = this.findViewById<SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
             searchAutoComplete.setTextColor(resources.getColor(R.color.white))
-            searchAutoComplete.setHintTextColor(resources.getColor(R.color.black))
+            searchAutoComplete.setHintTextColor(resources.getColor(R.color.description_color))
+            searchAutoComplete.hint = "Youtube 검색"
             menu.findItem(R.id.youtube_search_icon).setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
                 override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
                     binding.bottomNavigationView.visibility = View.GONE
@@ -397,9 +402,11 @@ class Activity: AppCompatActivity() {
                     return true
                 }
             })
-
             this.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
                 override fun onQueryTextSubmit(query: String?): Boolean {
+                    searchView.clearFocus()
+                    supportFragmentManager.beginTransaction().replace(binding.searchResultFragment.id,SearchResultFragment(query!!)).commit()
+                    binding.searchRecyclerView.visibility = View.INVISIBLE
                     return false
                 }
                 //SwipeRefreshLayout 새로고침
@@ -435,10 +442,17 @@ class Activity: AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-    interface transitionFragment{
-        fun onTransitionFragment()
+
+    override fun onBackPressed() {
+        for (fragment in supportFragmentManager.fragments){
+            if (fragment.isVisible && fragment is PlayerFragment){
+                val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+                if (playerFragment.binding.playerMotionLayout.currentState == R.id.end)
+                    playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+                else
+                    return super.onBackPressed()
+            }
+        }
     }
-
-
 
 }
