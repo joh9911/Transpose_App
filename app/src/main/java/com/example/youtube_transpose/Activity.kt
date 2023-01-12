@@ -121,22 +121,35 @@ class Activity: AppCompatActivity() {
             override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
                 binding.pitchValue.text = p1.toString()
             }
-
             override fun onStartTrackingTouch(p0: SeekBar?) {
             }
-
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
                     if(fragment.isVisible && fragment is PlayerFragment) {
-                        Log.d("여기는","들어가는데?")
-                        val fragment2 = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-                        fragment2.setPitch(p0?.progress!!)
+                        val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+                        playerFragment.setPitch(p0?.progress!!)
                     }
                 }
 
             }
         })
         tempoSeekBar = binding.tempoSeekBar
+        tempoSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
+                binding.tempoValue.text = p1.toString()
+            }
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+            }
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+                for(fragment in supportFragmentManager.fragments) {
+                    if(fragment.isVisible && fragment is PlayerFragment) {
+                        val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+                        playerFragment.setTempo(p0?.progress!!)
+                    }
+                }
+
+            }
+        })
         toolbar = binding.toolBar
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -444,15 +457,17 @@ class Activity: AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        for (fragment in supportFragmentManager.fragments){
-            if (fragment.isVisible && fragment is PlayerFragment){
-                val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-                if (playerFragment.binding.playerMotionLayout.currentState == R.id.end)
-                    playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
-                else
-                    return super.onBackPressed()
-            }
+        if (supportFragmentManager.findFragmentByTag("playerFragment") == null){
+            return super.onBackPressed()
         }
+        else{
+            val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+            if (playerFragment.binding.playerMotionLayout.currentState == R.id.end)
+                playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+            else
+                return super.onBackPressed()
+        }
+
     }
 
 }
