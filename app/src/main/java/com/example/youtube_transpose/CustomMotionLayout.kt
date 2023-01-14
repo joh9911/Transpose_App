@@ -16,9 +16,15 @@ import java.lang.Math.abs
 class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) : MotionLayout(context, attributeSet) {
 
     private var motionTouchStarted = false
+    private var scrollViewTouchStarted = false
+
     private val mainContainerView by lazy {
         findViewById<View>(R.id.mainContainerLayout)
     }
+//    private val playerFragmentScrollView by lazy {
+//        findViewById<View>(R.id.fragment_scroll_view)
+//    }
+
     private val playerMotionLayout by lazy {
         findViewById<MotionLayout>(R.id.player_motion_layout)
     }
@@ -35,7 +41,6 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
             override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {}
 
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
-                Log.d("ㅐㅜ","ㅁㄴㅇㄹ")
                 motionTouchStarted = false
             }
             override fun onTransitionTrigger(motionLayout: MotionLayout?, triggerId: Int, positive: Boolean, progress: Float) {}
@@ -52,10 +57,10 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         }
 
         if (!motionTouchStarted) {
-            mainContainerView.getHitRect(hitRect)
+            mainContainerView.getHitRect(hitRect) // 해당 뷰의 클릭 영역 hitRect에 저장
             motionTouchStarted = hitRect.contains(event.x.toInt(), event.y.toInt())
         }
-
+//        Log.d("터치이벤트","${super.onTouchEvent(event) && motionTouchStarted}")
         return super.onTouchEvent(event) && motionTouchStarted
     }
 
@@ -63,9 +68,9 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
                 mainContainerView.getHitRect(hitRect)
+                Log.d("onscroll","${hitRect.contains(e1.x.toInt(), e1.y.toInt())}")
                 return hitRect.contains(e1.x.toInt(), e1.y.toInt())
             }
-
         }
     }
 
@@ -73,8 +78,13 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         GestureDetector(context, gestureListener)
     }
 
+    //이게 true면 커스텀모션 레이아웃이라는 전체 틀에서만 터치 이벤트가 실행됨
+    //따라서 안의 뷰는 터치가 안먹음
+    //이거 로그로 gestureDetector.onTouchEvent(event) 이거 하면 작동안함 왤까?
     override fun onInterceptTouchEvent(event: MotionEvent?): Boolean {
-        return !onTouchEvent(event!!)
-//        return gestureDetector.onTouchEvent(event)
+//        Log.d("인터셉터","${gestureDetector.onTouchEvent(event)}")
+        return gestureDetector.onTouchEvent(event)
+//        return false
+
     }
 }
