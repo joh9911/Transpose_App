@@ -11,8 +11,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.youtube_transpose.databinding.ActivityMainBinding
 import com.example.youtube_transpose.databinding.FragmentPlayerBinding
 import com.example.youtube_transpose.databinding.MainBinding
@@ -33,15 +36,21 @@ import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.lang.Math.abs
 
-class PlayerFragment(melonData: VideoData): Fragment() {
+class PlayerFragment(videoData: VideoData): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
+    lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
+    val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
 
-    val melonData = melonData
+    val aray = ArrayList<VideoData>()
+    val videoData = videoData
 
     var player: SimpleExoPlayer? = null
     lateinit var playerView: PlayerView
@@ -59,17 +68,64 @@ class PlayerFragment(melonData: VideoData): Fragment() {
         initMotionLayout()
         initYoutubeDL()
         initListener()
+        getResultData()
         return view
     }
     fun initView(){
         binding.bottomPlayerCloseButton.setOnClickListener {
             getActivity()?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
         }
-        binding.bottomTitleTextView.text = melonData.title
+        binding.bottomTitleTextView.text = videoData.title
+        binding.fragmentVideoTitle.text = videoData.title
+        binding.fragmentVideoDetail.text = videoData.date
+        binding.channelTextView.text = videoData.channel
+
+        binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
+        searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(aray)
+        binding.fragmentRecyclerView.adapter = searchResultAdapter
+
     }
+    private fun getResultData() {
+        val retrofit = RetrofitVideo.initRetrofit()
+        retrofit.create(RetrofitService::class.java).getVideoDetails(API_KEY,"snippet","cookie","50","video")
+            .enqueue(object : Callback<VideoSearchData> {
+                override fun onResponse(call: Call<VideoSearchData>, response: Response<VideoSearchData>) {
+                    for (index in 0 until response.body()?.items?.size!!){
+                        val thumbnail = response?.body()?.items?.get(index)?.snippet?.thumbnails?.high?.url!!
+                        val date = response?.body()?.items?.get(index)?.snippet?.publishedAt!!.substring(0, 10)
+                        val account = response?.body()?.items?.get(index)?.snippet?.channelTitle!!
+                        val title = stringToHtmlSign(response?.body()?.items?.get(index)?.snippet?.title!!)
+                        val videoId = response?.body()?.items?.get(index)?.id?.videoId!!
+                        aray.add(VideoData(thumbnail, title, account, videoId, date))
+                    }
+                    Log.d("fragment 비디오 목록","$aray")
+                    searchResultAdapter.notifyDataSetChanged()
+
+                }
+                override fun onFailure(call: Call<VideoSearchData>, t: Throwable) {
+                    Log.e(ContentValues.TAG, "onFailure: ${t.message}")
+                }
+            })
+    }
+    private fun stringToHtmlSign(str: String): String {
+        return str.replace("&amp;".toRegex(), "[&]")
+            .replace("[<]".toRegex(), "&lt;")
+            .replace("[>]".toRegex(), "&gt;")
+            .replace("&quot;".toRegex(), "'")
+            .replace("&#39;".toRegex(), "'")
+    }
+
     fun setPitch(value: Int){
-        val value = value*0.05.toFloat()
-        val param = PlaybackParameters(1f, 1f + value)
+        val pitchValue = value*0.05.toFloat()
+        val tempoValue = activity.tempoSeekBar.progress*0.05.toFloat()
+        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+        player?.playbackParameters = param
+    }
+
+    fun setTempo(value: Int){
+        val tempoValue = value*0.05.toFloat()
+        val pitchValue = activity.pitchSeekBar.progress*0.05.toFloat()
+        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
         player?.playbackParameters = param
     }
     private fun initListener(){
@@ -80,9 +136,9 @@ class PlayerFragment(melonData: VideoData): Fragment() {
         startStream()
     }
     private fun startStream(){
-        Log.d("vdid","${melonData.videoId}")
-        val youtubeUrl = "https://www.youtube.com/watch?v=${melonData.videoId}"
-        binding.bottomTitleTextView.text = melonData.title
+        Log.d("vdid","${videoData.videoId}")
+        val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}"
+        binding.bottomTitleTextView.text = videoData.title
         val url = youtubeUrl.trim()
         if (TextUtils.isEmpty(url)){
             Toast.makeText(activity, "url오류", Toast.LENGTH_SHORT).show()
@@ -138,6 +194,8 @@ class PlayerFragment(melonData: VideoData): Fragment() {
             .createMediaSource(MediaItem.fromUri(videoUrl))
         player?.setMediaSource(videoSource)
         player?.prepare()
+        setTempo(activity.tempoSeekBar.progress)
+        setPitch(activity.pitchSeekBar.progress)
         player?.play()
 //        videoView.setVideoURI(Uri.parse(videoUrl))
     }
@@ -163,6 +221,7 @@ class PlayerFragment(melonData: VideoData): Fragment() {
                 endId: Int,
                 progress: Float
             ) {
+
                 /**
                  * 메인 엑티비티 모션 레이아웃에 값을 전달
                  */
@@ -174,6 +233,10 @@ class PlayerFragment(melonData: VideoData): Fragment() {
                     main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
                         abs(progress)
                 }
+                if (binding.playerMotionLayout.currentState == R.id.end)
+                    binding.bottomPlayerCloseButton.visibility = View.INVISIBLE
+                else
+                    binding.bottomPlayerCloseButton.visibility = View.VISIBLE
             }
 
             override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
@@ -194,6 +257,10 @@ class PlayerFragment(melonData: VideoData): Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
+    }
+
+    override fun onDetach() {
+        super.onDetach()
     }
 
 
