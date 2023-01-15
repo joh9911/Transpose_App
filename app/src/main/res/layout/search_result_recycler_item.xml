@@ -10,15 +10,17 @@
     <ImageView
         android:id="@+id/thumbnail_image_view"
         android:layout_width="match_parent"
-        android:layout_height="230dp"
+        android:layout_height="210dp"
         android:scaleType="fitXY"
         android:src="@drawable/ic_launcher_background"
         app:layout_constraintTop_toTopOf="parent"
         />
+
     <ImageView
         android:id="@+id/channel_image_view"
         android:layout_width="60dp"
         android:layout_height="60dp"
+        android:layout_margin="10dp"
         android:src="@drawable/ic_launcher_background"
         app:layout_constraintTop_toBottomOf="@id/thumbnail_image_view"
         app:layout_constraintStart_toStartOf="parent"/>
@@ -50,7 +52,7 @@
         android:id="@+id/option_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/drawer_background"
+        android:background="@color/black"
         android:src="@drawable/ic_baseline_more_vert_24"
         android:layout_marginRight="10dp"
         android:layout_marginTop="10dp"
