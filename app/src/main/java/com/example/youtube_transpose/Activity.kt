@@ -9,9 +9,9 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SearchView.SearchAutoComplete
@@ -20,11 +20,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.youtube_transpose.databinding.MainBinding
-import com.google.android.exoplayer2.PlaybackParameters
-import com.google.android.exoplayer2.Player
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import io.opencensus.resource.Resource
 import okhttp3.ResponseBody
 import retrofit2.*
 
@@ -39,7 +36,7 @@ class Activity: AppCompatActivity() {
     lateinit var pitchSeekBar: SeekBar
     lateinit var tempoSeekBar: SeekBar
 
-    private lateinit var playlistVideoAdapter: HomePlaylistVideoRecyclerViewAdapter
+    private lateinit var popular100PlaylistAdapter: HomePopular100RecyclerViewAdapter
     private lateinit var searchAdapter: SearchSuggestionKeywordRecyclerViewAdapter
     private lateinit var thisYearPlaylistAdapter: HomePlaylistRecyclerViewAdapter
     private lateinit var latestMusicPlaylistAdapter: HomePlaylistRecyclerViewAdapter
@@ -52,7 +49,7 @@ class Activity: AppCompatActivity() {
     }
 
 
-    val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
+    val API_KEY = "AIzaSyCNex-cHLNFKoFfgl9FcwR7scN3N0BkWb0"
     val suggestionKeywords = ArrayList<String>()
     val playListVideoData = ArrayList<VideoData>()
     val thisYearPlaylistData = ArrayList<PlayListData>()
@@ -103,7 +100,7 @@ class Activity: AppCompatActivity() {
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initView()
-        initRecyclerView()
+        initPopularTop100RecyclerView()
         floatButtonEvent()
         getPlaylistVideoData(null)
         getPlaylistData(thisYearMusicUrl)
@@ -156,40 +153,8 @@ class Activity: AppCompatActivity() {
         floatButton = binding.floatButton
         bottomNavigationView = binding.bottomNavigationView
     }
-
-
-    fun initRecyclerView(){
+    fun initSearchRecyclerView(){
         binding.searchRecyclerView.layoutManager = LinearLayoutManager(this)
-        binding.thisYearPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        binding.todayHotListPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        binding.latestMusicPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        binding.bestAtmospherePlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        binding.bestSituationPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        val gridLayoutManager = GridLayoutManager(this,4,GridLayoutManager.HORIZONTAL,false)
-        binding.melonPlaylistVideoRecyclerView.layoutManager = gridLayoutManager
-        thisYearPlaylistAdapter = HomePlaylistRecyclerViewAdapter(thisYearPlaylistData)
-        todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter(todayHotPlaylistData)
-        latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter(latestMusicPlaylistData)
-        bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestAtmospherePlaylistData)
-        bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestSituationPlaylistData)
-        playlistVideoAdapter = HomePlaylistVideoRecyclerViewAdapter(playListVideoData)
-
-        binding.thisYearPlaylistRecyclerView.adapter = thisYearPlaylistAdapter
-        binding.todayHotListPlaylistRecyclerView.adapter = todayHotPlaylistAdapter
-        binding.latestMusicPlaylistRecyclerView.adapter = latestMusicPlaylistAdapter
-        binding.bestAtmospherePlaylistRecyclerView.adapter = bestAtmospherePlaylistAdapter
-        binding.bestSituationPlaylistRecyclerView.adapter = bestSituationPlaylistAdapter
-        binding.melonPlaylistVideoRecyclerView.adapter = playlistVideoAdapter
-
-        playlistVideoAdapter.setItemClickListener(object: HomePlaylistVideoRecyclerViewAdapter.OnItemClickListener{
-            var mLastClickTime = 0L
-            override fun onClick(v: View, position: Int) {
-                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    replaceFragmentToPlayerFragment(playListVideoData[position])
-                }
-                mLastClickTime = SystemClock.elapsedRealtime()
-            }
-        })
         searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter(suggestionKeywords)
         searchAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
@@ -204,6 +169,66 @@ class Activity: AppCompatActivity() {
             }
         })
         binding.searchRecyclerView.adapter = searchAdapter
+    }
+
+    fun initThisYearPlaylistRecyclerView(){
+        binding.thisYearPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
+        thisYearPlaylistAdapter = HomePlaylistRecyclerViewAdapter(thisYearPlaylistData)
+        thisYearPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
+            var mLastClickTime = 0L
+            override fun onClick(v: View, position: Int) {
+                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
+                    supportFragmentManager.beginTransaction().add(binding.playlistItemsFragment.id,PlaylistItemsFragment()).commit()
+                }
+                mLastClickTime = SystemClock.elapsedRealtime()
+            }
+        })
+        binding.thisYearPlaylistRecyclerView.adapter = thisYearPlaylistAdapter
+    }
+
+    fun initTodayHotListPlaylistRecyclerView(){
+        binding.todayHotListPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
+        todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter(todayHotPlaylistData)
+        binding.todayHotListPlaylistRecyclerView.adapter = todayHotPlaylistAdapter
+    }
+
+    fun initLatestMusicPlaylistRecyclerView(){
+        binding.latestMusicPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
+        latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter(latestMusicPlaylistData)
+        binding.latestMusicPlaylistRecyclerView.adapter = latestMusicPlaylistAdapter
+
+    }
+
+    fun initBestAtmospherePlaylistRecyclerView(){
+        binding.bestAtmospherePlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
+        bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestAtmospherePlaylistData)
+        binding.bestAtmospherePlaylistRecyclerView.adapter = bestAtmospherePlaylistAdapter
+
+    }
+
+    fun initBestSituationPlaylistRecyclerView(){
+        binding.bestSituationPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
+        bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestSituationPlaylistData)
+        binding.bestSituationPlaylistRecyclerView.adapter = bestSituationPlaylistAdapter
+    }
+
+
+    fun initPopularTop100RecyclerView(){
+        val gridLayoutManager = GridLayoutManager(this,4,GridLayoutManager.HORIZONTAL,false)
+        binding.popularTop100PlaylistVideoRecyclerView.layoutManager = gridLayoutManager
+        popular100PlaylistAdapter = HomePopular100RecyclerViewAdapter(playListVideoData)
+        binding.popularTop100PlaylistVideoRecyclerView.adapter = popular100PlaylistAdapter
+
+        popular100PlaylistAdapter.setItemClickListener(object: HomePopular100RecyclerViewAdapter.OnItemClickListener{
+            var mLastClickTime = 0L
+            override fun onClick(v: View, position: Int) {
+                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
+                    replaceFragmentToPlayerFragment(playListVideoData[position])
+                }
+                mLastClickTime = SystemClock.elapsedRealtime()
+            }
+        })
+
     }
 
     fun replaceFragmentToPlayerFragment(videoData: VideoData){
@@ -265,66 +290,68 @@ class Activity: AppCompatActivity() {
     fun getPlaylistData(musicUrls: ArrayList<String>){
         for (index in musicUrls.indices){
             val retrofit = RetrofitVideo.initRetrofit()
-            retrofit.create(RetrofitService::class.java).getPlayLists(API_KEY,"snippet",musicUrls[index])
+            retrofit.create(RetrofitService::class.java).getPlayLists(API_KEY,"snippet",musicUrls[index],"50")
                 .enqueue(object: Callback<PlayListSearchData>{
                     override fun onResponse(
                         call: Call<PlayListSearchData>,
                         response: Response<PlayListSearchData>
                     ) {
-//                        Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
-                        val thumbnail = response.body()?.items?.get(0)?.snippet?.thumbnails?.medium?.url!!
-                        val title = response.body()?.items?.get(0)?.snippet?.title!!
-                        val description = response.body()?.items?.get(0)?.snippet?.description!!
-                        when(musicUrls) {
-                            thisYearMusicUrl -> {
-                                thisYearPlaylistData.add(
-                                    PlayListData(
-                                        thumbnail,
-                                        title,
-                                        description
+                        if (response.body()?.items?.size != 0){
+                            val thumbnail = response.body()?.items?.get(0)?.snippet?.thumbnails?.medium?.url!!
+                            val title = response.body()?.items?.get(0)?.snippet?.title!!
+                            val description = response.body()?.items?.get(0)?.snippet?.description!!
+                            Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
+                            when(musicUrls) {
+                                thisYearMusicUrl -> {
+                                    thisYearPlaylistData.add(
+                                        PlayListData(
+                                            thumbnail,
+                                            title,
+                                            description
+                                        )
                                     )
-                                )
-                                thisYearPlaylistAdapter.notifyDataSetChanged()
-                            }
-                            todayHotMusicUrl -> {
-                                todayHotPlaylistData.add(
-                                    PlayListData(
-                                        thumbnail,
-                                        title,
-                                        description
+                                    thisYearPlaylistAdapter.notifyDataSetChanged()
+                                }
+                                todayHotMusicUrl -> {
+                                    todayHotPlaylistData.add(
+                                        PlayListData(
+                                            thumbnail,
+                                            title,
+                                            description
+                                        )
                                     )
-                                )
-                                todayHotPlaylistAdapter.notifyDataSetChanged()
-                            }
-                            latestMusicUrl -> {
-                                latestMusicPlaylistData.add(
-                                    PlayListData(
-                                        thumbnail,
-                                        title,
-                                        description
+                                    todayHotPlaylistAdapter.notifyDataSetChanged()
+                                }
+                                latestMusicUrl -> {
+                                    latestMusicPlaylistData.add(
+                                        PlayListData(
+                                            thumbnail,
+                                            title,
+                                            description
+                                        )
                                     )
-                                )
-                                latestMusicPlaylistAdapter.notifyDataSetChanged()
-                            }
-                            bestAtmosphereMusicUrl -> {
-                                bestAtmospherePlaylistData.add(
-                                    PlayListData(
-                                        thumbnail,
-                                        title,
-                                        description
+                                    latestMusicPlaylistAdapter.notifyDataSetChanged()
+                                }
+                                bestAtmosphereMusicUrl -> {
+                                    bestAtmospherePlaylistData.add(
+                                        PlayListData(
+                                            thumbnail,
+                                            title,
+                                            description
+                                        )
                                     )
-                                )
-                                bestAtmospherePlaylistAdapter.notifyDataSetChanged()
-                            }
-                            bestSituationMusicUrl -> {
-                                bestSituationPlaylistData.add(
-                                    PlayListData(
-                                        thumbnail,
-                                        title,
-                                        description
+                                    bestAtmospherePlaylistAdapter.notifyDataSetChanged()
+                                }
+                                bestSituationMusicUrl -> {
+                                    bestSituationPlaylistData.add(
+                                        PlayListData(
+                                            thumbnail,
+                                            title,
+                                            description
+                                        )
                                     )
-                                )
-                                bestSituationPlaylistAdapter.notifyDataSetChanged()
+                                    bestSituationPlaylistAdapter.notifyDataSetChanged()
+                                }
                             }
                         }
                     }
@@ -337,10 +364,10 @@ class Activity: AppCompatActivity() {
     }
     fun getPlaylistVideoData(nextPageToken: String?){
         val retrofit = RetrofitVideo.initRetrofit()
-        retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY,"snippet","PLnlxKMP5GzKCXJ3Cw99qSWgC01cuhTFxG",nextPageToken)
+        retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY,"snippet","PLnlxKMP5GzKCXJ3Cw99qSWgC01cuhTFxG",nextPageToken,"50")
             .enqueue(object : Callback<PlayListVideoSearchData> {
                 override fun onResponse(call: Call<PlayListVideoSearchData>, response: Response<PlayListVideoSearchData>) {
-                    Log.d(TAG, "onSusses${response.body()?.pageInfo?.resultsPerPage}: ${stringToHtmlSign(response.body()?.items?.get(0)?.snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!)}")
+                    Log.d(TAG, "onSusses${response.body()?.pageInfo?.resultsPerPage}: ${response.body()?.items?.size}")
                     for (index in 0 until response.body()?.items?.size!!){
                         val thumbnail = response?.body()?.items?.get(index)?.snippet?.thumbnails?.default?.url!!
                         val date = response?.body()?.items?.get(index)?.snippet?.publishedAt!!.substring(0, 10)
@@ -349,7 +376,9 @@ class Activity: AppCompatActivity() {
                         val videoId = response?.body()?.items?.get(index)?.snippet?.resourceId?.videoId!!
                         playListVideoData.add(VideoData(thumbnail, title, account, videoId, date))
                     }
-                    playlistVideoAdapter.notifyDataSetChanged()
+                    popular100PlaylistAdapter.notifyDataSetChanged()
+                    binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
+                    binding.popularTop100PlaylistVideoProgressBar.visibility = View.VISIBLE
                     if (response.body()?.nextPageToken != null)
                         getPlaylistVideoData(response.body()?.nextPageToken)
                 }
@@ -367,7 +396,6 @@ class Activity: AppCompatActivity() {
             .replace("&quot;".toRegex(), "'")
             .replace("&#39;".toRegex(), "'")
     }
-
 
 
     private fun floatButtonEvent(){
