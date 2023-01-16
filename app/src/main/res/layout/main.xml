@@ -34,20 +34,28 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
             <TextView
-                android:id="@+id/melon_playlist_text_view"
+                android:id="@+id/popular_Top100_playlist_text_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="melon Daily top 100"
+                android:text="인기 Top 100"
                 android:textSize="20dp"
                 android:textStyle="bold"
                 android:gravity="left"
                 android:layout_marginTop="10dp"
                 />
+
+            <ProgressBar
+                android:id="@+id/popular_Top100_playlist_video_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="300dp"
+                android:layout_gravity="center"/>
+
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/melon_playlist_video_recycler_view"
+                android:id="@+id/popular_Top100_playlist_video_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:nestedScrollingEnabled="false"
+                android:visibility="invisible"
                 />
             <TextView
                 android:id="@+id/this_year_playlist_text_view"
@@ -59,12 +67,19 @@
                 android:gravity="left"
                 android:layout_marginTop="30dp"
                 />
+
+            <ProgressBar
+                android:id="@+id/this_year_playlist_video_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="240dp"
+                android:layout_gravity="center"/>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/this_year_playlist_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:nestedScrollingEnabled="false"
                 android:orientation="horizontal"
+                android:visibility="invisible"
                 />
 
             <TextView
@@ -77,12 +92,17 @@
                 android:gravity="left"
                 android:layout_marginTop="10dp"
                 />
-
+            <ProgressBar
+                android:id="@+id/today_hot_list_playlist_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="240dp"
+                android:layout_gravity="center"/>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/today_hot_list_playlist_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:nestedScrollingEnabled="false"
+                android:visibility="invisible"
                 />
 
             <TextView
@@ -95,12 +115,18 @@
                 android:gravity="left"
                 android:layout_marginTop="10dp"
                 />
+            <ProgressBar
+                android:id="@+id/latest_music_playlist_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="240dp"
+                android:layout_gravity="center"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/latest_music_playlist_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:nestedScrollingEnabled="false"
+                android:visibility="invisible"
                 />
 
             <TextView
@@ -113,12 +139,18 @@
                 android:gravity="left"
                 android:layout_marginTop="10dp"
                 />
+            <ProgressBar
+                android:id="@+id/best_atmosphere_playlist_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="240dp"
+                android:layout_gravity="center"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/best_atmosphere_playlist_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:nestedScrollingEnabled="false"
+                android:visibility="invisible"
                 />
 
             <TextView
@@ -131,15 +163,19 @@
                 android:gravity="left"
                 android:layout_marginTop="10dp"
                 />
+            <ProgressBar
+                android:id="@+id/best_situation_playlist_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="240dp"
+                android:layout_gravity="center"/>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/best_situation_playlist_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="240dp"
                 android:nestedScrollingEnabled="false"
+                android:visibility="invisible"
                 />
-
-
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
@@ -170,6 +206,14 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:visibility="invisible"/>
     <FrameLayout
+        android:id="@+id/playlist_items_fragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tool_bar"/>
+    <FrameLayout
         android:id="@+id/search_result_fragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -197,13 +241,13 @@
         android:background="@color/drawer_background"
         android:visibility="invisible">
         <androidx.constraintlayout.widget.ConstraintLayout
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/transpose_page_constraint_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/drawer_background">
 
             <TextView
+                android:id="@+id/transpose_page_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Transpose"
@@ -214,6 +258,7 @@
 
                 />
             <LinearLayout
+                android:id="@+id/pitch_linear_layout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
@@ -224,6 +269,7 @@
                 app:layout_constraintVertical_bias="0.25"
                 >
                 <TextView
+                    android:id="@+id/pitch_text_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="피치"
@@ -253,6 +299,7 @@
                 android:progress="0"/>
 
             <LinearLayout
+                android:id="@+id/tempo_linear_layout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
@@ -264,6 +311,7 @@
                 >
 
                 <TextView
+                    android:id="@+id/tempo_text_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="템포"
@@ -301,6 +349,8 @@
         android:layout_height="wrap_content"
         android:background="@color/bottom_background"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:menu="@menu/bottom_navi_item"/>
 
 
