@@ -55,12 +55,11 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
                 return super.onTouchEvent(event)
             }
         }
-
         if (!motionTouchStarted) {
             mainContainerView.getHitRect(hitRect) // 해당 뷰의 클릭 영역 hitRect에 저장
             motionTouchStarted = hitRect.contains(event.x.toInt(), event.y.toInt())
         }
-//        Log.d("터치이벤트","${super.onTouchEvent(event) && motionTouchStarted}")
+
         return super.onTouchEvent(event) && motionTouchStarted
     }
 
@@ -82,9 +81,6 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
     //따라서 안의 뷰는 터치가 안먹음
     //이거 로그로 gestureDetector.onTouchEvent(event) 이거 하면 작동안함 왤까?
     override fun onInterceptTouchEvent(event: MotionEvent?): Boolean {
-//        Log.d("인터셉터","${gestureDetector.onTouchEvent(event)}")
         return gestureDetector.onTouchEvent(event)
-//        return false
-
     }
 }
