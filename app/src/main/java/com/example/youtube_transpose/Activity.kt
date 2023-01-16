@@ -100,9 +100,9 @@ class Activity: AppCompatActivity() {
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initView()
-        initPopularTop100RecyclerView()
+        initRecyclerView()
         floatButtonEvent()
-        getPlaylistVideoData(null)
+        getPopularTop100MusicData(null)
         getPlaylistData(thisYearMusicUrl)
         getPlaylistData(todayHotMusicUrl)
         getPlaylistData(latestMusicUrl)
@@ -153,6 +153,15 @@ class Activity: AppCompatActivity() {
         floatButton = binding.floatButton
         bottomNavigationView = binding.bottomNavigationView
     }
+    fun initRecyclerView(){
+        initSearchRecyclerView()
+        initPopularTop100RecyclerView()
+        initBestAtmospherePlaylistRecyclerView()
+        initBestSituationPlaylistRecyclerView()
+        initLatestMusicPlaylistRecyclerView()
+        initThisYearPlaylistRecyclerView()
+        initTodayHotListPlaylistRecyclerView()
+    }
     fun initSearchRecyclerView(){
         binding.searchRecyclerView.layoutManager = LinearLayoutManager(this)
         searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter(suggestionKeywords)
@@ -178,7 +187,9 @@ class Activity: AppCompatActivity() {
             var mLastClickTime = 0L
             override fun onClick(v: View, position: Int) {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    supportFragmentManager.beginTransaction().add(binding.playlistItemsFragment.id,PlaylistItemsFragment()).commit()
+                    supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(thisYearPlaylistData[position]))
+                        .addToBackStack(null)
+                        .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
@@ -189,12 +200,28 @@ class Activity: AppCompatActivity() {
     fun initTodayHotListPlaylistRecyclerView(){
         binding.todayHotListPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter(todayHotPlaylistData)
+        todayHotPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
+            override fun onClick(v: View, position: Int) {
+                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(todayHotPlaylistData[position]))
+                    .addToBackStack(null)
+                    .commit()
+            }
+
+        })
         binding.todayHotListPlaylistRecyclerView.adapter = todayHotPlaylistAdapter
     }
 
     fun initLatestMusicPlaylistRecyclerView(){
         binding.latestMusicPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter(latestMusicPlaylistData)
+        latestMusicPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
+            override fun onClick(v: View, position: Int) {
+                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(latestMusicPlaylistData[position]))
+                    .addToBackStack(null)
+                    .commit()
+            }
+
+        })
         binding.latestMusicPlaylistRecyclerView.adapter = latestMusicPlaylistAdapter
 
     }
@@ -202,6 +229,14 @@ class Activity: AppCompatActivity() {
     fun initBestAtmospherePlaylistRecyclerView(){
         binding.bestAtmospherePlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestAtmospherePlaylistData)
+        bestAtmospherePlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
+            override fun onClick(v: View, position: Int) {
+                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(bestAtmospherePlaylistData[position]))
+                    .addToBackStack(null)
+                    .commit()
+            }
+
+        })
         binding.bestAtmospherePlaylistRecyclerView.adapter = bestAtmospherePlaylistAdapter
 
     }
@@ -209,6 +244,14 @@ class Activity: AppCompatActivity() {
     fun initBestSituationPlaylistRecyclerView(){
         binding.bestSituationPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestSituationPlaylistData)
+        bestSituationPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
+            override fun onClick(v: View, position: Int) {
+                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(bestSituationPlaylistData[position]))
+                    .addToBackStack(null)
+                    .commit()
+            }
+
+        })
         binding.bestSituationPlaylistRecyclerView.adapter = bestSituationPlaylistAdapter
     }
 
@@ -311,6 +354,8 @@ class Activity: AppCompatActivity() {
                                         )
                                     )
                                     thisYearPlaylistAdapter.notifyDataSetChanged()
+                                    binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
+                                    binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
                                 }
                                 todayHotMusicUrl -> {
                                     todayHotPlaylistData.add(
@@ -321,6 +366,8 @@ class Activity: AppCompatActivity() {
                                         )
                                     )
                                     todayHotPlaylistAdapter.notifyDataSetChanged()
+                                    binding.todayHotListPlaylistProgressBar.visibility = View.GONE
+                                    binding.todayHotListPlaylistRecyclerView.visibility = View.VISIBLE
                                 }
                                 latestMusicUrl -> {
                                     latestMusicPlaylistData.add(
@@ -331,6 +378,8 @@ class Activity: AppCompatActivity() {
                                         )
                                     )
                                     latestMusicPlaylistAdapter.notifyDataSetChanged()
+                                    binding.latestMusicPlaylistProgressBar.visibility = View.GONE
+                                    binding.latestMusicPlaylistRecyclerView.visibility = View.VISIBLE
                                 }
                                 bestAtmosphereMusicUrl -> {
                                     bestAtmospherePlaylistData.add(
@@ -341,6 +390,8 @@ class Activity: AppCompatActivity() {
                                         )
                                     )
                                     bestAtmospherePlaylistAdapter.notifyDataSetChanged()
+                                    binding.bestAtmospherePlaylistProgressBar.visibility = View.GONE
+                                    binding.bestAtmospherePlaylistRecyclerView.visibility = View.VISIBLE
                                 }
                                 bestSituationMusicUrl -> {
                                     bestSituationPlaylistData.add(
@@ -351,6 +402,8 @@ class Activity: AppCompatActivity() {
                                         )
                                     )
                                     bestSituationPlaylistAdapter.notifyDataSetChanged()
+                                    binding.bestSituationPlaylistProgressBar.visibility = View.GONE
+                                    binding.bestSituationPlaylistRecyclerView.visibility = View.VISIBLE
                                 }
                             }
                         }
@@ -362,7 +415,7 @@ class Activity: AppCompatActivity() {
         }
 
     }
-    fun getPlaylistVideoData(nextPageToken: String?){
+    fun getPopularTop100MusicData(nextPageToken: String?){
         val retrofit = RetrofitVideo.initRetrofit()
         retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY,"snippet","PLnlxKMP5GzKCXJ3Cw99qSWgC01cuhTFxG",nextPageToken,"50")
             .enqueue(object : Callback<PlayListVideoSearchData> {
@@ -378,9 +431,9 @@ class Activity: AppCompatActivity() {
                     }
                     popular100PlaylistAdapter.notifyDataSetChanged()
                     binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
-                    binding.popularTop100PlaylistVideoProgressBar.visibility = View.VISIBLE
+                    binding.popularTop100PlaylistVideoRecyclerView.visibility = View.VISIBLE
                     if (response.body()?.nextPageToken != null)
-                        getPlaylistVideoData(response.body()?.nextPageToken)
+                        getPopularTop100MusicData(response.body()?.nextPageToken)
                 }
                 override fun onFailure(call: Call<PlayListVideoSearchData>, t: Throwable) {
                     Log.e(TAG, "onFailure: ${t.message}")
