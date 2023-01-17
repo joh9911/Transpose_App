@@ -47,7 +47,7 @@ class PlayerFragment(videoData: VideoData): Fragment() {
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
-    val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
+    val API_KEY = com.example.youtube_transpose.BuildConfig.API_KEY
 
     val aray = ArrayList<VideoData>()
     val videoData = videoData
@@ -79,6 +79,9 @@ class PlayerFragment(videoData: VideoData): Fragment() {
         binding.fragmentVideoTitle.text = videoData.title
         binding.fragmentVideoDetail.text = videoData.date
         binding.channelTextView.text = videoData.channel
+        binding.fragmentTitleLinearLayout.setOnClickListener {
+            Log.d("난 타이틀을","클릭ㄱ했다")
+        }
 
         binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
         searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(aray)
@@ -235,6 +238,7 @@ class PlayerFragment(videoData: VideoData): Fragment() {
                 }
                 if (binding.playerMotionLayout.currentState == R.id.end)
                     binding.bottomPlayerCloseButton.visibility = View.INVISIBLE
+
                 else
                     binding.bottomPlayerCloseButton.visibility = View.VISIBLE
             }

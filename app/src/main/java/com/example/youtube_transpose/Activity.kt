@@ -19,6 +19,7 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.BuildConfig
 import com.example.youtube_transpose.databinding.MainBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -49,7 +50,7 @@ class Activity: AppCompatActivity() {
     }
 
 
-    val API_KEY = "AIzaSyCNex-cHLNFKoFfgl9FcwR7scN3N0BkWb0"
+    val API_KEY = com.example.youtube_transpose.BuildConfig.API_KEY
     val suggestionKeywords = ArrayList<String>()
     val playListVideoData = ArrayList<VideoData>()
     val thisYearPlaylistData = ArrayList<PlayListData>()
