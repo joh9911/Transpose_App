@@ -4,19 +4,16 @@ import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.youtube_transpose.databinding.ActivityMainBinding
 import com.example.youtube_transpose.databinding.FragmentPlayerBinding
 import com.example.youtube_transpose.databinding.MainBinding
 import com.google.android.exoplayer2.MediaItem
@@ -26,7 +23,6 @@ import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.util.FlacConstants
 import com.google.android.exoplayer2.util.MimeTypes
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
@@ -36,21 +32,22 @@ import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.lang.Math.abs
 
-class PlayerFragment(videoData: VideoData): Fragment() {
+class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: String): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
+    lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
     val API_KEY = com.example.youtube_transpose.BuildConfig.API_KEY
 
-    val aray = ArrayList<VideoData>()
-    val videoData = videoData
+    val videoDataList = videoDataList
+    val position = position
+    val mode = mode
+
+    val playlists = arrayListOf<String>()
 
     var player: SimpleExoPlayer? = null
     lateinit var playerView: PlayerView
@@ -67,55 +64,55 @@ class PlayerFragment(videoData: VideoData): Fragment() {
         initView()
         initMotionLayout()
         initYoutubeDL()
-        initListener()
-        getResultData()
+        initListener(videoDataList[position].videoId)
         return view
     }
     fun initView(){
         binding.bottomPlayerCloseButton.setOnClickListener {
             getActivity()?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
         }
+        binding.bottomTitleTextView.text = videoDataList[position].title
+        binding.fragmentVideoTitle.text = videoDataList[position].title
+        binding.fragmentVideoDetail.text = videoDataList[position].date
+        binding.channelTextView.text = videoDataList[position].channel
+        binding.fragmentTitleLinearLayout.setOnClickListener {
+            Log.d("난 타이틀을","클릭ㄱ했다")
+        }
+    }
+    fun settingVideoData(videoData: VideoData){
         binding.bottomTitleTextView.text = videoData.title
         binding.fragmentVideoTitle.text = videoData.title
         binding.fragmentVideoDetail.text = videoData.date
         binding.channelTextView.text = videoData.channel
-        binding.fragmentTitleLinearLayout.setOnClickListener {
-            Log.d("난 타이틀을","클릭ㄱ했다")
-        }
-
-        binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-        searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(aray)
-        binding.fragmentRecyclerView.adapter = searchResultAdapter
-
     }
-    private fun getResultData() {
-        val retrofit = RetrofitVideo.initRetrofit()
-        retrofit.create(RetrofitService::class.java).getVideoDetails(API_KEY,"snippet","cookie","50","video")
-            .enqueue(object : Callback<VideoSearchData> {
-                override fun onResponse(call: Call<VideoSearchData>, response: Response<VideoSearchData>) {
-                    for (index in 0 until response.body()?.items?.size!!){
-                        val thumbnail = response?.body()?.items?.get(index)?.snippet?.thumbnails?.high?.url!!
-                        val date = response?.body()?.items?.get(index)?.snippet?.publishedAt!!.substring(0, 10)
-                        val account = response?.body()?.items?.get(index)?.snippet?.channelTitle!!
-                        val title = stringToHtmlSign(response?.body()?.items?.get(index)?.snippet?.title!!)
-                        val videoId = response?.body()?.items?.get(index)?.id?.videoId!!
-                        aray.add(VideoData(thumbnail, title, account, videoId, date))
-                    }
-                    Log.d("fragment 비디오 목록","$aray")
-                    searchResultAdapter.notifyDataSetChanged()
 
-                }
-                override fun onFailure(call: Call<VideoSearchData>, t: Throwable) {
-                    Log.e(ContentValues.TAG, "onFailure: ${t.message}")
+    override fun onStart() {
+        initRecyclerView()
+        super.onStart()
+    }
+    fun initRecyclerView(){
+        if (mode == "playlist"){
+            Log.d("초기화함수","$position")
+            binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
+            playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(videoDataList, position)
+            playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
+                var mLastClickTime = 0L
+                override fun onClick(v: View, position: Int) {
+                    if (SystemClock.elapsedRealtime() - mLastClickTime > 1000){
+                        settingVideoData(videoDataList[position])
+                        startStream(videoDataList[position].videoId)
+                    }
+                    mLastClickTime = SystemClock.elapsedRealtime()
                 }
             })
-    }
-    private fun stringToHtmlSign(str: String): String {
-        return str.replace("&amp;".toRegex(), "[&]")
-            .replace("[<]".toRegex(), "&lt;")
-            .replace("[>]".toRegex(), "&gt;")
-            .replace("&quot;".toRegex(), "'")
-            .replace("&#39;".toRegex(), "'")
+            binding.fragmentRecyclerView.adapter = playlistItemsRecyclerViewAdapter
+        }
+
+        if (mode == "video"){
+            binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
+            searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(videoDataList)
+            binding.fragmentRecyclerView.adapter = searchResultAdapter
+        }
     }
 
     fun setPitch(value: Int){
@@ -131,22 +128,22 @@ class PlayerFragment(videoData: VideoData): Fragment() {
         val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
         player?.playbackParameters = param
     }
-    private fun initListener(){
+    private fun initListener(videoId: String){
         playerView = binding.playerView
         player = SimpleExoPlayer.Builder(activity)
             .build()
         playerView.player = player
-        startStream()
+        startStream(videoId)
     }
-    private fun startStream(){
-        Log.d("vdid","${videoData.videoId}")
-        val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}"
-        binding.bottomTitleTextView.text = videoData.title
+    private fun startStream(videoId: String){
+        Log.d("vdid","${videoId}")
+        if (player?.isPlaying!!)
+            player?.removeMediaItem(0)
+        val youtubeUrl = "https://www.youtube.com/watch?v=${videoId}"
         val url = youtubeUrl.trim()
         if (TextUtils.isEmpty(url)){
             Toast.makeText(activity, "url오류", Toast.LENGTH_SHORT).show()
         }
-//        pbLoading.visibility = View.VISIBLE
 
         val disposable: Disposable = Observable.fromCallable {
             val request = YoutubeDLRequest(url)
@@ -158,7 +155,6 @@ class PlayerFragment(videoData: VideoData): Fragment() {
             .subscribeOn(Schedulers.newThread())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ streamInfo ->
-//                pbLoading.visibility = View.GONE
                 Log.d("정보","$streamInfo")
                 val videoUrl: String = streamInfo.url
                 if (TextUtils.isEmpty(videoUrl)) {
@@ -173,7 +169,6 @@ class PlayerFragment(videoData: VideoData): Fragment() {
                 }
             }) { e ->
                 if (BuildConfig.DEBUG) Log.e(ContentValues.TAG, "failed to get stream info", e)
-//                pbLoading.visibility = View.GONE
                 Toast.makeText(
                     activity,
                     "streaming failed. failed to get stream info",
@@ -184,10 +179,12 @@ class PlayerFragment(videoData: VideoData): Fragment() {
     }
 
     private fun setupVideoView(videoUrl: String){
+        Log.d("셋업","비디오")
         val mediaItem = MediaItem.Builder()
             .setUri(Uri.parse(videoUrl))
             .setMimeType(MimeTypes.APPLICATION_MPD)
             .build()
+
         player?.setMediaItem(mediaItem)
 //        val audioSource = ProgressiveMediaSource
 //            .Factory(DefaultHttpDataSource.Factory())
