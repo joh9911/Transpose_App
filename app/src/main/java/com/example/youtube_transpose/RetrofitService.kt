@@ -11,14 +11,16 @@ interface RetrofitService {
     fun getVideoDetails(@Query("key") key: String,
                         @Query("part") part: String,
                         @Query("q") q: String,
-                        @Query("maxResults") maxResult: String,
+                        @Query("maxResults") maxResults: String,
                         @Query("type") type: String
     ): Call<VideoSearchData>
 
     @GET("search")
     fun getAllSearchData(@Query("key") key: String,
                          @Query("part") part: String,
-                         @Query("q") q: String
+                         @Query("q") q: String,
+                         @Query("maxResults") maxResults: String
+
     ): Call<AllSearchData>
 
     @GET("search")
@@ -31,14 +33,23 @@ interface RetrofitService {
     fun getPlayListVideoItems(@Query("key") key: String,
                          @Query("part") part: String,
                          @Query("playlistId") playListId: String,
-                         @Query("pageToken") pageToken: String?
+                         @Query("pageToken") pageToken: String?,
+                         @Query("maxResults") maxResults: String
+
     ): Call<PlayListVideoSearchData>
 
     @GET("playlists")
     fun getPlayLists(@Query("key") key: String,
                      @Query("part") part: String,
-                     @Query("id") id: String // id는 각 플레이리스트의 아이디
+                     @Query("id") id: String, // id는 각 플레이리스트의 아이디
+                     @Query("maxResults") maxResults: String
     ): Call<PlayListSearchData>
+
+    @GET("channels")
+    fun getChannelData(@Query("key") key: String,
+                       @Query("part") part: String,
+                       @Query("id") id: String
+    )
 }
 
 /**
@@ -332,16 +343,119 @@ data class Items (
 
 )
 
+/**
+ * 채널 정보
+ */
+data class ChannelData (
+
+    @SerializedName("kind"     ) var kind     : String?          = null,
+    @SerializedName("etag"     ) var etag     : String?          = null,
+    @SerializedName("pageInfo" ) var pageInfo : ChannelPageInfo? = ChannelPageInfo(),
+    @SerializedName("items"    ) var items    : ArrayList<ChannelItems> = arrayListOf()
+
+)
+
+data class ChannelPageInfo (
+
+    @SerializedName("totalResults"   ) var totalResults   : Int? = null,
+    @SerializedName("resultsPerPage" ) var resultsPerPage : Int? = null
+
+)
+
+data class ChannelDefault (
+
+    @SerializedName("url"    ) var url    : String? = null,
+    @SerializedName("width"  ) var width  : Int?    = null,
+    @SerializedName("height" ) var height : Int?    = null
+
+)
+
+data class ChannelMedium (
+
+    @SerializedName("url"    ) var url    : String? = null,
+    @SerializedName("width"  ) var width  : Int?    = null,
+    @SerializedName("height" ) var height : Int?    = null
+
+)
+data class ChannelHigh (
+
+    @SerializedName("url"    ) var url    : String? = null,
+    @SerializedName("width"  ) var width  : Int?    = null,
+    @SerializedName("height" ) var height : Int?    = null
+
+)
+
+data class ChannelThumbnails (
+
+    @SerializedName("default" ) var default : ChannelDefault? = ChannelDefault(),
+    @SerializedName("medium"  ) var medium  : ChannelMedium?  = ChannelMedium(),
+    @SerializedName("high"    ) var high    : ChannelHigh?    = ChannelHigh()
+
+)
+
+data class ChannelLocalized (
+
+    @SerializedName("title"       ) var title       : String? = null,
+    @SerializedName("description" ) var description : String? = null
+
+)
+
+data class ChannelSnippet (
+
+    @SerializedName("title"           ) var title           : String?     = null,
+    @SerializedName("description"     ) var description     : String?     = null,
+    @SerializedName("customUrl"       ) var customUrl       : String?     = null,
+    @SerializedName("publishedAt"     ) var publishedAt     : String?     = null,
+    @SerializedName("thumbnails"      ) var thumbnails      : ChannelThumbnails? = ChannelThumbnails(),
+    @SerializedName("defaultLanguage" ) var defaultLanguage : String?     = null,
+    @SerializedName("localized"       ) var localized       : ChannelLocalized?  = ChannelLocalized()
+
+)
+
+data class ChannelRelatedPlaylists (
+
+    @SerializedName("likes"   ) var likes   : String? = null,
+    @SerializedName("uploads" ) var uploads : String? = null
+
+)
+
+data class ChannelContentDetails (
+
+    @SerializedName("relatedPlaylists" ) var relatedPlaylists : ChannelRelatedPlaylists? = ChannelRelatedPlaylists()
+
+)
+
+data class ChannelStatistics (
+
+    @SerializedName("viewCount"             ) var viewCount             : String?  = null,
+    @SerializedName("subscriberCount"       ) var subscriberCount       : String?  = null,
+    @SerializedName("hiddenSubscriberCount" ) var hiddenSubscriberCount : Boolean? = null,
+    @SerializedName("videoCount"            ) var videoCount            : String?  = null
+
+)
+
+data class ChannelItems (
+
+    @SerializedName("kind"           ) var kind           : String?         = null,
+    @SerializedName("etag"           ) var etag           : String?         = null,
+    @SerializedName("id"             ) var id             : String?         = null,
+    @SerializedName("snippet"        ) var snippet        : ChannelSnippet?        = ChannelSnippet(),
+    @SerializedName("contentDetails" ) var contentDetails : ChannelContentDetails? = ChannelContentDetails(),
+    @SerializedName("statistics"     ) var statistics     : ChannelStatistics?     = ChannelStatistics()
+
+)
 data class VideoData(
     val thumbnail: String,
     val title: String,
     val channel: String,
     val videoId: String,
     val date: String,
+    val isPlaying: Boolean
 )
 
 data class PlayListData(
     val thumbnail: String,
     val title: String,
-    val description: String
+    val description: String,
+    val playlistId: String
 )
