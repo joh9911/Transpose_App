@@ -1,6 +1,7 @@
 package com.example.youtube_transpose
 
 import android.app.SearchManager
+import android.content.ContentValues
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.os.Bundle
@@ -9,9 +10,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.LinearLayout
-import android.widget.SeekBar
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SearchView.SearchAutoComplete
@@ -36,6 +35,7 @@ class Activity: AppCompatActivity() {
     lateinit var bottomNavigationView: BottomNavigationView
     lateinit var pitchSeekBar: SeekBar
     lateinit var tempoSeekBar: SeekBar
+    lateinit var searchView: SearchView
 
     private lateinit var popular100PlaylistAdapter: HomePopular100RecyclerViewAdapter
     private lateinit var searchAdapter: SearchSuggestionKeywordRecyclerViewAdapter
@@ -58,7 +58,7 @@ class Activity: AppCompatActivity() {
     val latestMusicPlaylistData = ArrayList<PlayListData>()
     val bestAtmospherePlaylistData = ArrayList<PlayListData>()
     val bestSituationPlaylistData = ArrayList<PlayListData>()
-    val thisYearMusicUrl = arrayListOf("RDCLAK5uy_kFoxHZo_PEVrqVnwKkeucGn4ldSyKHD8A",
+    val thisYearMusicId = arrayListOf("RDCLAK5uy_kFoxHZo_PEVrqVnwKkeucGn4ldSyKHD8A",
         "RDCLAK5uy_lZZ5gBJBR1AYziS_onNkE2m18Peg042fI","RDCLAK5uy_nwmWfUayX21xwr1VB72jjBqDPDxGm9zc0",
         "RDCLAK5uy_mOWD5gzPMEI5Ip97H4ivxpcxE7uglskHo","RDCLAK5uy_kaV_BsACArm2vCjj74y871plTk9F8RIDA",
         "RDCLAK5uy_kvnBKwOS6J1tBqsNmdISJEhJ2a-RhNliI","RDCLAK5uy_keUi-XamVp1RPNUoJ-BPIQy3_DusjC5Mg",
@@ -66,14 +66,14 @@ class Activity: AppCompatActivity() {
         "RDCLAK5uy_ln2vAJIQILond713LQLKfxSruLhFB1lIM","RDCLAK5uy_kcIyRk6eceGdn0Zjijw0ARVbHCubof1zM",
         "RDCLAK5uy_k4vBNV3dzeyoMlSagQydjsZ-uyo1x1fIU")
 
-    val todayHotMusicUrl = arrayListOf("RDCLAK5uy_l7wbVbkC-dG5fyEQQsBfjm_z3dLAhYyvo",
+    val todayHotMusicId = arrayListOf("RDCLAK5uy_l7wbVbkC-dG5fyEQQsBfjm_z3dLAhYyvo",
         "RDCLAK5uy_m9ty3WvAucm7-5KsKdro9_HnocE8LSS9o","RDCLAK5uy_kRRqnSpfrRZ9OJyTB2IE5WsAqYluG0uYo",
         "RDCLAK5uy_lYPvoz4gPFnKMw_BFojpMk7xRSIqVBkEE","RDCLAK5uy_l6DCR35xfT9bfeUqP7-uw6kWApcfYeDPY",
         "RDCLAK5uy_k6pZ82Gha0sopanWffXo4iMBVaGR7jQaE","RDCLAK5uy_mMRkzfvFXzNQbSl3K-hE_FJ7g8TqMtSlo",
         "RDCLAK5uy_mjCKq8hnUQJqul0W6YW6x2Ep4P67jQ5Po","RDCLAK5uy_l0nFcbRh2kbs27gleqzu364A9rN-D8Ib8",
         "RDCLAK5uy_ky-kXJCA_i0Gf0k6iNxsRHBhAgugAN8-g","RDCLAK5uy_lBfTSdVdgXeN399Mxt2L3C6hLarC1aaN0")
 
-    val latestMusicUrl = arrayListOf("RDCLAK5uy_lS4dqGRHszluFAbLsV-sHJCqULtBm2Gfw",
+    val latestMusicId = arrayListOf("RDCLAK5uy_lS4dqGRHszluFAbLsV-sHJCqULtBm2Gfw",
         "RDCLAK5uy_mVBAam6Saaqa_DeJRxGkawqqxwPTBrGXM","RDCLAK5uy_nkjcHIQK0Hgf7ihU25uJc0CEokeGkSNxA",
         "RDCLAK5uy_mWqhoadUUp9crhEkmZZkdExj7YpBuFBEQ","RDCLAK5uy_n0f4tLAkNM233wO0yiTEI7467ovnaGbR8",
         "RDCLAK5uy_lN9xj1RQGmBltmvrzTVHMg-vyVt594KYU","RDCLAK5uy_kITLp-IuXw_winp1mnN9PSNatPBiAK52A",
@@ -81,14 +81,14 @@ class Activity: AppCompatActivity() {
         "RDCLAK5uy_nppUVicPb1PRbUZmVEMhqgvyFz33Il4pE"
         )
 
-    val bestAtmosphereMusicUrl = arrayListOf("RDCLAK5uy_mA88hxo-cmI0-WaaRH8Bb2k0x2NptOPqM",
+    val bestAtmosphereMusicId = arrayListOf("RDCLAK5uy_mA88hxo-cmI0-WaaRH8Bb2k0x2NptOPqM",
         "RDCLAK5uy_meEBX-iIBwtXBhkeWzwX6njohWnpMijP8","RDCLAK5uy_kT-sIJz2O-hpkxwjosN2hMt9Y5xevcPYI",
         "RDCLAK5uy_lNJA7PB9DAQEdtTnfuKaC2XEOAE1OoX50","RDCLAK5uy_lv6V83HLaJMQDx8YFtfSAaZ6GGvSqI6PE",
         "RDCLAK5uy_mL0lDqxdKwRtBbzva3yVjVy-BZ9L7KX5I","RDCLAK5uy_nXDnxSmhez06eAnjfT2pWjSpp-p2VBv54",
         "RDCLAK5uy_ksGphJr7YduIL-vDvJBUJQ2_JCYnCkaYI","RDCLAK5uy_kDBL_tFOUos7q3SOifZrMHXKwuebdzf7I"
     )
 
-    val bestSituationMusicUrl = arrayListOf("RDCLAK5uy_msV9Vc8q_guumIXgLkzYs58uBZHVVBPtE",
+    val bestSituationMusicId = arrayListOf("RDCLAK5uy_msV9Vc8q_guumIXgLkzYs58uBZHVVBPtE",
         "RDCLAK5uy_lFgjDM5dWvoq0_wkEqx4_M43Nk6wXviaM","RDCLAK5uy_nEcCeflWNpzQNRExtAKjKkkX96wjom9Nc",
         "RDCLAK5uy_kskrFUGb5Tnz3-x4wyK9Q5j8RgfwQvq4k","RDCLAK5uy_kjKtb_RC7LRbxiEmSIzZqJRVcYm8U9KMc",
         "RDCLAK5uy_mS7UhvWzUZdjauupjE5JO6VCn-CCwaRoI","RDCLAK5uy_krjFmKbzWzkGvhqkYvvNnUbdrHy0QN1S8",
@@ -104,11 +104,11 @@ class Activity: AppCompatActivity() {
         initRecyclerView()
         floatButtonEvent()
         getPopularTop100MusicData(null)
-        getPlaylistData(thisYearMusicUrl)
-        getPlaylistData(todayHotMusicUrl)
-        getPlaylistData(latestMusicUrl)
-        getPlaylistData(bestAtmosphereMusicUrl)
-        getPlaylistData(bestSituationMusicUrl)
+        getPlaylistData(thisYearMusicId)
+        getPlaylistData(todayHotMusicId)
+        getPlaylistData(latestMusicId)
+        getPlaylistData(bestAtmosphereMusicId)
+        getPlaylistData(bestSituationMusicId)
         Log.d("온 크레이트","실행")
     }
     private fun initView() {
@@ -128,9 +128,17 @@ class Activity: AppCompatActivity() {
                         playerFragment.setPitch(p0?.progress!!)
                     }
                 }
-
             }
         })
+        binding.pitchInitButton.setOnClickListener {
+            pitchSeekBar.progress = 0
+            for(fragment in supportFragmentManager.fragments) {
+                if(fragment.isVisible && fragment is PlayerFragment) {
+                    val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+                    playerFragment.setPitch(pitchSeekBar.progress)
+                }
+            }
+        }
         tempoSeekBar = binding.tempoSeekBar
         tempoSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
@@ -148,6 +156,17 @@ class Activity: AppCompatActivity() {
 
             }
         })
+        binding.tempoInitButton.setOnClickListener {
+            tempoSeekBar.progress = 0
+            for(fragment in supportFragmentManager.fragments) {
+                if(fragment.isVisible && fragment is PlayerFragment) {
+                    val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+                    playerFragment.setTempo(tempoSeekBar.progress!!)
+                }
+            }
+        }
+        binding.transposePage.setOnClickListener {
+        }
         toolbar = binding.toolBar
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -173,7 +192,9 @@ class Activity: AppCompatActivity() {
                     val searchWord = suggestionKeywords[position]
                     suggestionKeywords.clear()
                     searchAdapter.notifyDataSetChanged()
+                    searchView.clearFocus()
                     supportFragmentManager.beginTransaction().replace(binding.searchResultFragment.id,SearchResultFragment(searchWord)).commit()
+                    binding.searchRecyclerView.visibility = View.INVISIBLE
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
@@ -247,7 +268,8 @@ class Activity: AppCompatActivity() {
         bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestSituationPlaylistData)
         bestSituationPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(bestSituationPlaylistData[position]))
+                supportFragmentManager.beginTransaction()
+                    .replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(bestSituationPlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
@@ -267,16 +289,14 @@ class Activity: AppCompatActivity() {
             var mLastClickTime = 0L
             override fun onClick(v: View, position: Int) {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    replaceFragmentToPlayerFragment(playListVideoData[position])
+                    supportFragmentManager.beginTransaction()
+                        .replace(binding.playerFragment.id,PlayerFragment(playListVideoData, position, "playlist"),"playerFragment")
+                        .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
         })
 
-    }
-
-    fun replaceFragmentToPlayerFragment(videoData: VideoData){
-        supportFragmentManager.beginTransaction().replace(binding.playerFragment.id,PlayerFragment(videoData),"playerFragment").commit()
     }
 
     private fun getSuggestionKeyword(newText: String){
@@ -344,64 +364,79 @@ class Activity: AppCompatActivity() {
                             val thumbnail = response.body()?.items?.get(0)?.snippet?.thumbnails?.medium?.url!!
                             val title = response.body()?.items?.get(0)?.snippet?.title!!
                             val description = response.body()?.items?.get(0)?.snippet?.description!!
+                            val playlistId = response.body()?.items?.get(0)?.id!!
                             Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
                             when(musicUrls) {
-                                thisYearMusicUrl -> {
+                                thisYearMusicId -> {
                                     thisYearPlaylistData.add(
                                         PlayListData(
                                             thumbnail,
                                             title,
-                                            description
+                                            description,
+                                            playlistId
                                         )
                                     )
+                                    Log.d("올해 음악","$playlistId")
                                     thisYearPlaylistAdapter.notifyDataSetChanged()
                                     binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
                                     binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
                                 }
-                                todayHotMusicUrl -> {
+                                todayHotMusicId -> {
                                     todayHotPlaylistData.add(
                                         PlayListData(
                                             thumbnail,
                                             title,
-                                            description
+                                            description,
+                                            playlistId
                                         )
                                     )
+                                    Log.d("오늘 음악","추가")
+
                                     todayHotPlaylistAdapter.notifyDataSetChanged()
                                     binding.todayHotListPlaylistProgressBar.visibility = View.GONE
                                     binding.todayHotListPlaylistRecyclerView.visibility = View.VISIBLE
                                 }
-                                latestMusicUrl -> {
+                                latestMusicId -> {
                                     latestMusicPlaylistData.add(
                                         PlayListData(
                                             thumbnail,
                                             title,
-                                            description
+                                            description,
+                                            playlistId
                                         )
                                     )
+                                    Log.d("최신 음악","추가")
+
                                     latestMusicPlaylistAdapter.notifyDataSetChanged()
                                     binding.latestMusicPlaylistProgressBar.visibility = View.GONE
                                     binding.latestMusicPlaylistRecyclerView.visibility = View.VISIBLE
                                 }
-                                bestAtmosphereMusicUrl -> {
+                                bestAtmosphereMusicId -> {
                                     bestAtmospherePlaylistData.add(
                                         PlayListData(
                                             thumbnail,
                                             title,
-                                            description
+                                            description,
+                                            playlistId
                                         )
                                     )
+                                    Log.d("분위기 음악","추가")
+
                                     bestAtmospherePlaylistAdapter.notifyDataSetChanged()
                                     binding.bestAtmospherePlaylistProgressBar.visibility = View.GONE
                                     binding.bestAtmospherePlaylistRecyclerView.visibility = View.VISIBLE
                                 }
-                                bestSituationMusicUrl -> {
+                                bestSituationMusicId -> {
                                     bestSituationPlaylistData.add(
                                         PlayListData(
                                             thumbnail,
                                             title,
-                                            description
+                                            description,
+                                            playlistId
                                         )
                                     )
+                                    Log.d("상황 음악","추가")
+
                                     bestSituationPlaylistAdapter.notifyDataSetChanged()
                                     binding.bestSituationPlaylistProgressBar.visibility = View.GONE
                                     binding.bestSituationPlaylistRecyclerView.visibility = View.VISIBLE
@@ -425,14 +460,18 @@ class Activity: AppCompatActivity() {
                     for (index in 0 until response.body()?.items?.size!!){
                         val thumbnail = response?.body()?.items?.get(index)?.snippet?.thumbnails?.default?.url!!
                         val date = response?.body()?.items?.get(index)?.snippet?.publishedAt!!.substring(0, 10)
-                        val account = response.body()?.items?.get(index)?.snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!
+                        val channelTitle = response.body()?.items?.get(index)?.snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!
+                        val channelId = response.body()?.items?.get(index)?.id
                         val title = stringToHtmlSign(response?.body()?.items?.get(index)?.snippet?.title!!)
                         val videoId = response?.body()?.items?.get(index)?.snippet?.resourceId?.videoId!!
-                        playListVideoData.add(VideoData(thumbnail, title, account, videoId, date))
+                        playListVideoData.add(VideoData(thumbnail, title, channelTitle, videoId, date, thumbnail))
                     }
-                    popular100PlaylistAdapter.notifyDataSetChanged()
+
                     binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
                     binding.popularTop100PlaylistVideoRecyclerView.visibility = View.VISIBLE
+                    popular100PlaylistAdapter.notifyDataSetChanged()
+
+
                     if (response.body()?.nextPageToken != null)
                         getPopularTop100MusicData(response.body()?.nextPageToken)
                 }
@@ -474,13 +513,18 @@ class Activity: AppCompatActivity() {
         val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
         (menu.findItem(R.id.youtube_search_icon).actionView as SearchView).apply {
             setSearchableInfo(searchManager.getSearchableInfo(componentName))
-            val searchView = this
-            val searchAutoComplete = this.findViewById<SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
+            searchView = this
+            val searchAutoComplete = searchView.findViewById<SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
             searchAutoComplete.setTextColor(resources.getColor(R.color.white))
             searchAutoComplete.setHintTextColor(resources.getColor(R.color.description_color))
             searchAutoComplete.hint = "Youtube 검색"
+
+            searchView.setOnQueryTextFocusChangeListener { p0, p1 ->
+                binding.searchRecyclerView.visibility = View.VISIBLE
+            }
             menu.findItem(R.id.youtube_search_icon).setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
                 override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
+                    binding.toolBar.setBackgroundColor(resources.getColor(R.color.drawer_background))
                     binding.bottomNavigationView.visibility = View.GONE
                     return true
                 }
@@ -491,9 +535,11 @@ class Activity: AppCompatActivity() {
                             supportFragmentManager.beginTransaction().remove(fragment).commit()
                         }
                     }
+                    binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
                     binding.bottomNavigationView.visibility = View.VISIBLE
                     binding.searchRecyclerView.visibility = View.INVISIBLE
                     suggestionKeywords.clear()
+                    searchAdapter.notifyDataSetChanged()
                     return true
                 }
             })
