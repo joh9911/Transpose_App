@@ -39,11 +39,17 @@
                 android:text="플레이리스트 설명"
                 android:gravity="center"
                 android:textColor="@color/description_color"/>
+            <ProgressBar
+                android:id="@+id/playlist_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="300dp"
+                android:layout_gravity="center"/>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/playlist_item_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="20dp"/>
+                android:paddingTop="20dp"
+                android:visibility="invisible"/>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
