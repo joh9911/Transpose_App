@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <ImageView
+        android:id="@+id/channel_banner"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_launcher_background"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+        <TextView
+            android:id="@+id/channel_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="채널 타이틀"
+            android:textSize="30dp"
+            android:gravity="center"
+            android:textStyle="bold"
+            app:layout_constraintTop_toTopOf="@id/channel_banner"
+            app:layout_constraintBottom_toBottomOf="@id/channel_banner"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintVertical_bias="0.8"/>
+        <LinearLayout
+            android:id="@+id/channel_description_info_linear_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@id/channel_banner"
+            >
+            <TextView
+                android:id="@+id/channel_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="채널 설명"
+                android:textColor="@color/description_color"
+                android:textSize="20dp"
+                android:lines="3"
+                android:maxLines="3"
+                android:ellipsize="end"
+                android:gravity="center"
+                />
+            <TextView
+                android:id="@+id/channel_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="동영상"
+                android:gravity="center"
+                />
+        </LinearLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/video_linear_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/channel_description_info_linear_layout"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+
+
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
