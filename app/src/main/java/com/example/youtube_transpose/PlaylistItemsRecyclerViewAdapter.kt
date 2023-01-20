@@ -11,28 +11,27 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.youtube_transpose.databinding.HomePlaylistItemsRecyclerViewItemBinding
 import com.example.youtube_transpose.databinding.HomePopular100RecyclerViewItemBinding
-import io.opencensus.resource.Resource
 
 class PlaylistItemsRecyclerViewAdapter(dataList: MutableList<VideoData>, position: Int): RecyclerView.Adapter<PlaylistItemsRecyclerViewAdapter.MyViewHolder>() {
     private val dataList = dataList
-    val firstSelectedPosition = position
-    var selectedPosition = position
+    var currentPlayedPosition = position
     var lastPlayedPosition = -1
 
     inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
         init {
             itemView.setOnClickListener {
                 itemClickListener.onClick(it, adapterPosition)
-                selectedPosition = adapterPosition
+                notifyItemChanged(currentPlayedPosition)
+                currentPlayedPosition = adapterPosition
                 lastPlayedPosition = if (lastPlayedPosition == -1){
-                    notifyItemChanged(firstSelectedPosition)
-                    selectedPosition
+                    notifyItemChanged(currentPlayedPosition)
+                    currentPlayedPosition
                 }
                 else{
                     notifyItemChanged(lastPlayedPosition)
-                    selectedPosition
+                    currentPlayedPosition
                 }
-                notifyItemChanged(selectedPosition)
+                notifyItemChanged(currentPlayedPosition)
             }
         }
         fun selected(){
@@ -61,8 +60,8 @@ class PlaylistItemsRecyclerViewAdapter(dataList: MutableList<VideoData>, positio
     override fun getItemCount(): Int = dataList.size
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        if (position == selectedPosition){
-            Log.d("onBind","${selectedPosition}, ${lastPlayedPosition}")
+        Log.d("온바인드뷰홀더","${currentPlayedPosition}")
+        if (position == currentPlayedPosition){
             holder.selected()
         }
         else{
