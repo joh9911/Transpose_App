@@ -49,7 +49,7 @@ interface RetrofitService {
     fun getChannelData(@Query("key") key: String,
                        @Query("part") part: String,
                        @Query("id") id: String
-    )
+    ): Call<ChannelSearchData>
 }
 
 /**
@@ -346,7 +346,7 @@ data class Items (
 /**
  * 채널 정보
  */
-data class ChannelData (
+data class ChannelSearchData (
 
     @SerializedName("kind"     ) var kind     : String?          = null,
     @SerializedName("etag"     ) var etag     : String?          = null,
@@ -434,6 +434,27 @@ data class ChannelStatistics (
 
 )
 
+data class ChannelChannel (
+
+    @SerializedName("title"       ) var title       : String? = null,
+    @SerializedName("description" ) var description : String? = null,
+    @SerializedName("keywords"    ) var keywords    : String? = null
+
+)
+
+data class ChannelImage (
+
+    @SerializedName("bannerExternalUrl" ) var bannerExternalUrl : String? = null
+
+)
+
+data class ChannelBrandingSettings (
+
+    @SerializedName("channel" ) var channel : ChannelChannel? = ChannelChannel(),
+    @SerializedName("image"   ) var image   : ChannelImage?   = ChannelImage()
+
+)
+
 data class ChannelItems (
 
     @SerializedName("kind"           ) var kind           : String?         = null,
@@ -441,8 +462,8 @@ data class ChannelItems (
     @SerializedName("id"             ) var id             : String?         = null,
     @SerializedName("snippet"        ) var snippet        : ChannelSnippet?        = ChannelSnippet(),
     @SerializedName("contentDetails" ) var contentDetails : ChannelContentDetails? = ChannelContentDetails(),
-    @SerializedName("statistics"     ) var statistics     : ChannelStatistics?     = ChannelStatistics()
-
+    @SerializedName("statistics"     ) var statistics     : ChannelStatistics?     = ChannelStatistics(),
+    @SerializedName("brandingSettings" ) var brandingSettings : ChannelBrandingSettings? = ChannelBrandingSettings()
 )
 data class VideoData(
     val thumbnail: String,
@@ -450,7 +471,7 @@ data class VideoData(
     val channel: String,
     val videoId: String,
     val date: String,
-    val isPlaying: Boolean
+    val channelThumbnail: String
 )
 
 data class PlayListData(
@@ -458,4 +479,15 @@ data class PlayListData(
     val title: String,
     val description: String,
     val playlistId: String
+)
+
+data class ChannelData(
+    val channelTitle: String,
+    val channelDescription: String,
+    val channelBanner: String?,
+    val channelThumbnail: String?,
+    val channelVideoCount: String,
+    val channelViewCount: String,
+    val channelSubscriberCount: String,
+    val channelPlaylistId: String
 )
