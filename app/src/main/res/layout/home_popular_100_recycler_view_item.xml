@@ -9,7 +9,7 @@
     android:id="@+id/data_item">
     <TextView
         android:id="@+id/ranking_text_view"
-        android:layout_width="wrap_content"
+        android:layout_width="25dp"
         android:layout_height="wrap_content"
         android:text="1"
         android:textSize="13dp"
@@ -25,7 +25,7 @@
         android:scaleType="fitXY"
         android:src="@drawable/ic_launcher_background"
         app:layout_constraintStart_toEndOf="@id/ranking_text_view"
-        android:layout_marginLeft="20dp"/>
+        android:layout_marginLeft="10dp"/>
     <TextView
         android:id="@+id/title_text_view"
         android:layout_width="150dp"

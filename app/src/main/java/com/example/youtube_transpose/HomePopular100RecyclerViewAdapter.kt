@@ -5,12 +5,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.youtube_transpose.databinding.HomePlaylistVideoRecyclerItemBinding
+import com.example.youtube_transpose.databinding.HomePopular100RecyclerViewItemBinding
 
-class HomePlaylistVideoRecyclerViewAdapter(dataList: MutableList<VideoData>): RecyclerView.Adapter<HomePlaylistVideoRecyclerViewAdapter.MyViewHolder>() {
+class HomePopular100RecyclerViewAdapter(dataList: MutableList<VideoData>): RecyclerView.Adapter<HomePopular100RecyclerViewAdapter.MyViewHolder>() {
     private val dataList = dataList
 
-    inner class MyViewHolder(private val binding: HomePlaylistVideoRecyclerItemBinding): RecyclerView.ViewHolder(binding.root) {
+    inner class MyViewHolder(private val binding: HomePopular100RecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
 
         fun bind(videoData: VideoData, position: Int){
             binding.channelTextView.text = videoData.channel
@@ -23,7 +23,7 @@ class HomePlaylistVideoRecyclerViewAdapter(dataList: MutableList<VideoData>): Re
         }
     }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = HomePlaylistVideoRecyclerItemBinding.inflate(LayoutInflater.from(parent.context),parent,false)
+        val binding = HomePopular100RecyclerViewItemBinding.inflate(LayoutInflater.from(parent.context),parent,false)
         return MyViewHolder(binding)
     }
 
