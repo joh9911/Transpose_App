@@ -1,19 +1,16 @@
 package com.example.youtube_transpose
 
 import android.content.ContentValues
-import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.youtube_transpose.databinding.FragmentPlayerBinding
 import com.example.youtube_transpose.databinding.FragmentSearchResultBinding
 import com.example.youtube_transpose.databinding.MainBinding
 import retrofit2.Call
@@ -24,13 +21,13 @@ class SearchResultFragment(search: String): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
-    private lateinit var callback: OnBackPressedCallback
     var fbinding: FragmentSearchResultBinding? = null
     val binding get() = fbinding!!
 
     val search = search
     val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
     val videoData = ArrayList<VideoData>()
+    val channelData = ArrayList<ChannelData>()
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -47,12 +44,25 @@ class SearchResultFragment(search: String): Fragment() {
 
     fun initRecyclerView(){
         activity = context as Activity
+        activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.recyclerView.layoutManager = LinearLayoutManager(activity)
         searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(videoData)
         binding.recyclerView.adapter = searchResultAdapter
         searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
-            var mLastClickTime = 0L
-            override fun onClick(v: View, position: Int) {
+
+            override fun channelClick(v: View, position: Int) {
+                var mLastClickTime = 0L
+                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
+                    activity.supportFragmentManager.beginTransaction()
+                        .replace(activity.binding.channelFragment.id,ChannelFragment(channelData[position]))
+                        .addToBackStack(null)
+                        .commit()
+                }
+                mLastClickTime = SystemClock.elapsedRealtime()
+            }
+
+            override fun videoClick(v: View, position: Int) {
+                var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
                         .replace(activity.binding.playerFragment.id,PlayerFragment(videoData, position, "video"),"playerFragment")
@@ -60,43 +70,55 @@ class SearchResultFragment(search: String): Fragment() {
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
+
+            override fun optionButtonClick(v: View, position: Int) {
+
+            }
         })
     }
 
     private fun getResultData() {
-        val retrofit = RetrofitVideo.initRetrofit()
+        val retrofit = RetrofitData.initRetrofit()
         retrofit.create(RetrofitService::class.java).getVideoDetails(API_KEY,"snippet",search,"50","video")
             .enqueue(object : Callback<VideoSearchData> {
                 override fun onResponse(call: Call<VideoSearchData>, response: Response<VideoSearchData>) {
-                    videoData.clear()
-                    for (index in 0 until response.body()?.items?.size!!){
-                        val thumbnail = response?.body()?.items?.get(index)?.snippet?.thumbnails?.high?.url!!
-                        val date = response?.body()?.items?.get(index)?.snippet?.publishedAt!!.substring(0, 10)
-                        val channelTitle = response?.body()?.items?.get(index)?.snippet?.channelTitle!!
-                        val channelId = response?.body()?.items?.get(index)?.snippet?.channelId!!
-                        val title = stringToHtmlSign(response?.body()?.items?.get(index)?.snippet?.title!!)
-                        val videoId = response?.body()?.items?.get(index)?.id?.videoId!!
-                        val retrofit = RetrofitVideo.initRetrofit()
-                        retrofit.create(RetrofitService::class.java).getChannelData(API_KEY,"snippet, contentDetails, statistics",channelId)
-                            .enqueue(object: Callback<ChannelData>{
-                                override fun onResponse(
-                                    call: Call<ChannelData>,
-                                    response: Response<ChannelData>
-                                ) {
-                                    val channelThumbnail = response.body()?.items?.get(0)?.snippet?.thumbnails?.default?.url!!
-                                    videoData.add(VideoData(thumbnail, title, channelTitle, videoId, date, channelThumbnail))
-                                    binding.progressBar.visibility = View.INVISIBLE
-                                    binding.recyclerView.visibility = View.VISIBLE
-                                    searchResultAdapter.notifyDataSetChanged()
-                                }
-
-                                override fun onFailure(call: Call<ChannelData>, t: Throwable) {
-                                    Log.e(ContentValues.TAG, "onFailureChannel: ${t.message}")
-                                }
-
-                            })
+                    if (response.body() != null){
+                        for (index in 0 until response.body()?.items?.size!!){
+                            val thumbnail = response?.body()?.items?.get(index)?.snippet?.thumbnails?.high?.url!!
+                            val date = response?.body()?.items?.get(index)?.snippet?.publishedAt!!.substring(0, 10)
+                            val channelId = response?.body()?.items?.get(index)?.snippet?.channelId!!
+                            val title = stringToHtmlSign(response?.body()?.items?.get(index)?.snippet?.title!!)
+                            val videoId = response?.body()?.items?.get(index)?.id?.videoId!!
+                            val retrofit = RetrofitData.initRetrofit()
+                            retrofit.create(RetrofitService::class.java).getChannelData(API_KEY,"snippet, contentDetails, statistics, brandingSettings",channelId)
+                                .enqueue(object: Callback<ChannelSearchData>{
+                                    override fun onResponse(
+                                        call: Call<ChannelSearchData>,
+                                        response: Response<ChannelSearchData>
+                                    ) {
+                                        val channelThumbnail = response.body()?.items?.get(0)?.snippet?.thumbnails?.default?.url!!
+                                        val videoCount = response.body()?.items?.get(0)?.statistics?.videoCount!!
+                                        val subscriberCount = response.body()?.items?.get(0)?.statistics?.subscriberCount!!
+                                        val viewCount = response.body()?.items?.get(0)?.statistics?.viewCount!!
+                                        val channelBanner = response.body()?.items?.get(0)?.brandingSettings?.image?.bannerExternalUrl
+                                        val channelTitle = response.body()?.items?.get(0)?.snippet?.title!!
+                                        val channelDescription = response.body()?.items?.get(0)?.snippet?.description!!
+                                        val channelPlaylistId = response.body()?.items?.get(0)?.contentDetails?.relatedPlaylists?.uploads!!
+                                        videoData.add(VideoData(thumbnail, title, channelTitle, videoId, date, channelThumbnail))
+                                        channelData.add(ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount , channelPlaylistId))
+                                        binding.progressBar.visibility = View.INVISIBLE
+                                        binding.recyclerView.visibility = View.VISIBLE
+                                        searchResultAdapter.notifyDataSetChanged()
+                                    }
+                                    override fun onFailure(call: Call<ChannelSearchData>, t: Throwable) {
+                                        Log.e(ContentValues.TAG, "onFailureChannel: ${t.message}")
+                                    }
+                                })
+                        }
                     }
-
+                    else{
+                        Toast.makeText(activity,"정보를 가져오지 못했습니다.",Toast.LENGTH_SHORT).show()
+                    }
 
                 }
                 override fun onFailure(call: Call<VideoSearchData>, t: Throwable) {
