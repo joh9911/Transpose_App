@@ -3,7 +3,7 @@ package com.example.youtube_transpose
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-object RetrofitVideo {
+object RetrofitData {
     var instance: Retrofit? = null
     private const val BASE_URL = "https://www.googleapis.com/youtube/v3/"
     fun initRetrofit(): Retrofit{
