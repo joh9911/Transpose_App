@@ -8,6 +8,7 @@
     app:layoutDescription="@xml/fragment_player_scene"
     android:id="@+id/player_motion_layout">
 
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/mainContainerLayout"
         android:layout_width="0dp"
@@ -26,18 +27,18 @@
         app:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
         app:layout_constraintStart_toStartOf="@id/mainContainerLayout"
         app:layout_constraintTop_toTopOf="@id/mainContainerLayout"
-        app:resize_mode="fill" />
+        app:resize_mode="fill"
+        app:show_buffering="always"/>
 
     <ImageView
-        android:id="@+id/bottomPlayerControlButton"
+        android:id="@+id/bottomPlayerCloseButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="24dp"
-        android:src="@drawable/ic_baseline_play_arrow_24"
+        android:src="@drawable/ic_baseline_close_24"
         app:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
         app:layout_constraintEnd_toEndOf="@id/mainContainerLayout"
-        app:layout_constraintTop_toTopOf="@id/mainContainerLayout"
-        tools:src="@drawable/ic_baseline_play_arrow_24" />
+        app:layout_constraintTop_toTopOf="@id/mainContainerLayout" />
 
     <!--
     ellipsize="end" 길이 넘어가면 ...으로
@@ -52,23 +53,74 @@
         android:maxLines="1"
         android:singleLine="true"
         android:textColor="@color/black"
-        app:layout_constraintBottom_toBottomOf="@id/bottomPlayerControlButton"
-        app:layout_constraintEnd_toStartOf="@id/bottomPlayerControlButton"
+        app:layout_constraintBottom_toBottomOf="@id/bottomPlayerCloseButton"
+        app:layout_constraintEnd_toStartOf="@id/bottomPlayerCloseButton"
         app:layout_constraintStart_toEndOf="@id/playerView"
-        app:layout_constraintTop_toTopOf="@id/bottomPlayerControlButton"
+        app:layout_constraintTop_toTopOf="@id/bottomPlayerCloseButton"
         tools:text="Title." />
+
+    <LinearLayout
+        android:id="@+id/fragmentTitleLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="10dp"
+        android:background="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
+        >
+        <TextView
+            android:id="@+id/fragmentVideoTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            android:text="title" />
+
+        <TextView
+            android:id="@+id/fragmentVideoDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="8dp"
+            android:paddingTop="5dp"
+            android:maxLines="1"
+            android:textColor="@color/description_color"
+            android:text="detail" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/channel_linear_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="10dp"
+        android:background="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout">
+
+        <ImageView
+            android:id="@+id/channel_image_view"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="10dp"
+            android:src="@drawable/ic_launcher_background" />
+
+        <TextView
+            android:id="@+id/channel_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:paddingLeft="10dp"
+            android:text="channel" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/fragmentRecyclerView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@color/white"
-        android:clipToPadding="false"
-        android:nestedScrollingEnabled="false"
-        android:padding="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mainContainerLayout" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/channel_linear_layout"/>
 
 </com.example.youtube_transpose.CustomMotionLayout>
