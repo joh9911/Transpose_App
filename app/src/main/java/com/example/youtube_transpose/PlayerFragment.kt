@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.example.youtube_transpose.databinding.FragmentPlayerBinding
 import com.example.youtube_transpose.databinding.MainBinding
 import com.google.android.exoplayer2.MediaItem
@@ -21,6 +22,7 @@ import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.ui.BuildConfig
+import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
@@ -33,6 +35,7 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.lang.Math.abs
+
 
 class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: String): Fragment() {
     lateinit var mainBinding: MainBinding
@@ -64,6 +67,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         initView()
         initMotionLayout()
         initYoutubeDL()
+        initRecyclerView()
         initListener(videoDataList[position].videoId)
         return view
     }
@@ -75,8 +79,14 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         binding.fragmentVideoTitle.text = videoDataList[position].title
         binding.fragmentVideoDetail.text = videoDataList[position].date
         binding.channelTextView.text = videoDataList[position].channel
+        Glide.with(binding.channelImageView)
+            .load(videoDataList[position].channelThumbnail)
+            .into(binding.channelImageView)
         binding.fragmentTitleLinearLayout.setOnClickListener {
             Log.d("난 타이틀을","클릭ㄱ했다")
+        }
+        binding.channelLinearLayout.setOnClickListener {
+            Log.d("채널을","클릭했다")
         }
     }
     fun settingVideoData(videoData: VideoData){
@@ -84,15 +94,14 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         binding.fragmentVideoTitle.text = videoData.title
         binding.fragmentVideoDetail.text = videoData.date
         binding.channelTextView.text = videoData.channel
+        Glide.with(binding.channelImageView)
+            .load(videoData.channelThumbnail)
+            .into(binding.channelImageView)
     }
 
-    override fun onStart() {
-        initRecyclerView()
-        super.onStart()
-    }
+
     fun initRecyclerView(){
         if (mode == "playlist"){
-            Log.d("초기화함수","$position")
             binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
             playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(videoDataList, position)
             playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
@@ -111,6 +120,21 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         if (mode == "video"){
             binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
             searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(videoDataList)
+            searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
+
+                override fun channelClick(v: View, position: Int) {
+
+                }
+
+                override fun videoClick(v: View, position: Int) {
+                    settingVideoData(videoDataList[position])
+                    startStream(videoDataList[position].videoId)
+                }
+
+                override fun optionButtonClick(v: View, position: Int) {
+
+                }
+            })
             binding.fragmentRecyclerView.adapter = searchResultAdapter
         }
     }
@@ -130,8 +154,11 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     }
     private fun initListener(videoId: String){
         playerView = binding.playerView
-        player = SimpleExoPlayer.Builder(activity)
-            .build()
+//        player = SimpleExoPlayer.Builder(activity)
+//            .build()
+        Log.d("플레이어","$activity.exoPlayer")
+        activity.videoService?.init()
+        player = activity.videoService?.exoPlayer
         playerView.player = player
         startStream(videoId)
     }
@@ -165,7 +192,8 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
                     ).show()
                 } else {
                     Log.d("유알엘","$videoUrl")
-                    setupVideoView(videoUrl)
+                    activity.videoService!!.getVideoData(videoDataList[position])
+                    activity.videoService!!.setupVideoView(videoUrl)
                 }
             }) { e ->
                 if (BuildConfig.DEBUG) Log.e(ContentValues.TAG, "failed to get stream info", e)
@@ -233,11 +261,6 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
                     main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
                         abs(progress)
                 }
-                if (binding.playerMotionLayout.currentState == R.id.end)
-                    binding.bottomPlayerCloseButton.visibility = View.INVISIBLE
-
-                else
-                    binding.bottomPlayerCloseButton.visibility = View.VISIBLE
             }
 
             override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
