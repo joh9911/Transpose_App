@@ -1,11 +1,15 @@
 package com.example.youtube_transpose
 
 import android.app.SearchManager
-import android.content.ContentValues
+import android.content.ComponentName
 import android.content.ContentValues.TAG
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
 import android.os.SystemClock
+import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -18,8 +22,8 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewbinding.BuildConfig
 import com.example.youtube_transpose.databinding.MainBinding
+import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import okhttp3.ResponseBody
@@ -29,6 +33,8 @@ import retrofit2.*
 class Activity: AppCompatActivity() {
     var mBinding: MainBinding? = null
     val binding get() = mBinding!!
+
+    lateinit var exoPlayer: SimpleExoPlayer
     lateinit var transposePage: LinearLayout
     lateinit var floatButton: ExtendedFloatingActionButton
     lateinit var toolbar: androidx.appcompat.widget.Toolbar
@@ -36,6 +42,8 @@ class Activity: AppCompatActivity() {
     lateinit var pitchSeekBar: SeekBar
     lateinit var tempoSeekBar: SeekBar
     lateinit var searchView: SearchView
+
+    var videoService: VideoService? = null
 
     private lateinit var popular100PlaylistAdapter: HomePopular100RecyclerViewAdapter
     private lateinit var searchAdapter: SearchSuggestionKeywordRecyclerViewAdapter
@@ -45,8 +53,19 @@ class Activity: AppCompatActivity() {
     private lateinit var bestAtmospherePlaylistAdapter: HomePlaylistRecyclerViewAdapter
     private lateinit var bestSituationPlaylistAdapter: HomePlaylistRecyclerViewAdapter
 
-    private val playerMotionLayout by lazy {
-        findViewById<MotionLayout>(R.id.player_motion_layout)
+    private val connection = object: ServiceConnection{
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            val b = p1 as VideoService.VideoServiceBinder
+            videoService = b.getService()
+
+            exoPlayer = videoService!!.VideoServiceBinder().getExoPlayerInstance()
+
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+
+        }
+
     }
 
 
@@ -100,7 +119,9 @@ class Activity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        bindService(Intent(this, VideoService::class.java), connection, BIND_AUTO_CREATE)
         initView()
+        initToolbar()
         initRecyclerView()
         floatButtonEvent()
         getPopularTop100MusicData(null)
@@ -111,8 +132,15 @@ class Activity: AppCompatActivity() {
         getPlaylistData(bestSituationMusicId)
         Log.d("온 크레이트","실행")
     }
-    private fun initView() {
 
+
+    private fun initView() {
+        initToolbar()
+        initTranspose()
+        initBottomNavigationView()
+        floatButton = binding.floatButton
+    }
+    fun initTranspose(){
         transposePage = binding.transposePage
         pitchSeekBar = binding.pitchSeekBar
         pitchSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
@@ -167,11 +195,26 @@ class Activity: AppCompatActivity() {
         }
         binding.transposePage.setOnClickListener {
         }
+    }
+    fun initToolbar(){
         toolbar = binding.toolBar
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
-        floatButton = binding.floatButton
+    }
+
+    fun initBottomNavigationView(){
         bottomNavigationView = binding.bottomNavigationView
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.home_icon -> {
+                    toolbar.collapseActionView()
+                    while (supportFragmentManager.backStackEntryCount != 0) {
+                        supportFragmentManager.popBackStackImmediate()
+                    }
+                }
+            }
+            true
+        }
     }
     fun initRecyclerView(){
         initSearchRecyclerView()
@@ -193,7 +236,10 @@ class Activity: AppCompatActivity() {
                     suggestionKeywords.clear()
                     searchAdapter.notifyDataSetChanged()
                     searchView.clearFocus()
-                    supportFragmentManager.beginTransaction().replace(binding.searchResultFragment.id,SearchResultFragment(searchWord)).commit()
+                    supportFragmentManager.beginTransaction()
+                        .replace(binding.searchResultFragment.id,SearchResultFragment(searchWord))
+                        .addToBackStack(null)
+                        .commit()
                     binding.searchRecyclerView.visibility = View.INVISIBLE
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
@@ -353,7 +399,7 @@ class Activity: AppCompatActivity() {
     }
     fun getPlaylistData(musicUrls: ArrayList<String>){
         for (index in musicUrls.indices){
-            val retrofit = RetrofitVideo.initRetrofit()
+            val retrofit = RetrofitData.initRetrofit()
             retrofit.create(RetrofitService::class.java).getPlayLists(API_KEY,"snippet",musicUrls[index],"50")
                 .enqueue(object: Callback<PlayListSearchData>{
                     override fun onResponse(
@@ -452,7 +498,7 @@ class Activity: AppCompatActivity() {
 
     }
     fun getPopularTop100MusicData(nextPageToken: String?){
-        val retrofit = RetrofitVideo.initRetrofit()
+        val retrofit = RetrofitData.initRetrofit()
         retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY,"snippet","PLnlxKMP5GzKCXJ3Cw99qSWgC01cuhTFxG",nextPageToken,"50")
             .enqueue(object : Callback<PlayListVideoSearchData> {
                 override fun onResponse(call: Call<PlayListVideoSearchData>, response: Response<PlayListVideoSearchData>) {
@@ -524,6 +570,7 @@ class Activity: AppCompatActivity() {
             }
             menu.findItem(R.id.youtube_search_icon).setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
                 override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
+                    Log.d("메뉴가","확장됨")
                     binding.toolBar.setBackgroundColor(resources.getColor(R.color.drawer_background))
                     binding.bottomNavigationView.visibility = View.GONE
                     return true
@@ -532,7 +579,7 @@ class Activity: AppCompatActivity() {
                 override fun onMenuItemActionCollapse(p0: MenuItem?): Boolean {
                     for(fragment in supportFragmentManager.fragments) {
                         if(fragment.isVisible && fragment is SearchResultFragment) {
-                            supportFragmentManager.beginTransaction().remove(fragment).commit()
+                            supportFragmentManager.popBackStackImmediate()
                         }
                     }
                     binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
@@ -546,7 +593,10 @@ class Activity: AppCompatActivity() {
             this.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     searchView.clearFocus()
-                    supportFragmentManager.beginTransaction().replace(binding.searchResultFragment.id,SearchResultFragment(query!!)).commit()
+                    supportFragmentManager.beginTransaction()
+                        .replace(binding.searchResultFragment.id,SearchResultFragment(query!!))
+                        .addToBackStack(null)
+                        .commit()
                     binding.searchRecyclerView.visibility = View.INVISIBLE
                     return false
                 }
@@ -572,11 +622,10 @@ class Activity: AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item?.itemId){
             R.id.transpose_icon -> {
-                binding.searchRecyclerView.visibility = View.INVISIBLE
-
                 true
             }
             R.id.youtube_search_icon -> {
+                Log.d("서치 버튼이","눌림")
                 binding.searchRecyclerView.visibility = View.VISIBLE
                 true
             }
