@@ -9,7 +9,6 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.os.SystemClock
-import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -18,7 +17,6 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SearchView.SearchAutoComplete
-import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -57,7 +55,7 @@ class Activity: AppCompatActivity() {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             val b = p1 as VideoService.VideoServiceBinder
             videoService = b.getService()
-
+            videoService!!.initActivity(this@Activity)
             exoPlayer = videoService!!.VideoServiceBinder().getExoPlayerInstance()
 
         }
@@ -123,7 +121,6 @@ class Activity: AppCompatActivity() {
         initView()
         initToolbar()
         initRecyclerView()
-        floatButtonEvent()
         getPopularTop100MusicData(null)
         getPlaylistData(thisYearMusicId)
         getPlaylistData(todayHotMusicId)
@@ -138,7 +135,6 @@ class Activity: AppCompatActivity() {
         initToolbar()
         initTranspose()
         initBottomNavigationView()
-        floatButton = binding.floatButton
     }
     fun initTranspose(){
         transposePage = binding.transposePage
@@ -152,8 +148,7 @@ class Activity: AppCompatActivity() {
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
                     if(fragment.isVisible && fragment is PlayerFragment) {
-                        val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-                        playerFragment.setPitch(p0?.progress!!)
+                        videoService!!.setPitch(p0?.progress!!)
                     }
                 }
             }
@@ -162,8 +157,7 @@ class Activity: AppCompatActivity() {
             pitchSeekBar.progress = 0
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-                    playerFragment.setPitch(pitchSeekBar.progress)
+                    videoService!!.setPitch(pitchSeekBar.progress)
                 }
             }
         }
@@ -177,8 +171,7 @@ class Activity: AppCompatActivity() {
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
                     if(fragment.isVisible && fragment is PlayerFragment) {
-                        val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-                        playerFragment.setTempo(p0?.progress!!)
+                        videoService!!.setTempo(p0?.progress!!)
                     }
                 }
 
@@ -188,8 +181,7 @@ class Activity: AppCompatActivity() {
             tempoSeekBar.progress = 0
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-                    playerFragment.setTempo(tempoSeekBar.progress!!)
+                    videoService!!.setTempo(tempoSeekBar.progress!!)
                 }
             }
         }
@@ -207,10 +199,14 @@ class Activity: AppCompatActivity() {
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.home_icon -> {
+                    transposePage.visibility = View.INVISIBLE
                     toolbar.collapseActionView()
                     while (supportFragmentManager.backStackEntryCount != 0) {
                         supportFragmentManager.popBackStackImmediate()
                     }
+                }
+                R.id.transpose_icon -> {
+                    transposePage.visibility = View.VISIBLE
                 }
             }
             true
@@ -411,7 +407,7 @@ class Activity: AppCompatActivity() {
                             val title = response.body()?.items?.get(0)?.snippet?.title!!
                             val description = response.body()?.items?.get(0)?.snippet?.description!!
                             val playlistId = response.body()?.items?.get(0)?.id!!
-                            Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
+//                            Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
                             when(musicUrls) {
                                 thisYearMusicId -> {
                                     thisYearPlaylistData.add(
@@ -422,7 +418,7 @@ class Activity: AppCompatActivity() {
                                             playlistId
                                         )
                                     )
-                                    Log.d("올해 음악","$playlistId")
+//                                    Log.d("올해 음악","$playlistId")
                                     thisYearPlaylistAdapter.notifyDataSetChanged()
                                     binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
                                     binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
@@ -436,7 +432,7 @@ class Activity: AppCompatActivity() {
                                             playlistId
                                         )
                                     )
-                                    Log.d("오늘 음악","추가")
+//                                    Log.d("오늘 음악","추가")
 
                                     todayHotPlaylistAdapter.notifyDataSetChanged()
                                     binding.todayHotListPlaylistProgressBar.visibility = View.GONE
@@ -451,7 +447,7 @@ class Activity: AppCompatActivity() {
                                             playlistId
                                         )
                                     )
-                                    Log.d("최신 음악","추가")
+//                                    Log.d("최신 음악","추가")
 
                                     latestMusicPlaylistAdapter.notifyDataSetChanged()
                                     binding.latestMusicPlaylistProgressBar.visibility = View.GONE
@@ -466,7 +462,7 @@ class Activity: AppCompatActivity() {
                                             playlistId
                                         )
                                     )
-                                    Log.d("분위기 음악","추가")
+//                                    Log.d("분위기 음악","추가")
 
                                     bestAtmospherePlaylistAdapter.notifyDataSetChanged()
                                     binding.bestAtmospherePlaylistProgressBar.visibility = View.GONE
@@ -481,7 +477,7 @@ class Activity: AppCompatActivity() {
                                             playlistId
                                         )
                                     )
-                                    Log.d("상황 음악","추가")
+//                                    Log.d("상황 음악","추가")
 
                                     bestSituationPlaylistAdapter.notifyDataSetChanged()
                                     binding.bestSituationPlaylistProgressBar.visibility = View.GONE
@@ -536,23 +532,6 @@ class Activity: AppCompatActivity() {
             .replace("&#39;".toRegex(), "'")
     }
 
-
-    private fun floatButtonEvent(){
-        floatButton.shrink()
-        var isExtended = false
-        floatButton.setOnClickListener{
-            isExtended = if (!isExtended){
-                transposePage.visibility = View.VISIBLE
-                floatButton.extend()
-                true
-            } else{
-                transposePage.visibility = View.INVISIBLE
-                floatButton.shrink()
-                false
-            }
-
-        }
-    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.toolbar_item, menu)
@@ -634,17 +613,26 @@ class Activity: AppCompatActivity() {
     }
 
     override fun onBackPressed() {
+
         if (supportFragmentManager.findFragmentByTag("playerFragment") == null){
-            return super.onBackPressed()
-        }
-        else{
-            val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-            if (playerFragment.binding.playerMotionLayout.currentState == R.id.end)
-                playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+            if (transposePage.visibility == View.VISIBLE)
+                transposePage.visibility = View.INVISIBLE
             else
                 return super.onBackPressed()
         }
+        else{
+            val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+            if (playerFragment.binding.playerMotionLayout.currentState == R.id.end){
+                playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+            }
+            else{
+                if (transposePage.visibility == View.VISIBLE)
+                    transposePage.visibility = View.INVISIBLE
+                else
+                    return super.onBackPressed()
+            }
 
+        }
     }
 
 }
