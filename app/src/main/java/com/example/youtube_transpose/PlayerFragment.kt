@@ -44,13 +44,10 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
-    val API_KEY = com.example.youtube_transpose.BuildConfig.API_KEY
 
     val videoDataList = videoDataList
     val position = position
     val mode = mode
-
-    val playlists = arrayListOf<String>()
 
     var player: SimpleExoPlayer? = null
     lateinit var playerView: PlayerView
@@ -68,11 +65,15 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         initMotionLayout()
         initYoutubeDL()
         initRecyclerView()
-        initListener(videoDataList[position].videoId)
+        initListener(videoDataList[position])
+//        playlistUrl()
+        Log.d("작업이 끝난후","실행되나?")
         return view
     }
     fun initView(){
+        Log.d("이니셜라이즈 ","뷰")
         binding.bottomPlayerCloseButton.setOnClickListener {
+            activity.exoPlayer.stop()
             getActivity()?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
         }
         binding.bottomTitleTextView.text = videoDataList[position].title
@@ -109,7 +110,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
                 override fun onClick(v: View, position: Int) {
                     if (SystemClock.elapsedRealtime() - mLastClickTime > 1000){
                         settingVideoData(videoDataList[position])
-                        startStream(videoDataList[position].videoId)
+                        startStream(videoDataList[position])
                     }
                     mLastClickTime = SystemClock.elapsedRealtime()
                 }
@@ -128,7 +129,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
                 override fun videoClick(v: View, position: Int) {
                     settingVideoData(videoDataList[position])
-                    startStream(videoDataList[position].videoId)
+                    startStream(videoDataList[position])
                 }
 
                 override fun optionButtonClick(v: View, position: Int) {
@@ -139,34 +140,17 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         }
     }
 
-    fun setPitch(value: Int){
-        val pitchValue = value*0.05.toFloat()
-        val tempoValue = activity.tempoSeekBar.progress*0.05.toFloat()
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        player?.playbackParameters = param
+    private fun initListener(videoData: VideoData){
+        playerView = binding.playerView
+        player = activity.exoPlayer
+        playerView.player = player
+        startStream(videoData)
     }
 
-    fun setTempo(value: Int){
-        val tempoValue = value*0.05.toFloat()
-        val pitchValue = activity.pitchSeekBar.progress*0.05.toFloat()
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        player?.playbackParameters = param
-    }
-    private fun initListener(videoId: String){
-        playerView = binding.playerView
-//        player = SimpleExoPlayer.Builder(activity)
-//            .build()
-        Log.d("플레이어","$activity.exoPlayer")
-        activity.videoService?.init()
-        player = activity.videoService?.exoPlayer
-        playerView.player = player
-        startStream(videoId)
-    }
-    private fun startStream(videoId: String){
-        Log.d("vdid","${videoId}")
+    private fun startStream(videoData: VideoData){
         if (player?.isPlaying!!)
             player?.removeMediaItem(0)
-        val youtubeUrl = "https://www.youtube.com/watch?v=${videoId}"
+        val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}"
         val url = youtubeUrl.trim()
         if (TextUtils.isEmpty(url)){
             Toast.makeText(activity, "url오류", Toast.LENGTH_SHORT).show()
@@ -192,7 +176,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
                     ).show()
                 } else {
                     Log.d("유알엘","$videoUrl")
-                    activity.videoService!!.getVideoData(videoDataList[position])
+                    activity.videoService!!.saveVideoData(videoData)
                     activity.videoService!!.setupVideoView(videoUrl)
                 }
             }) { e ->
@@ -206,27 +190,6 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         CompositeDisposable().add(disposable)
     }
 
-    private fun setupVideoView(videoUrl: String){
-        Log.d("셋업","비디오")
-        val mediaItem = MediaItem.Builder()
-            .setUri(Uri.parse(videoUrl))
-            .setMimeType(MimeTypes.APPLICATION_MPD)
-            .build()
-
-        player?.setMediaItem(mediaItem)
-//        val audioSource = ProgressiveMediaSource
-//            .Factory(DefaultHttpDataSource.Factory())
-//            .createMediaSource(MediaItem.fromUri(videoUrl))
-        val videoSource = ProgressiveMediaSource
-            .Factory(DefaultHttpDataSource.Factory())
-            .createMediaSource(MediaItem.fromUri(videoUrl))
-        player?.setMediaSource(videoSource)
-        player?.prepare()
-        setTempo(activity.tempoSeekBar.progress)
-        setPitch(activity.pitchSeekBar.progress)
-        player?.play()
-//        videoView.setVideoURI(Uri.parse(videoUrl))
-    }
 
     private fun initYoutubeDL(){
         try {
@@ -274,10 +237,9 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
     override fun onDestroy() {
         super.onDestroy()
-
         fbinding = null
-        player?.release()
     }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
