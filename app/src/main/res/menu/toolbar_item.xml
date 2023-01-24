@@ -6,17 +6,15 @@
     <item
         android:id="@+id/youtube_search_icon"
         android:title="search"
-        android:icon="@drawable/ic_baseline_search_24"
-        app:showAsAction="collapseActionView|ifRoom"
-        android:iconTint="@color/white"
+        android:icon="@drawable/ic_baseline_search_24_white"
+        app:showAsAction="always|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         />
     <item
         android:id="@+id/transpose_icon"
         android:title="transpose"
         android:icon="@drawable/ic_baseline_menu_24"
-        app:showAsAction="always"/>
-
+        app:showAsAction="always|collapseActionView"/>
 
 
 </menu>
