@@ -15,10 +15,13 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.text.TextUtils
 import android.util.Log
 import android.widget.MediaController
 import android.widget.RemoteViews
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.media.session.MediaButtonReceiver
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.PlaybackParameters
@@ -26,15 +29,23 @@ import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
+import com.yausername.youtubedl_android.YoutubeDLRequest
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 
 class VideoService: Service() {
     lateinit var exoPlayer: SimpleExoPlayer
     lateinit var notification: Notification
-    lateinit var videoDetailData: VideoData
+    var videoDataList = arrayListOf<VideoData>()
+    var position = 0
     lateinit var mediaSession: MediaSessionCompat
     lateinit var activity: Activity
     val CHANNEL_ID = "foreground_service_channel" // 임의의 채널 ID
@@ -58,14 +69,13 @@ class VideoService: Service() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        Log.d("서비스","언바인드")
         return super.onUnbind(intent)
-
+        stopForegroundService()
     }
 
     override fun onCreate() {
         super.onCreate()
-
+        initYoutubeDL()
         val trackSelector = DefaultTrackSelector(this).apply {
             setParameters(buildUponParameters().setMaxVideoSizeSd())
         }
@@ -76,14 +86,17 @@ class VideoService: Service() {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                 when (playbackState){
                     Player.STATE_READY -> {
-                        Log.d("재생이 ","돠엇따?")
                         startForegroundService()
                         if (!exoPlayer.isPlaying){
 //                            stopForegroundService()
                         }
                     }
                     Player.STATE_ENDED -> {
-                        Log.d("끝낫음","ㅁㄴㅇ")
+                        if (position != videoDataList.size){
+                            position += 1
+                            playVideo(position)
+                        }
+                        startForegroundService()
                     }
                     Player.STATE_BUFFERING ->{
                         //your logic
@@ -104,7 +117,6 @@ class VideoService: Service() {
         fun getExoPlayerInstance() = exoPlayer
     }
 
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
             when (intent?.action) {
                 Actions.START_FOREGROUND -> {
@@ -120,15 +132,21 @@ class VideoService: Service() {
                     activity.pitchSeekBar.progress = activity.pitchSeekBar.progress - 1
                 }
                 Actions.PREV -> {
+                    if (position != 0){
+                        position -= 1
+                        playVideo(position)
+                    }
 
                 }
                 Actions.PLAY -> {
                     startForegroundService()
-                    Log.d("액션","플레이")
                     exoPlayer.playWhenReady = !exoPlayer.isPlaying
                 }
                 Actions.NEXT -> {
-
+                    if (position != videoDataList.size){
+                        position += 1
+                        playVideo(position)
+                    }
                 }
                 Actions.PLUS -> {
                     setPitch(activity.pitchSeekBar.progress+1)
@@ -142,26 +160,84 @@ class VideoService: Service() {
             return START_STICKY
     }
 
-    private fun startForegroundService() {
-        Log.d("스타트","포그라운드")
+    fun startForegroundService() {
         startForeground(NOTIFICATION_ID, createNotification())
     }
 
-    private fun stopForegroundService() {
+
+    fun stopForegroundService() {
         Log.d("스탑","포그라운드")
         stopForeground(false)
+        NotificationManagerCompat.from(this).cancelAll()
     }
 
-    fun saveVideoData(videoData: VideoData){
-        Log.d("들어온 데이타","${videoData.title}")
-        videoDetailData = videoData
+    fun saveVideoData(param: ArrayList<VideoData>){
+        videoDataList.clear()
+        videoDataList.addAll(param)
     }
 
     fun initActivity(param: Activity) {
         activity = param
     }
 
-    fun setupVideoView(videoUrl: String){
+    private fun initYoutubeDL(){
+        try {
+            YoutubeDL.getInstance().init(this)
+        } catch (e: YoutubeDLException) {
+            Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
+        }
+    }
+
+    fun playVideo(paramPosition: Int){
+        position = paramPosition
+        startStream(videoDataList[position])
+    }
+
+    private fun startStream(videoData: VideoData){
+        if (exoPlayer?.isPlaying!!){
+            exoPlayer?.stop()
+            exoPlayer?.removeMediaItem(0)
+        }
+        val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}"
+        val url = youtubeUrl.trim()
+        if (TextUtils.isEmpty(url)){
+            Toast.makeText(activity, "url오류", Toast.LENGTH_SHORT).show()
+        }
+
+        val disposable: Disposable = Observable.fromCallable {
+            val request = YoutubeDLRequest(url)
+            // best stream containing video+audio
+            request.addOption("-f b", "")
+
+            YoutubeDL.getInstance().getInfo(request)
+        }
+            .subscribeOn(Schedulers.newThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ streamInfo ->
+                Log.d("정보","$streamInfo")
+                val videoUrl: String = streamInfo.url
+                if (TextUtils.isEmpty(videoUrl)) {
+                    Toast.makeText(
+                        activity,
+                        "failed to get stream url",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Log.d("유알엘","$videoUrl")
+                    setupVideoView(videoUrl)
+                }
+            }) { e ->
+                if (BuildConfig.DEBUG) Log.e(ContentValues.TAG, "failed to get stream info", e)
+                Toast.makeText(
+                    activity,
+                    "streaming failed. failed to get stream info",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        CompositeDisposable().add(disposable)
+    }
+
+    private fun setupVideoView(videoUrl: String){
         val mediaItem = MediaItem.Builder()
             .setUri(Uri.parse(videoUrl))
             .setMimeType(MimeTypes.APPLICATION_MPD)
@@ -178,7 +254,6 @@ class VideoService: Service() {
         exoPlayer?.prepare()
         setTempo(activity.tempoSeekBar.progress)
         setPitch(activity.pitchSeekBar.progress)
-        exoPlayer?.play()
     }
 
     fun setPitch(value: Int){
@@ -244,10 +319,10 @@ class VideoService: Service() {
 
         
         val metadataBuilder = MediaMetadataCompat.Builder().apply {
-            putString(MediaMetadata.METADATA_KEY_TITLE, videoDetailData.title)
-            putString(MediaMetadata.METADATA_KEY_ARTIST, videoDetailData.channel)
-            putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, videoDetailData.thumbnail)
-            putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, videoDetailData.thumbnail)
+            putString(MediaMetadata.METADATA_KEY_TITLE, videoDataList[position].title)
+            putString(MediaMetadata.METADATA_KEY_ARTIST, videoDataList[position].channel)
+            putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, videoDataList[position].thumbnail)
+            putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, videoDataList[position].thumbnail)
             putLong(MediaMetadata.METADATA_KEY_DURATION,exoPlayer.duration)
         }
         mediaSession.setMetadata(metadataBuilder.build())
@@ -270,7 +345,7 @@ class VideoService: Service() {
                 CHANNEL_ID
             )
                 .setContentTitle("Music Player")
-                .setContentText(videoDetailData.title)
+                .setContentText(videoDataList[position].title)
                 .setSmallIcon(R.drawable.ic_launcher_background)
                 .setStyle(mediaStyle)
                 .setOngoing(true) // true 일경우 알림 리스트에서 클릭하거나 좌우로 드래그해도 사라지지 않음
@@ -294,12 +369,11 @@ class VideoService: Service() {
                 .build()
         }
         else{
-            Log.d("엘스","제발")
             notification = NotificationCompat.Builder(this,
                 CHANNEL_ID
             )
                 .setContentTitle("Music Player")
-                .setContentText(videoDetailData.title)
+                .setContentText(videoDataList[position].title)
                 .setStyle(mediaStyle)
                 .setSmallIcon(R.drawable.ic_launcher_background)
                 .addAction(NotificationCompat.Action(R.drawable.ic_baseline_exposure_neg_1_24,
@@ -340,11 +414,9 @@ class VideoService: Service() {
     inner class MediaSessionCallback(): MediaSessionCompat.Callback(){
         override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
             return super.onMediaButtonEvent(mediaButtonEvent)
-            Log.d("온 버튼","이벤트")
         }
         override fun onSeekTo(pos: Long) {
             super.onSeekTo(pos)
-            Log.d("타임라인","변화")
             exoPlayer.seekTo(pos)
             mediaSession.setPlaybackState(
                 PlaybackStateCompat.Builder()
@@ -363,12 +435,10 @@ class VideoService: Service() {
 
         override fun onPause() {
             super.onPause()
-            Log.d("음아기","멈췃을때")
         }
 
         override fun onStop() {
             super.onStop()
-            Log.d("음아기","멈췃을때")
         }
     }
 
