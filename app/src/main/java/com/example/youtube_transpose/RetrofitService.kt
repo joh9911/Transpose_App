@@ -3,25 +3,26 @@ package com.example.youtube_transpose
 import com.google.gson.annotations.SerializedName
 import okhttp3.ResponseBody
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface RetrofitService {
     @GET("search")
-    fun getVideoDetails(@Query("key") key: String,
+    suspend fun getVideoDetails(@Query("key") key: String,
                         @Query("part") part: String,
                         @Query("q") q: String,
                         @Query("maxResults") maxResults: String,
                         @Query("type") type: String
-    ): Call<VideoSearchData>
+    ): Response<VideoSearchData>
 
     @GET("search")
-    fun getAllSearchData(@Query("key") key: String,
+    suspend fun getAllSearchData(@Query("key") key: String,
                          @Query("part") part: String,
                          @Query("q") q: String,
                          @Query("maxResults") maxResults: String
 
-    ): Call<AllSearchData>
+    ): Response<AllSearchData>
 
     @GET("search")
     fun getSuggestionKeyword(@Query("client") client: String,
@@ -30,20 +31,20 @@ interface RetrofitService {
     ): Call<ResponseBody>
 
     @GET("playlistItems")
-    fun getPlayListVideoItems(@Query("key") key: String,
+    suspend fun getPlayListVideoItems(@Query("key") key: String,
                          @Query("part") part: String,
                          @Query("playlistId") playListId: String,
                          @Query("pageToken") pageToken: String?,
                          @Query("maxResults") maxResults: String
 
-    ): Call<PlayListVideoSearchData>
+    ): Response<PlayListVideoSearchData>
 
     @GET("playlists")
-    fun getPlayLists(@Query("key") key: String,
+    suspend fun getPlayLists(@Query("key") key: String,
                      @Query("part") part: String,
                      @Query("id") id: String, // id는 각 플레이리스트의 아이디
                      @Query("maxResults") maxResults: String
-    ): Call<PlayListSearchData>
+    ): Response<PlayListSearchData>
 
     @GET("channels")
     fun getChannelData(@Query("key") key: String,

@@ -24,6 +24,7 @@ import com.example.youtube_transpose.databinding.MainBinding
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.*
 
@@ -121,15 +122,10 @@ class Activity: AppCompatActivity() {
         initView()
         initToolbar()
         initRecyclerView()
-        getPopularTop100MusicData(null)
-        getPlaylistData(thisYearMusicId)
-        getPlaylistData(todayHotMusicId)
-        getPlaylistData(latestMusicId)
-        getPlaylistData(bestAtmosphereMusicId)
-        getPlaylistData(bestSituationMusicId)
-        Log.d("온 크레이트","실행")
-    }
+        getAllData()
 
+        Log.d("update","실행")
+    }
 
     private fun initView() {
         initToolbar()
@@ -391,137 +387,113 @@ class Activity: AppCompatActivity() {
             }
             i++
         }
+
         return sb.toString()
     }
-    fun getPlaylistData(musicUrls: ArrayList<String>){
-        for (index in musicUrls.indices){
-            val retrofit = RetrofitData.initRetrofit()
-            retrofit.create(RetrofitService::class.java).getPlayLists(API_KEY,"snippet",musicUrls[index],"50")
-                .enqueue(object: Callback<PlayListSearchData>{
-                    override fun onResponse(
-                        call: Call<PlayListSearchData>,
-                        response: Response<PlayListSearchData>
-                    ) {
-                        if (response.body()?.items?.size != 0){
-                            val thumbnail = response.body()?.items?.get(0)?.snippet?.thumbnails?.medium?.url!!
-                            val title = response.body()?.items?.get(0)?.snippet?.title!!
-                            val description = response.body()?.items?.get(0)?.snippet?.description!!
-                            val playlistId = response.body()?.items?.get(0)?.id!!
-//                            Log.d("플레이리스트 가져오기","${response.body()?.items?.get(0)?.snippet?.title}")
-                            when(musicUrls) {
-                                thisYearMusicId -> {
-                                    thisYearPlaylistData.add(
-                                        PlayListData(
-                                            thumbnail,
-                                            title,
-                                            description,
-                                            playlistId
-                                        )
-                                    )
-//                                    Log.d("올해 음악","$playlistId")
-                                    thisYearPlaylistAdapter.notifyDataSetChanged()
-                                    binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
-                                    binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
-                                }
-                                todayHotMusicId -> {
-                                    todayHotPlaylistData.add(
-                                        PlayListData(
-                                            thumbnail,
-                                            title,
-                                            description,
-                                            playlistId
-                                        )
-                                    )
-//                                    Log.d("오늘 음악","추가")
 
-                                    todayHotPlaylistAdapter.notifyDataSetChanged()
-                                    binding.todayHotListPlaylistProgressBar.visibility = View.GONE
-                                    binding.todayHotListPlaylistRecyclerView.visibility = View.VISIBLE
-                                }
-                                latestMusicId -> {
-                                    latestMusicPlaylistData.add(
-                                        PlayListData(
-                                            thumbnail,
-                                            title,
-                                            description,
-                                            playlistId
-                                        )
-                                    )
-//                                    Log.d("최신 음악","추가")
-
-                                    latestMusicPlaylistAdapter.notifyDataSetChanged()
-                                    binding.latestMusicPlaylistProgressBar.visibility = View.GONE
-                                    binding.latestMusicPlaylistRecyclerView.visibility = View.VISIBLE
-                                }
-                                bestAtmosphereMusicId -> {
-                                    bestAtmospherePlaylistData.add(
-                                        PlayListData(
-                                            thumbnail,
-                                            title,
-                                            description,
-                                            playlistId
-                                        )
-                                    )
-//                                    Log.d("분위기 음악","추가")
-
-                                    bestAtmospherePlaylistAdapter.notifyDataSetChanged()
-                                    binding.bestAtmospherePlaylistProgressBar.visibility = View.GONE
-                                    binding.bestAtmospherePlaylistRecyclerView.visibility = View.VISIBLE
-                                }
-                                bestSituationMusicId -> {
-                                    bestSituationPlaylistData.add(
-                                        PlayListData(
-                                            thumbnail,
-                                            title,
-                                            description,
-                                            playlistId
-                                        )
-                                    )
-//                                    Log.d("상황 음악","추가")
-
-                                    bestSituationPlaylistAdapter.notifyDataSetChanged()
-                                    binding.bestSituationPlaylistProgressBar.visibility = View.GONE
-                                    binding.bestSituationPlaylistRecyclerView.visibility = View.VISIBLE
-                                }
-                            }
-                        }
-                    }
-                    override fun onFailure(call: Call<PlayListSearchData>, t: Throwable) {
-                        Log.e(TAG, "onFailure: ${t.message}")
-                    }
-                })
+    private fun getAllData(){
+        val popularTop100ResponseList = arrayListOf<PlayListVideoSearchData>()
+        val job = CoroutineScope(Dispatchers.IO).launch {
+            async { getPopularTop100MusicData(null, popularTop100ResponseList) }
+            async { getPlaylistData(thisYearMusicId) }
+            async { getPlaylistData(todayHotMusicId) }
+            async { getPlaylistData(latestMusicId) }
+            async { getPlaylistData(bestAtmosphereMusicId) }
+            async { getPlaylistData(bestSituationMusicId) }
         }
-
     }
-    fun getPopularTop100MusicData(nextPageToken: String?){
-        val retrofit = RetrofitData.initRetrofit()
-        retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY,"snippet","PLnlxKMP5GzKCXJ3Cw99qSWgC01cuhTFxG",nextPageToken,"50")
-            .enqueue(object : Callback<PlayListVideoSearchData> {
-                override fun onResponse(call: Call<PlayListVideoSearchData>, response: Response<PlayListVideoSearchData>) {
-                    Log.d(TAG, "onSusses${response.body()?.pageInfo?.resultsPerPage}: ${response.body()?.items?.size}")
-                    for (index in 0 until response.body()?.items?.size!!){
-                        val thumbnail = response?.body()?.items?.get(index)?.snippet?.thumbnails?.default?.url!!
-                        val date = response?.body()?.items?.get(index)?.snippet?.publishedAt!!.substring(0, 10)
-                        val channelTitle = response.body()?.items?.get(index)?.snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!
-                        val channelId = response.body()?.items?.get(index)?.id
-                        val title = stringToHtmlSign(response?.body()?.items?.get(index)?.snippet?.title!!)
-                        val videoId = response?.body()?.items?.get(index)?.snippet?.resourceId?.videoId!!
-                        playListVideoData.add(VideoData(thumbnail, title, channelTitle, videoId, date, thumbnail))
+
+    private suspend fun getPlaylistData(musicUrls: ArrayList<String>) {
+        for (index in musicUrls.indices) {
+            val retrofit = RetrofitData.initRetrofit()
+            val response = retrofit.create(RetrofitService::class.java)
+                .getPlayLists(API_KEY, "snippet", musicUrls[index], "50")
+            if (response.isSuccessful){
+                if (response.body()?.items?.size != 0) {
+                    withContext(Dispatchers.Main){
+                        playlistDataMapping(musicUrls, response.body()!!)
                     }
-
-                    binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
-                    binding.popularTop100PlaylistVideoRecyclerView.visibility = View.VISIBLE
-                    popular100PlaylistAdapter.notifyDataSetChanged()
-
-
-                    if (response.body()?.nextPageToken != null)
-                        getPopularTop100MusicData(response.body()?.nextPageToken)
                 }
-                override fun onFailure(call: Call<PlayListVideoSearchData>, t: Throwable) {
-                    Log.e(TAG, "onFailure: ${t.message}")
-                }
-            })
+            }
+        }
     }
+
+    private fun playlistDataMapping(musicUrls: ArrayList<String>, responseData: PlayListSearchData){
+        val thumbnail = responseData.items[0].snippet?.thumbnails?.medium?.url!!
+        val title = responseData.items[0].snippet?.title!!
+        val description = responseData.items[0].snippet?.description!!
+        val playlistId = responseData.items[0].id!!
+        when(musicUrls) {
+            thisYearMusicId -> {
+                thisYearPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
+                thisYearPlaylistAdapter.notifyDataSetChanged()
+                binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
+                binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
+            }
+            todayHotMusicId -> {
+                todayHotPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
+                todayHotPlaylistAdapter.notifyDataSetChanged()
+                binding.todayHotListPlaylistProgressBar.visibility = View.GONE
+                binding.todayHotListPlaylistRecyclerView.visibility = View.VISIBLE
+            }
+            latestMusicId -> {
+                latestMusicPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
+                latestMusicPlaylistAdapter.notifyDataSetChanged()
+                binding.latestMusicPlaylistProgressBar.visibility = View.GONE
+                binding.latestMusicPlaylistRecyclerView.visibility = View.VISIBLE
+            }
+            bestAtmosphereMusicId -> {
+                bestAtmospherePlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
+                bestAtmospherePlaylistAdapter.notifyDataSetChanged()
+                binding.bestAtmospherePlaylistProgressBar.visibility = View.GONE
+                binding.bestAtmospherePlaylistRecyclerView.visibility = View.VISIBLE
+            }
+            bestSituationMusicId -> {
+                bestSituationPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
+                bestSituationPlaylistAdapter.notifyDataSetChanged()
+                binding.bestSituationPlaylistProgressBar.visibility = View.GONE
+                binding.bestSituationPlaylistRecyclerView.visibility = View.VISIBLE
+            }
+        }
+    }
+    private suspend fun getPopularTop100MusicData(
+        nextPageToken: String?,
+        popularTop100ResponseList: ArrayList<PlayListVideoSearchData>
+    ) {
+        val retrofit = RetrofitData.initRetrofit()
+        val response =  retrofit.create(RetrofitService::class.java).getPlayListVideoItems(
+            API_KEY,
+            "snippet",
+            "PLnlxKMP5GzKCXJ3Cw99qSWgC01cuhTFxG",
+            nextPageToken,
+            "50"
+        )
+        if (response.isSuccessful){
+            if (response.body()?.items?.size != 0){
+                withContext(Dispatchers.Main){
+                    popularTop100MusicDataMapping(response.body()!!)
+                }
+                if (response.body()?.nextPageToken != null)
+                    getPopularTop100MusicData(response.body()?.nextPageToken, popularTop100ResponseList)
+            }
+        }
+    }
+
+    private fun popularTop100MusicDataMapping(responseData: PlayListVideoSearchData){
+        for (index in responseData.items.indices){
+            val thumbnail = responseData.items[index].snippet?.thumbnails?.default?.url!!
+            val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
+            val channelTitle = responseData.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!
+            val channelId = responseData.items[index].id
+            val title = stringToHtmlSign(responseData.items[index].snippet?.title!!)
+            val videoId = responseData.items[index].snippet?.resourceId?.videoId!!
+            playListVideoData.add(VideoData(thumbnail, title, channelTitle, videoId, date, thumbnail))
+            }
+        binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
+        binding.popularTop100PlaylistVideoRecyclerView.visibility = View.VISIBLE
+        popular100PlaylistAdapter.notifyDataSetChanged()
+    }
+
 
     //영상 제목을 받아올때 &quot; &#39; 문자가 그대로 출력되기 때문에 다른 문자로 대체 해주기 위해 사용하는 메서드
     private fun stringToHtmlSign(str: String): String {
@@ -633,6 +605,11 @@ class Activity: AppCompatActivity() {
             }
 
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unbindService(connection)
     }
 
 }
