@@ -65,7 +65,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         initMotionLayout()
         initYoutubeDL()
         initRecyclerView()
-        initListener(videoDataList[position])
+        initListener()
 //        playlistUrl()
         Log.d("작업이 끝난후","실행되나?")
         return view
@@ -110,7 +110,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
                 override fun onClick(v: View, position: Int) {
                     if (SystemClock.elapsedRealtime() - mLastClickTime > 1000){
                         settingVideoData(videoDataList[position])
-                        startStream(videoDataList[position])
+                        activity.videoService!!.playVideo(position)
                     }
                     mLastClickTime = SystemClock.elapsedRealtime()
                 }
@@ -129,7 +129,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
                 override fun videoClick(v: View, position: Int) {
                     settingVideoData(videoDataList[position])
-                    startStream(videoDataList[position])
+                    activity.videoService!!.playVideo(position)
                 }
 
                 override fun optionButtonClick(v: View, position: Int) {
@@ -140,54 +140,12 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         }
     }
 
-    private fun initListener(videoData: VideoData){
+    private fun initListener(){
         playerView = binding.playerView
         player = activity.exoPlayer
         playerView.player = player
-        startStream(videoData)
-    }
-
-    private fun startStream(videoData: VideoData){
-        if (player?.isPlaying!!)
-            player?.removeMediaItem(0)
-        val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}"
-        val url = youtubeUrl.trim()
-        if (TextUtils.isEmpty(url)){
-            Toast.makeText(activity, "url오류", Toast.LENGTH_SHORT).show()
-        }
-
-        val disposable: Disposable = Observable.fromCallable {
-            val request = YoutubeDLRequest(url)
-            // best stream containing video+audio
-            request.addOption("-f b", "")
-
-            YoutubeDL.getInstance().getInfo(request)
-        }
-            .subscribeOn(Schedulers.newThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ streamInfo ->
-                Log.d("정보","$streamInfo")
-                val videoUrl: String = streamInfo.url
-                if (TextUtils.isEmpty(videoUrl)) {
-                    Toast.makeText(
-                        activity,
-                        "failed to get stream url",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                    Log.d("유알엘","$videoUrl")
-                    activity.videoService!!.saveVideoData(videoData)
-                    activity.videoService!!.setupVideoView(videoUrl)
-                }
-            }) { e ->
-                if (BuildConfig.DEBUG) Log.e(ContentValues.TAG, "failed to get stream info", e)
-                Toast.makeText(
-                    activity,
-                    "streaming failed. failed to get stream info",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        CompositeDisposable().add(disposable)
+        activity.videoService!!.saveVideoData(videoDataList)
+        activity.videoService!!.playVideo(position)
     }
 
 
@@ -237,6 +195,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
     override fun onDestroy() {
         super.onDestroy()
+        activity.videoService!!.stopForegroundService()
         fbinding = null
     }
 
