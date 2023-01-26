@@ -47,10 +47,10 @@ interface RetrofitService {
     ): Response<PlayListSearchData>
 
     @GET("channels")
-    fun getChannelData(@Query("key") key: String,
+    suspend fun getChannelData(@Query("key") key: String,
                        @Query("part") part: String,
                        @Query("id") id: String
-    ): Call<ChannelSearchData>
+    ): Response<ChannelSearchData>
 }
 
 /**
@@ -472,7 +472,7 @@ data class VideoData(
     val channel: String,
     val videoId: String,
     val date: String,
-    val channelThumbnail: String
+    val channelThumbnail: String?
 )
 
 data class PlayListData(
