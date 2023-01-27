@@ -1,14 +1,12 @@
 package com.example.youtube_transpose
 
 import android.app.SearchManager
-import android.content.ComponentName
+import android.content.*
 import android.content.ContentValues.TAG
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.os.SystemClock
+import android.text.TextUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -22,8 +20,18 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.youtube_transpose.databinding.MainBinding
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.yausername.youtubedl_android.YoutubeDL
+import com.yausername.youtubedl_android.YoutubeDLException
+import com.yausername.youtubedl_android.YoutubeDLRequest
+import com.yausername.youtubedl_android.mapper.VideoInfo
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.*
@@ -120,11 +128,73 @@ class Activity: AppCompatActivity() {
         setContentView(binding.root)
         bindService(Intent(this, VideoService::class.java), connection, BIND_AUTO_CREATE)
         initView()
+        initYoutubeDL()
         initToolbar()
         initRecyclerView()
         getAllData()
-
         Log.d("update","실행")
+    }
+    private fun initYoutubeDL(){
+        try {
+            YoutubeDL.getInstance().init(this)
+        } catch (e: YoutubeDLException) {
+            Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
+        }
+    }
+    suspend fun getUrl() {
+            val youtubeUrl = "https://www.youtube.com/watch?v="
+            val url = youtubeUrl.trim()
+            val request = YoutubeDLRequest(url)
+            // best stream containing video+audio
+            request.addOption("-f b", "")
+            try {
+                val Url = YoutubeDL.getInstance().getInfo(request).url
+            }catch (e: YoutubeDLException){
+                Log.d("유알엘이","잘못됨")
+            }
+        }
+
+
+
+    private fun startStream(videoData: VideoData){
+
+        val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}"
+        val url = youtubeUrl.trim()
+        if (TextUtils.isEmpty(url)){
+            Toast.makeText(this, "url오류", Toast.LENGTH_SHORT).show()
+        }
+
+        val disposable: Disposable = Observable.fromCallable {
+            val request = YoutubeDLRequest(url)
+            // best stream containing video+audio
+            request.addOption("-f b", "")
+
+            YoutubeDL.getInstance().getInfo(request)
+        }
+            .subscribeOn(Schedulers.newThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({ streamInfo ->
+                Log.d("정보","$streamInfo")
+                val videoUrl: String = streamInfo.url
+                if (TextUtils.isEmpty(videoUrl)) {
+                    Toast.makeText(
+                        this,
+                        "failed to get stream url",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Log.d("유알엘","$videoUrl")
+//                    setupVideoView(videoData, videoUrl)
+                }
+            }) { e ->
+                if (BuildConfig.DEBUG) Log.e(ContentValues.TAG, "failed to get stream info", e)
+                Toast.makeText(
+                    this,
+                    "streaming failed. failed to get stream info",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        CompositeDisposable().add(disposable)
     }
 
     private fun initView() {
@@ -392,14 +462,14 @@ class Activity: AppCompatActivity() {
     }
 
     private fun getAllData(){
-        val popularTop100ResponseList = arrayListOf<PlayListVideoSearchData>()
         val job = CoroutineScope(Dispatchers.IO).launch {
-            async { getPopularTop100MusicData(null, popularTop100ResponseList) }
+            async { getPopularTop100MusicData(null) }
             async { getPlaylistData(thisYearMusicId) }
             async { getPlaylistData(todayHotMusicId) }
             async { getPlaylistData(latestMusicId) }
             async { getPlaylistData(bestAtmosphereMusicId) }
             async { getPlaylistData(bestSituationMusicId) }
+            getUrl()
         }
     }
 
@@ -457,14 +527,13 @@ class Activity: AppCompatActivity() {
         }
     }
     private suspend fun getPopularTop100MusicData(
-        nextPageToken: String?,
-        popularTop100ResponseList: ArrayList<PlayListVideoSearchData>
+        nextPageToken: String?
     ) {
         val retrofit = RetrofitData.initRetrofit()
         val response =  retrofit.create(RetrofitService::class.java).getPlayListVideoItems(
             API_KEY,
             "snippet",
-            "PLnlxKMP5GzKCXJ3Cw99qSWgC01cuhTFxG",
+            "PL2HEDIx6Li8jGsqCiXUq9fzCqpH99qqHV",
             nextPageToken,
             "50"
         )
@@ -474,12 +543,13 @@ class Activity: AppCompatActivity() {
                     popularTop100MusicDataMapping(response.body()!!)
                 }
                 if (response.body()?.nextPageToken != null)
-                    getPopularTop100MusicData(response.body()?.nextPageToken, popularTop100ResponseList)
+                    getPopularTop100MusicData(response.body()?.nextPageToken)
             }
         }
     }
 
     private fun popularTop100MusicDataMapping(responseData: PlayListVideoSearchData){
+        Log.d("매핑","했다")
         for (index in responseData.items.indices){
             val thumbnail = responseData.items[index].snippet?.thumbnails?.default?.url!!
             val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
@@ -607,9 +677,12 @@ class Activity: AppCompatActivity() {
         }
     }
 
+
     override fun onDestroy() {
         super.onDestroy()
         unbindService(connection)
+        val intent = Intent(this, VideoService::class.java)
+        stopService(intent)
     }
 
 }

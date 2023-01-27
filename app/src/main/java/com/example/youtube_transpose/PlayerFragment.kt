@@ -66,12 +66,10 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         initYoutubeDL()
         initRecyclerView()
         initListener()
-//        playlistUrl()
-        Log.d("작업이 끝난후","실행되나?")
         return view
     }
+
     fun initView(){
-        Log.d("이니셜라이즈 ","뷰")
         binding.bottomPlayerCloseButton.setOnClickListener {
             activity.exoPlayer.stop()
             getActivity()?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
@@ -84,13 +82,12 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
             .load(videoDataList[position].channelThumbnail)
             .into(binding.channelImageView)
         binding.fragmentTitleLinearLayout.setOnClickListener {
-            Log.d("난 타이틀을","클릭ㄱ했다")
         }
         binding.channelLinearLayout.setOnClickListener {
-            Log.d("채널을","클릭했다")
         }
     }
-    fun settingVideoData(videoData: VideoData){
+
+    fun updatePlayerView(videoData: VideoData){
         binding.bottomTitleTextView.text = videoData.title
         binding.fragmentVideoTitle.text = videoData.title
         binding.fragmentVideoDetail.text = videoData.date
@@ -100,16 +97,15 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
             .into(binding.channelImageView)
     }
 
-
     fun initRecyclerView(){
         if (mode == "playlist"){
             binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-            playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(videoDataList, position)
+            playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(videoDataList, position, activity.videoService!!.exoPlayer)
             playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
                 var mLastClickTime = 0L
                 override fun onClick(v: View, position: Int) {
                     if (SystemClock.elapsedRealtime() - mLastClickTime > 1000){
-                        settingVideoData(videoDataList[position])
+                        updatePlayerView(videoDataList[position])
                         activity.videoService!!.playVideo(position)
                     }
                     mLastClickTime = SystemClock.elapsedRealtime()
@@ -128,7 +124,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
                 }
 
                 override fun videoClick(v: View, position: Int) {
-                    settingVideoData(videoDataList[position])
+                    updatePlayerView(videoDataList[position])
                     activity.videoService!!.playVideo(position)
                 }
 
@@ -140,11 +136,17 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        Log.d("리줌","ㅅㄹ")
+    }
+
     private fun initListener(){
+        Log.d("프ㅔ그먼트","인잇")
         playerView = binding.playerView
         player = activity.exoPlayer
         playerView.player = player
-        activity.videoService!!.saveVideoData(videoDataList)
+        activity.videoService!!.setPlaylist(videoDataList)
         activity.videoService!!.playVideo(position)
     }
 

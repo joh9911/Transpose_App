@@ -53,7 +53,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         binding.playlistDescription.text = playListData.description
 
         binding.playlistItemRecyclerView.layoutManager = LinearLayoutManager(activity)
-        playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(playlistVideoData, -1)
+        playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(playlistVideoData, -1, activity.videoService!!.exoPlayer)
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 activity.supportFragmentManager.beginTransaction()
@@ -70,7 +70,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
             getPlaylistItemsData(null)
         }
     }
-    suspend fun getPlaylistItemsData(nextPageToken: String?){
+    private suspend fun getPlaylistItemsData(nextPageToken: String?){
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY,"snippet",playListData.playlistId,nextPageToken,"50")
         if (response.isSuccessful){
@@ -98,7 +98,6 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
             binding.playlistItemRecyclerView.visibility = View.VISIBLE
         }
     }
-
 
     private fun stringToHtmlSign(str: String): String {
         return str.replace("&amp;".toRegex(), "[&]")
