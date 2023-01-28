@@ -3,12 +3,13 @@ package com.example.youtube_transpose
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.youtube_transpose.databinding.HomePopular100RecyclerViewItemBinding
 
-class HomePopular100RecyclerViewAdapter(dataList: MutableList<VideoData>): RecyclerView.Adapter<HomePopular100RecyclerViewAdapter.MyViewHolder>() {
-    private val dataList = dataList
+class HomePopular100RecyclerViewAdapter: ListAdapter<VideoData,HomePopular100RecyclerViewAdapter.MyViewHolder>(diffUtil) {
 
     inner class MyViewHolder(private val binding: HomePopular100RecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
 
@@ -19,7 +20,6 @@ class HomePopular100RecyclerViewAdapter(dataList: MutableList<VideoData>): Recyc
             Glide.with(binding.thumbnailImageView)
                 .load(videoData.thumbnail)
                 .into(binding.thumbnailImageView)
-
         }
     }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
@@ -27,10 +27,9 @@ class HomePopular100RecyclerViewAdapter(dataList: MutableList<VideoData>): Recyc
         return MyViewHolder(binding)
     }
 
-    override fun getItemCount(): Int = dataList.size
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        holder.bind(dataList[position], position)
+        holder.bind(currentList[position], position)
         holder.itemView.setOnClickListener {
             itemClickListener.onClick(it, position)
         }
@@ -45,4 +44,15 @@ class HomePopular100RecyclerViewAdapter(dataList: MutableList<VideoData>): Recyc
     }
     // (4) setItemClickListener로 설정한 함수 실행
     private lateinit var itemClickListener : OnItemClickListener
+
+    companion object diffUtil : DiffUtil.ItemCallback<VideoData>() {
+
+        override fun areItemsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+            return oldItem.title == newItem.title
+        }
+
+        override fun areContentsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+            return oldItem == newItem
+        }
+    }
 }

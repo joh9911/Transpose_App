@@ -5,13 +5,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.youtube_transpose.databinding.ProgressBarItemBinding
 import com.example.youtube_transpose.databinding.SearchResultRecyclerItemBinding
 
-class SearchResultFragmentRecyclerViewAdapter(dataList: MutableList<VideoData>): RecyclerView.Adapter<SearchResultFragmentRecyclerViewAdapter.MyViewHolder>() {
-    private val dataList = dataList
+class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewHolder>(diffUtil) {
+    private val VIEW_TYPE_ITEM = 0
+    private val VIEW_TYPE_LOADING = 1
 
+    inner class MyProgressViewHolder(private val binding: ProgressBarItemBinding): RecyclerView.ViewHolder(binding.root){
+    }
     inner class MyViewHolder(private val binding: SearchResultRecyclerItemBinding): RecyclerView.ViewHolder(binding.root) {
         init{
             binding.channelImageView.setOnClickListener {
@@ -35,18 +41,35 @@ class SearchResultFragmentRecyclerViewAdapter(dataList: MutableList<VideoData>):
                 .into(binding.channelImageView)
         }
     }
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = SearchResultRecyclerItemBinding.inflate(LayoutInflater.from(parent.context),parent,false)
-        return MyViewHolder(binding)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_ITEM -> {
+                val binding = SearchResultRecyclerItemBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                MyViewHolder(binding)
+            }
+            else -> {
+                val binding = ProgressBarItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                MyProgressViewHolder(binding)
+            }
+        }
+    }
+    override fun getItemViewType(position: Int): Int {
+        return when (currentList[position].title) {
+            " " -> VIEW_TYPE_LOADING
+            else -> VIEW_TYPE_ITEM
+        }
     }
 
-    override fun getItemCount(): Int = dataList.size
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if(holder is MyViewHolder){
+            holder.bind(currentList[position])
+        }
 
-    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        holder.bind(dataList[position])
-//        holder.itemView.setOnClickListener {
-//            itemClickListener.channelClick(it, position)
-//        }
+
     }
     // (2) 리스너 인터페이스
     interface OnItemClickListener {
@@ -60,5 +83,16 @@ class SearchResultFragmentRecyclerViewAdapter(dataList: MutableList<VideoData>):
     }
     // (4) setItemClickListener로 설정한 함수 실행
     private lateinit var itemClickListener : OnItemClickListener
+
+    companion object diffUtil : DiffUtil.ItemCallback<VideoData>() {
+
+        override fun areItemsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+            return oldItem.title == newItem.title
+        }
+
+        override fun areContentsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+            return oldItem == newItem
+        }
+    }
 
 }

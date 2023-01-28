@@ -7,48 +7,24 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.youtube_transpose.databinding.HomePlaylistItemsRecyclerViewItemBinding
 import com.example.youtube_transpose.databinding.HomePopular100RecyclerViewItemBinding
+import com.example.youtube_transpose.databinding.ProgressBarItemBinding
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.api.services.youtube.model.Video
 
-class PlaylistItemsRecyclerViewAdapter(dataList: MutableList<VideoData>, position: Int, exoPlayer: SimpleExoPlayer): RecyclerView.Adapter<PlaylistItemsRecyclerViewAdapter.MyViewHolder>() {
-    private val dataList = dataList
-    var exoPlayer = exoPlayer
-    var currentPlayedPosition = position
-    var lastPlayedPosition = -1
+class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecyclerViewAdapter.MyViewHolder>(diffUtil) {
 
     inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
-        init {
-            Log.d("인잇","ㄴㅇㄹ")
-            if (currentPlayedPosition == adapterPosition){
-                selected()
-                notifyItemChanged(currentPlayedPosition)
-            }
-            itemView.setOnClickListener {
-                itemClickListener.onClick(it, adapterPosition)
-
-//                notifyItemChanged(currentPlayedPosition)
-//                currentPlayedPosition = adapterPosition
-//                lastPlayedPosition = if (lastPlayedPosition == -1){
-//                    notifyItemChanged(currentPlayedPosition)
-//                    currentPlayedPosition
-//                }
-//                else{
-//                    notifyItemChanged(lastPlayedPosition)
-//                    currentPlayedPosition
-//                }
-//                notifyItemChanged(currentPlayedPosition)
-//            }
-            }
-        }
-
-        fun selected(){
+        private fun selected(){
             binding.dataItem.setBackgroundColor(Color.parseColor("#484848"))
             binding.optionButton.setBackgroundColor(Color.parseColor("#484848"))
         }
-        fun unSelected(){
+        private fun unSelected(){
             binding.dataItem.setBackgroundColor(Color.parseColor("#010101"))
             binding.optionButton.setBackgroundColor(Color.parseColor("#010101"))
         }
@@ -60,32 +36,28 @@ class PlaylistItemsRecyclerViewAdapter(dataList: MutableList<VideoData>, positio
             Glide.with(binding.thumbnailImageView)
                 .load(videoData.thumbnail)
                 .into(binding.thumbnailImageView)
-            if (exoPlayer.isPlaying){
-                if (exoPlayer.currentMediaItem?.playbackProperties?.tag == dataList[position].title)
-                    selected()
-                else
-                    unSelected()
-            }
+            if (videoData.isPlaying)
+                selected()
+            else
+                unSelected()
         }
     }
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = HomePlaylistItemsRecyclerViewItemBinding.inflate(LayoutInflater.from(parent.context),parent,false)
-        return MyViewHolder(binding)
-    }
 
-    override fun getItemCount(): Int = dataList.size
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
+        val binding = HomePlaylistItemsRecyclerViewItemBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false)
+        return MyViewHolder(binding)
+        }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        if (position == currentPlayedPosition){
-            Log.d("바이느","ㅁㄴㅇㄹ")
-            holder.selected()
+        holder.itemView.setOnClickListener {
+            itemClickListener.onClick(it, position)
         }
-        else{
-            holder.unSelected()
-        }
-        holder.bind(dataList[position], position)
-
+        holder.bind(currentList[position], position)
     }
+
     // (2) 리스너 인터페이스
     interface OnItemClickListener {
         fun onClick(v: View, position: Int)
@@ -97,5 +69,16 @@ class PlaylistItemsRecyclerViewAdapter(dataList: MutableList<VideoData>, positio
     // (4) setItemClickListener로 설정한 함수 실행
     private lateinit var itemClickListener : OnItemClickListener
 
+
+    companion object diffUtil : DiffUtil.ItemCallback<VideoData>() {
+
+        override fun areItemsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+            return oldItem.title == newItem.title
+        }
+
+        override fun areContentsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+            return oldItem == newItem
+        }
+    }
 
 }
