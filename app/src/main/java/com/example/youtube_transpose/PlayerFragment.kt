@@ -44,8 +44,10 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
+    var playerModel = PlayerModel(playMusicList = videoDataList,
+    currentPosition = position)
 
-    val videoDataList = videoDataList
+
     val position = position
     val mode = mode
 
@@ -63,23 +65,42 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         Log.d("프레그먼트","onccreateview")
         initView()
         initMotionLayout()
-        initYoutubeDL()
         initRecyclerView()
         initListener()
         return view
     }
 
-    fun initView(){
+    override fun onPause() {
+        super.onPause()
+        Log.d("프레그먼트","온퍼즈")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("프레그먼트","온리줌")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("프레그먼트","온스탑")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d("프레그먼트","온스타트")
+    }
+
+    private fun initView(){
+        val currentPlayingVideoData = playerModel.currentMusicModel()!!
         binding.bottomPlayerCloseButton.setOnClickListener {
-            activity.exoPlayer.stop()
             getActivity()?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
         }
-        binding.bottomTitleTextView.text = videoDataList[position].title
-        binding.fragmentVideoTitle.text = videoDataList[position].title
-        binding.fragmentVideoDetail.text = videoDataList[position].date
-        binding.channelTextView.text = videoDataList[position].channel
+        binding.bottomTitleTextView.text = currentPlayingVideoData.title
+        binding.fragmentVideoTitle.text = currentPlayingVideoData.title
+        binding.fragmentVideoDetail.text = currentPlayingVideoData.date
+        binding.channelTextView.text = currentPlayingVideoData.channel
         Glide.with(binding.channelImageView)
-            .load(videoDataList[position].channelThumbnail)
+            .load(currentPlayingVideoData.channelThumbnail)
             .into(binding.channelImageView)
         binding.fragmentTitleLinearLayout.setOnClickListener {
         }
@@ -87,78 +108,96 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         }
     }
 
-    fun updatePlayerView(videoData: VideoData){
-        binding.bottomTitleTextView.text = videoData.title
-        binding.fragmentVideoTitle.text = videoData.title
-        binding.fragmentVideoDetail.text = videoData.date
-        binding.channelTextView.text = videoData.channel
-        Glide.with(binding.channelImageView)
-            .load(videoData.channelThumbnail)
-            .into(binding.channelImageView)
-    }
-
-    fun initRecyclerView(){
+    private fun initRecyclerView(){
+        val videoDataList = playerModel.getPlayMusicList()
         if (mode == "playlist"){
             binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-            playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(videoDataList, position, activity.videoService!!.exoPlayer)
+            playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter()
             playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
-                var mLastClickTime = 0L
                 override fun onClick(v: View, position: Int) {
-                    if (SystemClock.elapsedRealtime() - mLastClickTime > 1000){
-                        updatePlayerView(videoDataList[position])
-                        activity.videoService!!.playVideo(position)
-                    }
-                    mLastClickTime = SystemClock.elapsedRealtime()
+                        replaceVideo(position)
+                        playCurrentVideo()
                 }
             })
+            playlistItemsRecyclerViewAdapter.submitList(videoDataList)
             binding.fragmentRecyclerView.adapter = playlistItemsRecyclerViewAdapter
         }
 
         if (mode == "video"){
             binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-            searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(videoDataList)
+            searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
             searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
 
                 override fun channelClick(v: View, position: Int) {
 
                 }
-
                 override fun videoClick(v: View, position: Int) {
-                    updatePlayerView(videoDataList[position])
-                    activity.videoService!!.playVideo(position)
+                    replaceVideo(position)
+                    playCurrentVideo()
                 }
 
                 override fun optionButtonClick(v: View, position: Int) {
 
                 }
             })
+            searchResultAdapter.submitList(videoDataList)
             binding.fragmentRecyclerView.adapter = searchResultAdapter
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        Log.d("리줌","ㅅㄹ")
+    fun playPrevVideo(){
+        activity.videoService!!.playVideo(playerModel.prevMusic()!!)
+        playerModel.refreshPlaylist()
+        if (mode == "playlist")
+            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
+        if (mode == "video")
+            searchResultAdapter.submitList(playerModel.getPlayMusicList())
+        updatePlayerView()
+    }
+
+    fun playNextVideo(){
+        activity.videoService!!.playVideo(playerModel.nextMusic()!!)
+        playerModel.refreshPlaylist()
+        if (mode == "playlist")
+            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
+        if (mode == "video")
+            searchResultAdapter.submitList(playerModel.getPlayMusicList())
+        updatePlayerView()
+    }
+
+    fun playCurrentVideo(){
+        activity.videoService!!.playVideo(playerModel.currentMusicModel()!!)
+    }
+
+    fun replaceVideo(position: Int){
+        binding.fragmentRecyclerView.scrollToPosition(position)
+        playerModel.updateCurrentPosition(position)
+        playerModel.refreshPlaylist()
+        if (mode == "playlist")
+            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
+        if (mode == "video")
+            searchResultAdapter.submitList(playerModel.getPlayMusicList())
+        updatePlayerView()
+    }
+
+    private fun updatePlayerView(){
+        val currentVideoData = playerModel.currentMusicModel()!!
+        binding.bottomTitleTextView.text = currentVideoData.title
+        binding.fragmentVideoTitle.text = currentVideoData.title
+        binding.fragmentVideoDetail.text = currentVideoData.date
+        binding.channelTextView.text = currentVideoData.channel
+        Glide.with(binding.channelImageView)
+            .load(currentVideoData.channelThumbnail)
+            .into(binding.channelImageView)
     }
 
     private fun initListener(){
-        Log.d("프ㅔ그먼트","인잇")
         playerView = binding.playerView
         player = activity.exoPlayer
         playerView.player = player
-        activity.videoService!!.setPlaylist(videoDataList)
-        activity.videoService!!.playVideo(position)
+        activity.videoService!!.playVideo(playerModel.currentMusicModel()!!)
+        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
     }
-
-
-    private fun initYoutubeDL(){
-        try {
-            YoutubeDL.getInstance().init(activity)
-        } catch (e: YoutubeDLException) {
-            Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
-        }
-    }
-
 
     private fun initMotionLayout() {
         binding.playerMotionLayout.setTransitionListener(object :
@@ -197,6 +236,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d("프레그먼트의","onDestroy")
         activity.videoService!!.stopForegroundService()
         fbinding = null
     }
