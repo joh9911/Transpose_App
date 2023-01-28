@@ -78,7 +78,7 @@ class Activity: AppCompatActivity() {
 
     val API_KEY = com.example.youtube_transpose.BuildConfig.API_KEY
     val suggestionKeywords = ArrayList<String>()
-    val playListVideoData = ArrayList<VideoData>()
+    val popularTop100Playlist = ArrayList<VideoData>()
     val thisYearPlaylistData = ArrayList<PlayListData>()
     val todayHotPlaylistData = ArrayList<PlayListData>()
     val latestMusicPlaylistData = ArrayList<PlayListData>()
@@ -128,74 +128,11 @@ class Activity: AppCompatActivity() {
         setContentView(binding.root)
         bindService(Intent(this, VideoService::class.java), connection, BIND_AUTO_CREATE)
         initView()
-        initYoutubeDL()
-        initToolbar()
         initRecyclerView()
+        initToolbar()
         getAllData()
-        Log.d("update","실행")
     }
-    private fun initYoutubeDL(){
-        try {
-            YoutubeDL.getInstance().init(this)
-        } catch (e: YoutubeDLException) {
-            Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
-        }
-    }
-    suspend fun getUrl() {
-            val youtubeUrl = "https://www.youtube.com/watch?v="
-            val url = youtubeUrl.trim()
-            val request = YoutubeDLRequest(url)
-            // best stream containing video+audio
-            request.addOption("-f b", "")
-            try {
-                val Url = YoutubeDL.getInstance().getInfo(request).url
-            }catch (e: YoutubeDLException){
-                Log.d("유알엘이","잘못됨")
-            }
-        }
 
-
-
-    private fun startStream(videoData: VideoData){
-
-        val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}"
-        val url = youtubeUrl.trim()
-        if (TextUtils.isEmpty(url)){
-            Toast.makeText(this, "url오류", Toast.LENGTH_SHORT).show()
-        }
-
-        val disposable: Disposable = Observable.fromCallable {
-            val request = YoutubeDLRequest(url)
-            // best stream containing video+audio
-            request.addOption("-f b", "")
-
-            YoutubeDL.getInstance().getInfo(request)
-        }
-            .subscribeOn(Schedulers.newThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ streamInfo ->
-                Log.d("정보","$streamInfo")
-                val videoUrl: String = streamInfo.url
-                if (TextUtils.isEmpty(videoUrl)) {
-                    Toast.makeText(
-                        this,
-                        "failed to get stream url",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else {
-                    Log.d("유알엘","$videoUrl")
-//                    setupVideoView(videoData, videoUrl)
-                }
-            }) { e ->
-                if (BuildConfig.DEBUG) Log.e(ContentValues.TAG, "failed to get stream info", e)
-                Toast.makeText(
-                    this,
-                    "streaming failed. failed to get stream info",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        CompositeDisposable().add(disposable)
-    }
 
     private fun initView() {
         initToolbar()
@@ -289,14 +226,14 @@ class Activity: AppCompatActivity() {
     }
     fun initSearchRecyclerView(){
         binding.searchRecyclerView.layoutManager = LinearLayoutManager(this)
-        searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter(suggestionKeywords)
+        searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
         searchAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     val searchWord = suggestionKeywords[position]
                     suggestionKeywords.clear()
-                    searchAdapter.notifyDataSetChanged()
+                    searchAdapter.submitList(suggestionKeywords)
                     searchView.clearFocus()
                     supportFragmentManager.beginTransaction()
                         .replace(binding.searchResultFragment.id,SearchResultFragment(searchWord))
@@ -312,7 +249,7 @@ class Activity: AppCompatActivity() {
 
     fun initThisYearPlaylistRecyclerView(){
         binding.thisYearPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        thisYearPlaylistAdapter = HomePlaylistRecyclerViewAdapter(thisYearPlaylistData)
+        thisYearPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         thisYearPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             var mLastClickTime = 0L
             override fun onClick(v: View, position: Int) {
@@ -324,12 +261,13 @@ class Activity: AppCompatActivity() {
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
         })
+        thisYearPlaylistAdapter.submitList(thisYearPlaylistData)
         binding.thisYearPlaylistRecyclerView.adapter = thisYearPlaylistAdapter
     }
 
     fun initTodayHotListPlaylistRecyclerView(){
         binding.todayHotListPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter(todayHotPlaylistData)
+        todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         todayHotPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(todayHotPlaylistData[position]))
@@ -338,12 +276,13 @@ class Activity: AppCompatActivity() {
             }
 
         })
+        todayHotPlaylistAdapter.submitList(todayHotPlaylistData)
         binding.todayHotListPlaylistRecyclerView.adapter = todayHotPlaylistAdapter
     }
 
     fun initLatestMusicPlaylistRecyclerView(){
         binding.latestMusicPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter(latestMusicPlaylistData)
+        latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         latestMusicPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(latestMusicPlaylistData[position]))
@@ -352,13 +291,14 @@ class Activity: AppCompatActivity() {
             }
 
         })
+        latestMusicPlaylistAdapter.submitList(latestMusicPlaylistData)
         binding.latestMusicPlaylistRecyclerView.adapter = latestMusicPlaylistAdapter
 
     }
 
     fun initBestAtmospherePlaylistRecyclerView(){
         binding.bestAtmospherePlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestAtmospherePlaylistData)
+        bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         bestAtmospherePlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(bestAtmospherePlaylistData[position]))
@@ -367,13 +307,14 @@ class Activity: AppCompatActivity() {
             }
 
         })
+        bestAtmospherePlaylistAdapter.submitList(bestAtmospherePlaylistData)
         binding.bestAtmospherePlaylistRecyclerView.adapter = bestAtmospherePlaylistAdapter
 
     }
 
     fun initBestSituationPlaylistRecyclerView(){
         binding.bestSituationPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
-        bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter(bestSituationPlaylistData)
+        bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         bestSituationPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 supportFragmentManager.beginTransaction()
@@ -383,6 +324,7 @@ class Activity: AppCompatActivity() {
             }
 
         })
+        bestSituationPlaylistAdapter.submitList(bestSituationPlaylistData)
         binding.bestSituationPlaylistRecyclerView.adapter = bestSituationPlaylistAdapter
     }
 
@@ -390,21 +332,21 @@ class Activity: AppCompatActivity() {
     fun initPopularTop100RecyclerView(){
         val gridLayoutManager = GridLayoutManager(this,4,GridLayoutManager.HORIZONTAL,false)
         binding.popularTop100PlaylistVideoRecyclerView.layoutManager = gridLayoutManager
-        popular100PlaylistAdapter = HomePopular100RecyclerViewAdapter(playListVideoData)
-        binding.popularTop100PlaylistVideoRecyclerView.adapter = popular100PlaylistAdapter
+        popular100PlaylistAdapter = HomePopular100RecyclerViewAdapter()
 
         popular100PlaylistAdapter.setItemClickListener(object: HomePopular100RecyclerViewAdapter.OnItemClickListener{
             var mLastClickTime = 0L
             override fun onClick(v: View, position: Int) {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     supportFragmentManager.beginTransaction()
-                        .replace(binding.playerFragment.id,PlayerFragment(playListVideoData, position, "playlist"),"playerFragment")
+                        .replace(binding.playerFragment.id,PlayerFragment(popularTop100Playlist, position, "playlist"),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
         })
-
+        popular100PlaylistAdapter.submitList(popularTop100Playlist)
+        binding.popularTop100PlaylistVideoRecyclerView.adapter = popular100PlaylistAdapter
     }
 
     private fun getSuggestionKeyword(newText: String){
@@ -419,7 +361,7 @@ class Activity: AppCompatActivity() {
                     if (splitCommaList[0] != "]]" && splitCommaList[0] != '"'.toString()){
                         addSubstringToSuggestionKeyword(splitCommaList)
                     }
-                    searchAdapter.notifyDataSetChanged()
+                    searchAdapter.submitList(suggestionKeywords)
                 }
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     Log.d("실패!","!1")
@@ -469,7 +411,6 @@ class Activity: AppCompatActivity() {
             async { getPlaylistData(latestMusicId) }
             async { getPlaylistData(bestAtmosphereMusicId) }
             async { getPlaylistData(bestSituationMusicId) }
-            getUrl()
         }
     }
 
@@ -495,37 +436,41 @@ class Activity: AppCompatActivity() {
         val playlistId = responseData.items[0].id!!
         when(musicUrls) {
             thisYearMusicId -> {
+                Log.d("이번젼","ㅇㄹ")
                 thisYearPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
-                thisYearPlaylistAdapter.notifyDataSetChanged()
+                thisYearPlaylistAdapter.submitList(thisYearPlaylistData.toMutableList())
                 binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
                 binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
             }
             todayHotMusicId -> {
+                Log.d("오늘날","ㅇㄹ")
                 todayHotPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
-                todayHotPlaylistAdapter.notifyDataSetChanged()
+                todayHotPlaylistAdapter.submitList(todayHotPlaylistData.toMutableList())
                 binding.todayHotListPlaylistProgressBar.visibility = View.GONE
                 binding.todayHotListPlaylistRecyclerView.visibility = View.VISIBLE
             }
             latestMusicId -> {
+                Log.d("최근","ㅇㄹ")
                 latestMusicPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
-                latestMusicPlaylistAdapter.notifyDataSetChanged()
+                latestMusicPlaylistAdapter.submitList(latestMusicPlaylistData.toMutableList())
                 binding.latestMusicPlaylistProgressBar.visibility = View.GONE
                 binding.latestMusicPlaylistRecyclerView.visibility = View.VISIBLE
             }
             bestAtmosphereMusicId -> {
                 bestAtmospherePlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
-                bestAtmospherePlaylistAdapter.notifyDataSetChanged()
+                bestAtmospherePlaylistAdapter.submitList(bestAtmospherePlaylistData.toMutableList())
                 binding.bestAtmospherePlaylistProgressBar.visibility = View.GONE
                 binding.bestAtmospherePlaylistRecyclerView.visibility = View.VISIBLE
             }
             bestSituationMusicId -> {
                 bestSituationPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
-                bestSituationPlaylistAdapter.notifyDataSetChanged()
+                bestSituationPlaylistAdapter.submitList(bestSituationPlaylistData.toMutableList())
                 binding.bestSituationPlaylistProgressBar.visibility = View.GONE
                 binding.bestSituationPlaylistRecyclerView.visibility = View.VISIBLE
             }
         }
     }
+
     private suspend fun getPopularTop100MusicData(
         nextPageToken: String?
     ) {
@@ -554,14 +499,13 @@ class Activity: AppCompatActivity() {
             val thumbnail = responseData.items[index].snippet?.thumbnails?.default?.url!!
             val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
             val channelTitle = responseData.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!
-            val channelId = responseData.items[index].id
             val title = stringToHtmlSign(responseData.items[index].snippet?.title!!)
             val videoId = responseData.items[index].snippet?.resourceId?.videoId!!
-            playListVideoData.add(VideoData(thumbnail, title, channelTitle, videoId, date, thumbnail))
+            popularTop100Playlist.add(VideoData(thumbnail, title, channelTitle, videoId, date, thumbnail, false))
             }
+        popular100PlaylistAdapter.submitList(popularTop100Playlist)
         binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
         binding.popularTop100PlaylistVideoRecyclerView.visibility = View.VISIBLE
-        popular100PlaylistAdapter.notifyDataSetChanged()
     }
 
 
@@ -607,7 +551,7 @@ class Activity: AppCompatActivity() {
                     binding.bottomNavigationView.visibility = View.VISIBLE
                     binding.searchRecyclerView.visibility = View.INVISIBLE
                     suggestionKeywords.clear()
-                    searchAdapter.notifyDataSetChanged()
+                    searchAdapter.submitList(suggestionKeywords)
                     return true
                 }
             })
@@ -629,7 +573,7 @@ class Activity: AppCompatActivity() {
                     if (newText == ""){
                         Log.d("빈","칸")
                         suggestionKeywords.clear()
-                        searchAdapter.notifyDataSetChanged()
+                        searchAdapter.submitList(suggestionKeywords)
                     }
                     Log.d("TAG", "SearchVies Text is changed : $newText")
                     return false
@@ -655,10 +599,11 @@ class Activity: AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-
         if (supportFragmentManager.findFragmentByTag("playerFragment") == null){
-            if (transposePage.visibility == View.VISIBLE)
+            if (transposePage.visibility == View.VISIBLE){
                 transposePage.visibility = View.INVISIBLE
+                binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
+            }
             else
                 return super.onBackPressed()
         }
@@ -668,8 +613,10 @@ class Activity: AppCompatActivity() {
                 playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
             }
             else{
-                if (transposePage.visibility == View.VISIBLE)
+                if (transposePage.visibility == View.VISIBLE){
                     transposePage.visibility = View.INVISIBLE
+                    binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
+                }
                 else
                     return super.onBackPressed()
             }
@@ -680,6 +627,7 @@ class Activity: AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d("액티비티의","onDestroy")
         unbindService(connection)
         val intent = Intent(this, VideoService::class.java)
         stopService(intent)
