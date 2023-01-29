@@ -1,6 +1,5 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
-import android.provider.MediaStore
 import android.util.Log
 
 data class PlayerModel (
@@ -8,6 +7,7 @@ data class PlayerModel (
     private var currentPosition: Int = -1, // -1: 초기화 되지 않은 값
 ){
     init {
+        Log.d("ㅑㅜㅑㅅ","init함수")
         refreshPlaylist()
     }
     fun getCurrentPosition(): Int{
@@ -29,12 +29,12 @@ data class PlayerModel (
             val newItem = musicModel.copy(
                 isPlaying = index == currentPosition
             )
+            Log.d("새로운 아이템","${newItem}")
             newItem
         }
     }
 
     fun updateCurrentPosition(position: Int) {
-
         currentPosition = position
     }
 

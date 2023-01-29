@@ -1,39 +1,19 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
-import android.content.ContentValues
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
-import android.os.SystemClock
-import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.youtube_transpose.databinding.FragmentPlayerBinding
-import com.example.youtube_transpose.databinding.MainBinding
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.PlaybackParameters
+import com.example.video_transpose.databinding.FragmentPlayerBinding
+import com.example.video_transpose.databinding.MainBinding
 import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.ui.BuildConfig
-import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import com.google.android.exoplayer2.ui.PlayerView
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.util.MimeTypes
-import com.yausername.youtubedl_android.YoutubeDL
-import com.yausername.youtubedl_android.YoutubeDLException
-import com.yausername.youtubedl_android.YoutubeDLRequest
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.disposables.Disposable
-import io.reactivex.rxjava3.schedulers.Schedulers
 import java.lang.Math.abs
 
 
@@ -63,6 +43,8 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
         Log.d("프레그먼트","onccreateview")
+        Log.d("현재 포지션","${playerModel.getCurrentPosition()}")
+        Log.d("현재 곡","${playerModel.currentMusicModel()}")
         initView()
         initMotionLayout()
         initRecyclerView()
@@ -132,8 +114,10 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
                 }
                 override fun videoClick(v: View, position: Int) {
+                    Log.d("누른 포지션","$position")
                     replaceVideo(position)
                     playCurrentVideo()
+
                 }
 
                 override fun optionButtonClick(v: View, position: Int) {
@@ -173,15 +157,21 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         binding.fragmentRecyclerView.scrollToPosition(position)
         playerModel.updateCurrentPosition(position)
         playerModel.refreshPlaylist()
-        if (mode == "playlist")
+
+        if (mode == "playlist"){
             playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-        if (mode == "video")
+
+        }
+        if (mode == "video"){
             searchResultAdapter.submitList(playerModel.getPlayMusicList())
+        }
         updatePlayerView()
     }
 
     private fun updatePlayerView(){
+        Log.d("updatePlayerVIew","${playerModel.getCurrentPosition()}")
         val currentVideoData = playerModel.currentMusicModel()!!
+        Log.d("updatePlayerVIew","${playerModel.getCurrentPosition()}")
         binding.bottomTitleTextView.text = currentVideoData.title
         binding.fragmentVideoTitle.text = currentVideoData.title
         binding.fragmentVideoDetail.text = currentVideoData.date

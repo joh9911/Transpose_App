@@ -1,10 +1,9 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import android.app.*
 import android.content.ContentValues
 import android.content.Intent
 import android.media.MediaMetadata
-import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -16,7 +15,6 @@ import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.PlaybackParameters
 import com.google.android.exoplayer2.Player
@@ -25,12 +23,10 @@ import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.util.MimeTypes
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.CompletableSource
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
@@ -86,6 +82,8 @@ class VideoService: Service() {
                         startForegroundService()
                     }
                     Player.STATE_ENDED -> {
+                        if (exoPlayer.mediaItemCount == 0) // play중이면 mediaItem을 제거하는데, 제거할 때 state_ended가 실행됨
+                            return
                         val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
                         playerFragment.playNextVideo()
                         startForegroundService()

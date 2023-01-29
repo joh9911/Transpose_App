@@ -1,17 +1,14 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import android.content.Context
 import android.graphics.Rect
-import android.transition.Transition
 import android.util.AttributeSet
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.widget.ImageView
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.constraintlayout.motion.widget.MotionScene
-import androidx.constraintlayout.widget.ConstraintSet
-import java.lang.Math.abs
 
 class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) : MotionLayout(context, attributeSet) {
 
@@ -29,6 +26,10 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         findViewById<MotionLayout>(R.id.player_motion_layout)
     }
 
+    private val bottomCloseButton by lazy {
+        findViewById<ImageView>(R.id.bottomPlayerCloseButton)
+    }
+
     private val hitRect = Rect()
 
 
@@ -38,7 +39,8 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
             override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {
             }
 
-            override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {}
+            override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
+            }
 
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
                 motionTouchStarted = false

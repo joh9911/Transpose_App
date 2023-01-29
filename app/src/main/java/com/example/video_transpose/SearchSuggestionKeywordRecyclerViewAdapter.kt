@@ -1,4 +1,4 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,24 +6,20 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.example.youtube_transpose.databinding.HomePlaylistRecyclerItemBinding
+import com.example.video_transpose.databinding.SearchRecyclerItemBinding
 
-class HomePlaylistRecyclerViewAdapter: ListAdapter<PlayListData, HomePlaylistRecyclerViewAdapter.MyViewHolder>(diffUtil) {
+class SearchSuggestionKeywordRecyclerViewAdapter: ListAdapter<String, SearchSuggestionKeywordRecyclerViewAdapter.MyViewHolder>(diffUtil) {
 
-    inner class MyViewHolder(private val binding: HomePlaylistRecyclerItemBinding) :
+    inner class MyViewHolder(private val binding: SearchRecyclerItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bind(playlistData: PlayListData) {
-            binding.playlistTitle.text = playlistData.title
-            binding.playlistDescription.text = playlistData.description
-                Glide.with(binding.playlistThumbnail)
-                    .load(playlistData.thumbnail)
-                    .into(binding.playlistThumbnail)
+
+        fun bind(searchKeywordData: String) {
+            binding.suggestionKeyword.text = searchKeywordData
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = HomePlaylistRecyclerItemBinding.inflate(
+        val binding = SearchRecyclerItemBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
@@ -49,17 +45,21 @@ class HomePlaylistRecyclerViewAdapter: ListAdapter<PlayListData, HomePlaylistRec
         this.itemClickListener = onItemClickListener
     }
 
-    // (4) setItemClickListener로 설정한 함수 실행
+    // (4) setItemClickListener 설정한 함수 실행
     private lateinit var itemClickListener: OnItemClickListener
 
-    companion object diffUtil : DiffUtil.ItemCallback<PlayListData>() {
+    companion object diffUtil : DiffUtil.ItemCallback<String>() {
 
-        override fun areItemsTheSame(oldItem: PlayListData, newItem: PlayListData): Boolean {
-            return oldItem.title == newItem.title
+        override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
+            return oldItem == newItem
         }
 
-        override fun areContentsTheSame(oldItem: PlayListData, newItem: PlayListData): Boolean {
+        override fun areContentsTheSame(oldItem: String, newItem: String): Boolean {
             return oldItem == newItem
         }
     }
 }
+
+
+
+

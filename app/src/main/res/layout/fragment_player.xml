@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.example.youtube_transpose.CustomMotionLayout
+<com.example.video_transpose.CustomMotionLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -123,4 +123,4 @@
         android:background="@color/black"
         app:layout_constraintTop_toBottomOf="@id/channel_linear_layout"/>
 
-</com.example.youtube_transpose.CustomMotionLayout>
+</com.example.video_transpose.CustomMotionLayout>

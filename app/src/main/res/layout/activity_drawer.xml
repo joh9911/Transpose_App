@@ -5,19 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/drawer_background">
-    <ImageButton
-        android:id="@+id/transpose_back_button"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="@drawable/ic_baseline_arrow_back_24"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHeight_percent="0.05"
-        app:layout_constraintWidth_percent="0.2"
-        app:layout_constraintHorizontal_bias="0"
-        app:layout_constraintVertical_bias="0.03" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -29,7 +16,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintVertical_bias="0.1"/>
+        app:layout_constraintVertical_bias="0.1"
+
+        />
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -38,7 +27,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.15"
+        app:layout_constraintVertical_bias="0.25"
         >
         <TextView
             android:layout_width="match_parent"
@@ -59,49 +48,17 @@
             android:layout_marginTop="10dp"/>
     </LinearLayout>
 
-
-    <TextView
-        android:id="@+id/pitch_plus_text"
-        android:layout_width="wrap_content"
+    <SeekBar
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="+"
-        android:textColor="@color/white"
-        android:textSize="30dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.4"
-        app:layout_constraintVertical_bias="0.2"/>
-    <abak.tr.com.boxedverticalseekbar.BoxedVertical
-        android:id="@+id/pitch_seek_bar"
-        android:layout_width="3dp"
-        android:layout_height="0dp"
-        app:max="10"
-        app:min="-10"
-        app:step="1"
-        app:defaultValue="0"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.4"
-        app:layout_constraintVertical_bias="0.6"
-        app:layout_constraintHeight_percent="0.6"/>
-
-    <TextView
-        android:id="@+id/pitch_minus_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="-"
-        android:textColor="@color/white"
-        android:textSize="30dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.4"
-        app:layout_constraintVertical_bias="0.9"/>
+        app:layout_constraintVertical_bias="0.38"
+        android:max="10"
+        android:min="-10"
+        android:progress="0"/>
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -111,7 +68,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.7"
+        app:layout_constraintVertical_bias="0.6"
         >
 
         <TextView
@@ -133,46 +90,16 @@
             android:layout_marginTop="10dp"/>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tempo_plus_text"
-        android:layout_width="wrap_content"
+    <SeekBar
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="+"
-        android:textColor="@color/white"
-        android:textSize="30dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.9"
-        app:layout_constraintVertical_bias="0.2"/>
-    <abak.tr.com.boxedverticalseekbar.BoxedVertical
-        android:id="@+id/tempo_seek_bar"
-        android:layout_width="3dp"
-        android:layout_height="0dp"
-        app:max="10"
-        app:min="-10"
-        app:step="1"
-        app:defaultValue="0"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.88"
-        app:layout_constraintVertical_bias="0.6"
-        app:layout_constraintHeight_percent="0.6"/>
-    <TextView
-        android:id="@+id/tempo_minus_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="-"
-        android:textColor="@color/white"
-        android:textSize="30dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_bias="0.9"
-        app:layout_constraintVertical_bias="0.9"/>
+        app:layout_constraintVertical_bias="0.73"
+        android:max="10"
+        android:min="-10"
+        android:progress="0"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

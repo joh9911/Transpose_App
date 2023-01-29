@@ -1,15 +1,16 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.youtube_transpose.databinding.FragmentPlaylistBinding
-import com.example.youtube_transpose.databinding.MainBinding
+import com.example.video_transpose.databinding.FragmentPlaylistBinding
+import com.example.video_transpose.databinding.MainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,7 +19,7 @@ import kotlinx.coroutines.withContext
 class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
     private val playListData = playListData
 
-    val API_KEY = com.example.youtube_transpose.BuildConfig.API_KEY
+    val API_KEY = com.example.video_transpose.BuildConfig.API_KEY
     lateinit var activity: Activity
     lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
     lateinit var mainBinding: MainBinding
@@ -51,9 +52,8 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
             .into(binding.playlistThumbnail)
         binding.playlistTitle.text = playListData.title
         binding.playlistDescription.text = playListData.description
-
         binding.playlistItemRecyclerView.layoutManager = LinearLayoutManager(activity)
-        playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter(playlistVideoData, -1, activity.videoService!!.exoPlayer)
+        playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter()
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 activity.supportFragmentManager.beginTransaction()
@@ -70,21 +70,21 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
             getPlaylistItemsData(null)
         }
     }
+
     private suspend fun getPlaylistItemsData(nextPageToken: String?){
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY,"snippet",playListData.playlistId,nextPageToken,"50")
         if (response.isSuccessful){
-            if (response.body()?.items?.size != 0){
-                withContext(Dispatchers.Main){
+            if (response.body()?.items?.size != 0) {
+                withContext(Dispatchers.Main) {
                     playlistItemsMapper(response.body()!!)
                 }
-                if (response.body()?.nextPageToken != null)
-                    getPlaylistItemsData(response.body()?.nextPageToken)
             }
         }
     }
     private fun playlistItemsMapper(playlistItemsResponse: PlayListVideoSearchData) {
         for (index in 0 until playlistItemsResponse.items.size!!) {
+            Log.d("맴퍼","진행햇음")
             val thumbnail =
                 playlistItemsResponse.items[index].snippet?.thumbnails?.default?.url!!
             val date =
@@ -92,11 +92,11 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
             val account = playlistItemsResponse.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic", "")!!
             val title = stringToHtmlSign(playlistItemsResponse.items[index].snippet?.title!!)
             val videoId = playlistItemsResponse.items[index].snippet?.resourceId?.videoId!!
-            playlistVideoData.add(VideoData(thumbnail, title, account, videoId, date, thumbnail))
-            playlistItemsRecyclerViewAdapter.notifyDataSetChanged()
-            binding.playlistProgressBar.visibility = View.GONE
-            binding.playlistItemRecyclerView.visibility = View.VISIBLE
+            playlistVideoData.add(VideoData(thumbnail, title, account, videoId, date, thumbnail, false))
         }
+        playlistItemsRecyclerViewAdapter.submitList(playlistVideoData.toMutableList())
+        binding.playlistProgressBar.visibility = View.GONE
+        binding.playlistItemRecyclerView.visibility = View.VISIBLE
     }
 
     private fun stringToHtmlSign(str: String): String {

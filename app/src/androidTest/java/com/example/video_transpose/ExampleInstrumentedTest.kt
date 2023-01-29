@@ -1,4 +1,4 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,9 +1,5 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
-import android.content.Context
-import android.content.res.Resources
-import android.graphics.Color
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,23 +7,11 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.youtube_transpose.databinding.HomePlaylistItemsRecyclerViewItemBinding
-import com.example.youtube_transpose.databinding.HomePopular100RecyclerViewItemBinding
-import com.example.youtube_transpose.databinding.ProgressBarItemBinding
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.api.services.youtube.model.Video
+import com.example.video_transpose.databinding.HomePopular100RecyclerViewItemBinding
 
-class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecyclerViewAdapter.MyViewHolder>(diffUtil) {
+class HomePopular100RecyclerViewAdapter: ListAdapter<VideoData,HomePopular100RecyclerViewAdapter.MyViewHolder>(diffUtil) {
 
-    inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
-        private fun selected(){
-            binding.dataItem.setBackgroundColor(Color.parseColor("#484848"))
-            binding.optionButton.setBackgroundColor(Color.parseColor("#484848"))
-        }
-        private fun unSelected(){
-            binding.dataItem.setBackgroundColor(Color.parseColor("#010101"))
-            binding.optionButton.setBackgroundColor(Color.parseColor("#010101"))
-        }
+    inner class MyViewHolder(private val binding: HomePopular100RecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
 
         fun bind(videoData: VideoData, position: Int){
             binding.channelTextView.text = videoData.channel
@@ -36,28 +20,20 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
             Glide.with(binding.thumbnailImageView)
                 .load(videoData.thumbnail)
                 .into(binding.thumbnailImageView)
-            if (videoData.isPlaying)
-                selected()
-            else
-                unSelected()
         }
     }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = HomePlaylistItemsRecyclerViewItemBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false)
+        val binding = HomePopular100RecyclerViewItemBinding.inflate(LayoutInflater.from(parent.context),parent,false)
         return MyViewHolder(binding)
-        }
+    }
+
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+        holder.bind(currentList[position], position)
         holder.itemView.setOnClickListener {
             itemClickListener.onClick(it, position)
         }
-        holder.bind(currentList[position], position)
     }
-
     // (2) 리스너 인터페이스
     interface OnItemClickListener {
         fun onClick(v: View, position: Int)
@@ -69,7 +45,6 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
     // (4) setItemClickListener로 설정한 함수 실행
     private lateinit var itemClickListener : OnItemClickListener
 
-
     companion object diffUtil : DiffUtil.ItemCallback<VideoData>() {
 
         override fun areItemsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
@@ -80,5 +55,4 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
             return oldItem == newItem
         }
     }
-
 }

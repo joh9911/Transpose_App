@@ -1,4 +1,4 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import com.google.gson.annotations.SerializedName
 import okhttp3.ResponseBody
@@ -9,11 +9,12 @@ import retrofit2.http.Query
 
 interface RetrofitService {
     @GET("search")
-    suspend fun getVideoDetails(@Query("key") key: String,
+    suspend fun getVideoDetails(
                         @Query("part") part: String,
                         @Query("q") q: String,
                         @Query("maxResults") maxResults: String,
-                        @Query("type") type: String
+                        @Query("type") type: String,
+                        @Query("pageToken") pageToken: String?
     ): Response<VideoSearchData>
 
     @GET("search")
@@ -45,11 +46,11 @@ interface RetrofitService {
                      @Query("id") id: String, // id는 각 플레이리스트의 아이디
                      @Query("maxResults") maxResults: String
     ): Response<PlayListSearchData>
-
+//    @Query("key") key: String,
     @GET("channels")
-    suspend fun getChannelData(@Query("key") key: String,
+    suspend fun getChannelData(
                        @Query("part") part: String,
-                       @Query("id") id: String
+                       @Query("id") id: String?
     ): Response<ChannelSearchData>
 }
 
@@ -466,13 +467,79 @@ data class ChannelItems (
     @SerializedName("statistics"     ) var statistics     : ChannelStatistics?     = ChannelStatistics(),
     @SerializedName("brandingSettings" ) var brandingSettings : ChannelBrandingSettings? = ChannelBrandingSettings()
 )
+
+data class YTVideoData (
+
+    @SerializedName("kind"          ) var kind          : String?          = null,
+    @SerializedName("etag"          ) var etag          : String?          = null,
+    @SerializedName("nextPageToken" ) var nextPageToken : String?          = null,
+    @SerializedName("items"         ) var items         : ArrayList<YTVideoItems> = arrayListOf()
+
+)
+
+data class YTVideoId (
+
+    @SerializedName("kind"    ) var kind    : String? = null,
+    @SerializedName("videoId" ) var videoId : String? = null
+
+)
+
+data class YTVideoThumbnails (
+
+    @SerializedName("url"    ) var url    : String? = null,
+    @SerializedName("width"  ) var width  : Int?    = null,
+    @SerializedName("height" ) var height : Int?    = null
+
+)
+
+
+data class YTVideoChannelThumbnails (
+
+    @SerializedName("url"    ) var url    : String? = null,
+    @SerializedName("width"  ) var width  : Int?    = null,
+    @SerializedName("height" ) var height : Int?    = null
+
+)
+
+data class YTVideoDetailedMetadataSnippet (
+
+    @SerializedName("text" ) var text : String? = null
+
+)
+
+data class YTVideoSnippet (
+
+    @SerializedName("channelId"               ) var channelId               : String?                            = null,
+    @SerializedName("title"                   ) var title                   : String?                            = null,
+    @SerializedName("thumbnails"              ) var thumbnails              : ArrayList<YTVideoThumbnails>              = arrayListOf(),
+    @SerializedName("channelTitle"            ) var channelTitle            : String?                            = null,
+    @SerializedName("channelHandle"           ) var channelHandle           : String?                            = null,
+    @SerializedName("timestamp"               ) var timestamp               : String?                            = null,
+    @SerializedName("duration"                ) var duration                : Int?                               = null,
+    @SerializedName("views"                   ) var views                   : Int?                               = null,
+    @SerializedName("badges"                  ) var badges                  : ArrayList<String>                  = arrayListOf(),
+    @SerializedName("channelApproval"         ) var channelApproval         : String?                            = null,
+    @SerializedName("channelThumbnails"       ) var channelThumbnails       : ArrayList<YTVideoChannelThumbnails>       = arrayListOf(),
+    @SerializedName("detailedMetadataSnippet" ) var detailedMetadataSnippet : ArrayList<YTVideoDetailedMetadataSnippet> = arrayListOf()
+
+)
+
+data class YTVideoItems (
+
+    @SerializedName("kind"    ) var kind    : String?  = null,
+    @SerializedName("etag"    ) var etag    : String?  = null,
+    @SerializedName("id"      ) var id      : YTVideoId?      = YTVideoId(),
+    @SerializedName("snippet" ) var snippet : YTVideoSnippet? = YTVideoSnippet()
+
+)
 data class VideoData(
     val thumbnail: String,
     val title: String,
     val channel: String,
     val videoId: String,
     val date: String,
-    val channelThumbnail: String?
+    val channelThumbnail: String?,
+    val isPlaying: Boolean
 )
 
 data class PlayListData(

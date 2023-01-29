@@ -1,4 +1,4 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import org.junit.Test
 
