@@ -1,4 +1,4 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import android.os.Bundle
 import android.os.SystemClock
@@ -8,8 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.youtube_transpose.databinding.FragmentSearchResultBinding
-import com.example.youtube_transpose.databinding.MainBinding
+import androidx.recyclerview.widget.RecyclerView
+import com.example.video_transpose.databinding.FragmentSearchResultBinding
+import com.example.video_transpose.databinding.MainBinding
 import kotlinx.coroutines.*
 
 class SearchResultFragment(search: String): Fragment() {
@@ -19,10 +20,11 @@ class SearchResultFragment(search: String): Fragment() {
     var fbinding: FragmentSearchResultBinding? = null
     val binding get() = fbinding!!
 
+    var nextPageToken = ""
     val search = search
     val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
-    val videoData = ArrayList<VideoData>()
-    val channelData = ArrayList<ChannelData>()
+    val videoDataList = ArrayList<VideoData>()
+    val channelDataList = ArrayList<ChannelData>()
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -33,7 +35,7 @@ class SearchResultFragment(search: String): Fragment() {
         val view = binding.root
         Log.d("searchResultFragment","onccreateview")
         initRecyclerView()
-        getData()
+        getData(null)
 //        getResultData()
         return view
     }
@@ -42,7 +44,7 @@ class SearchResultFragment(search: String): Fragment() {
         activity = context as Activity
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.recyclerView.layoutManager = LinearLayoutManager(activity)
-        searchResultAdapter = SearchResultFragmentRecyclerViewAdapter(videoData)
+        searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
         binding.recyclerView.adapter = searchResultAdapter
         searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
 
@@ -50,7 +52,7 @@ class SearchResultFragment(search: String): Fragment() {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.channelFragment.id,ChannelFragment(channelData[position]))
+                        .replace(activity.binding.channelFragment.id,ChannelFragment(channelDataList[position]))
                         .addToBackStack(null)
                         .commit()
                 }
@@ -60,8 +62,9 @@ class SearchResultFragment(search: String): Fragment() {
             override fun videoClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
+                    Log.d("이번거 클릭","${position}")
                     activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoData, position, "video"),"playerFragment")
+                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList, position, "video"),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
@@ -71,29 +74,37 @@ class SearchResultFragment(search: String): Fragment() {
 
             }
         })
+
     }
-    private fun getData(){
+
+    private fun getData(pageToken: String?) {
         val job = CoroutineScope(Dispatchers.IO).launch {
-            getSearchVideoData()
-        }
-    }
-    suspend fun getSearchVideoData(){
-        val retrofit = RetrofitData.initRetrofit()
-        val response = retrofit.create(RetrofitService::class.java).getVideoDetails(API_KEY,"snippet",search,"50","video")
-        if (response.isSuccessful) {
-            if (response.body()?.items?.size != 0) {
-                getChannelData(response.body()!!)
+            getSearchVideoData(pageToken)
+            withContext(Dispatchers.Main){
             }
         }
     }
-    suspend fun getChannelData(responseData: VideoSearchData) {
+
+    private suspend fun getSearchVideoData(pageToken: String?) {
+        val retrofit = RetrofitYT.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java).getVideoDetails("snippet",search,"50","video",
+            pageToken
+        )
+        if (response.isSuccessful) {
+            if (response.body()?.items?.size != 0) {
+                getChannelData(response.body()!!)
+                if (response.body()?.nextPageToken != null)
+                    nextPageToken = response.body()?.nextPageToken!!
+            }
+        }
+    }
+
+    private suspend fun getChannelData(responseData: VideoSearchData) {
         for (index in 0 until responseData.items.size) {
-            Log.d("채널 데이터가","가져와짐")
-            val retrofit = RetrofitData.initRetrofit()
+            val retrofit = RetrofitYT.initRetrofit()
             val channelResponseData = retrofit.create(RetrofitService::class.java).getChannelData(
-                API_KEY,
                 "snippet, contentDetails, statistics, brandingSettings",
-                responseData.items[index].snippet?.channelId!!
+                responseData.items[index].snippet?.channelId
             )
             if (channelResponseData.isSuccessful){
                 if (channelResponseData.body()?.items?.size != 0){
@@ -110,25 +121,44 @@ class SearchResultFragment(search: String): Fragment() {
         channelResponseData: ChannelSearchData,
         index: Int
     ){
+        if (videoDataList.contains(VideoData(" ", " ", " ", " ", " ", " ", false)))
+            videoDataList.remove(VideoData(" ", " ", " ", " ", " ", " ", false))
         val thumbnail = searchResponseData.items[index].snippet?.thumbnails?.high?.url!!
-        val date = searchResponseData.items[index].snippet?.publishedAt!!.substring(0, 10)
+        val date = searchResponseData.items[index].snippet?.publishedAt!!
         val title = stringToHtmlSign(searchResponseData.items[index].snippet?.title!!)
         val videoId = searchResponseData.items[index].id?.videoId!!
         val channelThumbnail = channelResponseData.items[0].snippet?.thumbnails?.default?.url!!
         val videoCount = channelResponseData.items[0].statistics?.videoCount!!
         val subscriberCount = channelResponseData.items[0].statistics?.subscriberCount!!
         val viewCount = channelResponseData.items[0].statistics?.viewCount!!
-        val channelBanner =
-            channelResponseData.items[0].brandingSettings?.image?.bannerExternalUrl
+        val channelBanner = channelResponseData.items[0].brandingSettings?.image?.bannerExternalUrl
         val channelTitle = channelResponseData.items[0].snippet?.title!!
         val channelDescription = channelResponseData.items[0].snippet?.description!!
-        val channelPlaylistId =
-            channelResponseData.items[0].contentDetails?.relatedPlaylists?.uploads!!
+        val channelPlaylistId = channelResponseData.items[0].contentDetails?.relatedPlaylists?.uploads!!
+
         binding.progressBar.visibility = View.INVISIBLE
         binding.recyclerView.visibility = View.VISIBLE
-        videoData.add(VideoData(thumbnail, title, channelTitle, videoId, date, channelThumbnail))
-        channelData.add(ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId))
-        searchResultAdapter.notifyDataSetChanged()
+        videoDataList.add(VideoData(thumbnail, title, channelTitle, videoId, date, channelThumbnail, false))
+        channelDataList.add(ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId))
+        searchResultAdapter.submitList(videoDataList.toMutableList())
+
+        if (index == searchResponseData.items.size-1){
+            videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+            searchResultAdapter.submitList(videoDataList.toMutableList())
+            binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener(){
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    val lastVisibleItemPosition =
+                        (recyclerView.layoutManager as LinearLayoutManager?)!!.findLastCompletelyVisibleItemPosition()
+                    val itemTotalCount = recyclerView.adapter!!.itemCount-1
+                    // 스크롤이 끝에 도달했는지 확인
+                    if (!binding.recyclerView.canScrollVertically(1) && lastVisibleItemPosition == itemTotalCount) {
+                        Log.d("스크롤","도달")
+                        getData(nextPageToken)
+                    }
+                }
+            })
+        }
     }
 
 
