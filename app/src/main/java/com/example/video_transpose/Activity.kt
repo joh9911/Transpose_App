@@ -1,12 +1,10 @@
-package com.example.youtube_transpose
+package com.example.video_transpose
 
 import android.app.SearchManager
 import android.content.*
-import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.os.IBinder
 import android.os.SystemClock
-import android.text.TextUtils
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -18,20 +16,10 @@ import androidx.appcompat.widget.SearchView.SearchAutoComplete
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.youtube_transpose.databinding.MainBinding
+import com.example.video_transpose.databinding.MainBinding
 import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.yausername.youtubedl_android.YoutubeDL
-import com.yausername.youtubedl_android.YoutubeDLException
-import com.yausername.youtubedl_android.YoutubeDLRequest
-import com.yausername.youtubedl_android.mapper.VideoInfo
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.disposables.Disposable
-import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.*
@@ -76,7 +64,7 @@ class Activity: AppCompatActivity() {
     }
 
 
-    val API_KEY = com.example.youtube_transpose.BuildConfig.API_KEY
+    val API_KEY = com.example.video_transpose.BuildConfig.API_KEY
     val suggestionKeywords = ArrayList<String>()
     val popularTop100Playlist = ArrayList<VideoData>()
     val thisYearPlaylistData = ArrayList<PlayListData>()
@@ -211,6 +199,10 @@ class Activity: AppCompatActivity() {
                 R.id.transpose_icon -> {
                     transposePage.visibility = View.VISIBLE
                 }
+                R.id.my_playlist_icon -> {
+                    Log.d("toolbar","${toolbar.menu.findItem(R.id.youtube_search_icon).isActionViewExpanded}")
+
+                }
             }
             true
         }
@@ -224,7 +216,7 @@ class Activity: AppCompatActivity() {
         initThisYearPlaylistRecyclerView()
         initTodayHotListPlaylistRecyclerView()
     }
-    fun initSearchRecyclerView(){
+    private fun initSearchRecyclerView(){
         binding.searchRecyclerView.layoutManager = LinearLayoutManager(this)
         searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
         searchAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
@@ -233,7 +225,7 @@ class Activity: AppCompatActivity() {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     val searchWord = suggestionKeywords[position]
                     suggestionKeywords.clear()
-                    searchAdapter.submitList(suggestionKeywords)
+                    searchAdapter.submitList(suggestionKeywords.toMutableList())
                     searchView.clearFocus()
                     supportFragmentManager.beginTransaction()
                         .replace(binding.searchResultFragment.id,SearchResultFragment(searchWord))
@@ -247,7 +239,7 @@ class Activity: AppCompatActivity() {
         binding.searchRecyclerView.adapter = searchAdapter
     }
 
-    fun initThisYearPlaylistRecyclerView(){
+    private fun initThisYearPlaylistRecyclerView(){
         binding.thisYearPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         thisYearPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         thisYearPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
@@ -265,7 +257,7 @@ class Activity: AppCompatActivity() {
         binding.thisYearPlaylistRecyclerView.adapter = thisYearPlaylistAdapter
     }
 
-    fun initTodayHotListPlaylistRecyclerView(){
+    private fun initTodayHotListPlaylistRecyclerView(){
         binding.todayHotListPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         todayHotPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
@@ -274,13 +266,12 @@ class Activity: AppCompatActivity() {
                     .addToBackStack(null)
                     .commit()
             }
-
         })
         todayHotPlaylistAdapter.submitList(todayHotPlaylistData)
         binding.todayHotListPlaylistRecyclerView.adapter = todayHotPlaylistAdapter
     }
 
-    fun initLatestMusicPlaylistRecyclerView(){
+    private fun initLatestMusicPlaylistRecyclerView(){
         binding.latestMusicPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         latestMusicPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
@@ -293,10 +284,9 @@ class Activity: AppCompatActivity() {
         })
         latestMusicPlaylistAdapter.submitList(latestMusicPlaylistData)
         binding.latestMusicPlaylistRecyclerView.adapter = latestMusicPlaylistAdapter
-
     }
 
-    fun initBestAtmospherePlaylistRecyclerView(){
+    private fun initBestAtmospherePlaylistRecyclerView(){
         binding.bestAtmospherePlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         bestAtmospherePlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
@@ -312,7 +302,7 @@ class Activity: AppCompatActivity() {
 
     }
 
-    fun initBestSituationPlaylistRecyclerView(){
+    private fun initBestSituationPlaylistRecyclerView(){
         binding.bestSituationPlaylistRecyclerView.layoutManager = LinearLayoutManager(this,RecyclerView.HORIZONTAL,false)
         bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         bestSituationPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
@@ -329,7 +319,7 @@ class Activity: AppCompatActivity() {
     }
 
 
-    fun initPopularTop100RecyclerView(){
+    private fun initPopularTop100RecyclerView(){
         val gridLayoutManager = GridLayoutManager(this,4,GridLayoutManager.HORIZONTAL,false)
         binding.popularTop100PlaylistVideoRecyclerView.layoutManager = gridLayoutManager
         popular100PlaylistAdapter = HomePopular100RecyclerViewAdapter()
@@ -361,7 +351,7 @@ class Activity: AppCompatActivity() {
                     if (splitCommaList[0] != "]]" && splitCommaList[0] != '"'.toString()){
                         addSubstringToSuggestionKeyword(splitCommaList)
                     }
-                    searchAdapter.submitList(suggestionKeywords)
+                    searchAdapter.submitList(suggestionKeywords.toMutableList())
                 }
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     Log.d("실패!","!1")
@@ -374,7 +364,6 @@ class Activity: AppCompatActivity() {
     private fun addSubstringToSuggestionKeyword(splitList: List<String>){
         for (index in splitList.indices){
             if (splitList[index].isNotEmpty()){
-                Log.d("함수","${splitList[index]}")
                 if (splitList[index][splitList[index].length-1] == ']')
                     suggestionKeywords.add(splitList[index].substring(1, splitList[index].length-2))
                 else
@@ -436,21 +425,18 @@ class Activity: AppCompatActivity() {
         val playlistId = responseData.items[0].id!!
         when(musicUrls) {
             thisYearMusicId -> {
-                Log.d("이번젼","ㅇㄹ")
                 thisYearPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
                 thisYearPlaylistAdapter.submitList(thisYearPlaylistData.toMutableList())
                 binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
                 binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
             }
             todayHotMusicId -> {
-                Log.d("오늘날","ㅇㄹ")
                 todayHotPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
                 todayHotPlaylistAdapter.submitList(todayHotPlaylistData.toMutableList())
                 binding.todayHotListPlaylistProgressBar.visibility = View.GONE
                 binding.todayHotListPlaylistRecyclerView.visibility = View.VISIBLE
             }
             latestMusicId -> {
-                Log.d("최근","ㅇㄹ")
                 latestMusicPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
                 latestMusicPlaylistAdapter.submitList(latestMusicPlaylistData.toMutableList())
                 binding.latestMusicPlaylistProgressBar.visibility = View.GONE
@@ -529,30 +515,50 @@ class Activity: AppCompatActivity() {
             searchAutoComplete.setTextColor(resources.getColor(R.color.white))
             searchAutoComplete.setHintTextColor(resources.getColor(R.color.description_color))
             searchAutoComplete.hint = "Youtube 검색"
-
             searchView.setOnQueryTextFocusChangeListener { p0, p1 ->
-                binding.searchRecyclerView.visibility = View.VISIBLE
+                if (p1){
+                    Log.d("눌림","ㄴㅇㄹ")
+                    binding.searchRecyclerView.visibility = View.VISIBLE
+                }
+
             }
             menu.findItem(R.id.youtube_search_icon).setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
                 override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
-                    Log.d("메뉴가","확장됨")
+                    if (transposePage.visibility == View.VISIBLE){
+                        transposePage.visibility = View.INVISIBLE
+                        binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked =
+                            true
+                    }
                     binding.toolBar.setBackgroundColor(resources.getColor(R.color.drawer_background))
                     binding.bottomNavigationView.visibility = View.GONE
                     return true
                 }
 
                 override fun onMenuItemActionCollapse(p0: MenuItem?): Boolean {
-                    for(fragment in supportFragmentManager.fragments) {
-                        if(fragment.isVisible && fragment is SearchResultFragment) {
-                            supportFragmentManager.popBackStackImmediate()
+                    if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
+                        return if (transposePage.visibility == View.VISIBLE) {
+                            transposePageInvisibleEvent()
+                            false
+                        } else{
+                            searchViewCollapseEvent()
+                            true
+                        }
+                    } else {
+                        val playerFragment =
+                            supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+                        return if (playerFragment.binding.playerMotionLayout.currentState == R.id.end) {
+                            playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+                            false
+                        } else {
+                            if (transposePage.visibility == View.VISIBLE) {
+                                transposePageInvisibleEvent()
+                                false
+                            } else{
+                                searchViewCollapseEvent()
+                                true
+                            }
                         }
                     }
-                    binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
-                    binding.bottomNavigationView.visibility = View.VISIBLE
-                    binding.searchRecyclerView.visibility = View.INVISIBLE
-                    suggestionKeywords.clear()
-                    searchAdapter.submitList(suggestionKeywords)
-                    return true
                 }
             })
             this.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
@@ -573,7 +579,7 @@ class Activity: AppCompatActivity() {
                     if (newText == ""){
                         Log.d("빈","칸")
                         suggestionKeywords.clear()
-                        searchAdapter.submitList(suggestionKeywords)
+                        searchAdapter.submitList(suggestionKeywords.toMutableList())
                     }
                     Log.d("TAG", "SearchVies Text is changed : $newText")
                     return false
@@ -582,6 +588,20 @@ class Activity: AppCompatActivity() {
 
         }
         return true
+    }
+
+    private fun searchViewCollapseEvent(){
+        Log.d("이게 실행이 됏잖아","왜")
+        for (fragment in supportFragmentManager.fragments) {
+            if (fragment.isVisible && fragment is SearchResultFragment) {
+                supportFragmentManager.popBackStackImmediate()
+            }
+        }
+        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
+        binding.bottomNavigationView.visibility = View.VISIBLE
+        binding.searchRecyclerView.visibility = View.INVISIBLE
+        suggestionKeywords.clear()
+        searchAdapter.submitList(suggestionKeywords.toMutableList())
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -597,13 +617,17 @@ class Activity: AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+    private fun transposePageInvisibleEvent(){
+            transposePage.visibility = View.INVISIBLE
+            binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
+    }
 
     override fun onBackPressed() {
-        if (supportFragmentManager.findFragmentByTag("playerFragment") == null){
-            if (transposePage.visibility == View.VISIBLE){
-                transposePage.visibility = View.INVISIBLE
-                binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
-            }
+        if (toolbar.menu.findItem(R.id.youtube_search_icon).isActionViewExpanded)
+            return
+        if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null){
+            if (transposePage.visibility == View.VISIBLE)
+                transposePageInvisibleEvent()
             else
                 return super.onBackPressed()
         }
@@ -613,10 +637,8 @@ class Activity: AppCompatActivity() {
                 playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
             }
             else{
-                if (transposePage.visibility == View.VISIBLE){
-                    transposePage.visibility = View.INVISIBLE
-                    binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
-                }
+                if (transposePage.visibility == View.VISIBLE)
+                    transposePageInvisibleEvent()
                 else
                     return super.onBackPressed()
             }
