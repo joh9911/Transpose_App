@@ -15,10 +15,7 @@ import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.PlaybackParameters
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.BuildConfig
@@ -34,7 +31,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
 
 class VideoService: Service() {
-    lateinit var exoPlayer: SimpleExoPlayer
+    lateinit var exoPlayer: ExoPlayer
     lateinit var notification: Notification
     lateinit var mediaSession: MediaSessionCompat
     lateinit var activity: Activity
@@ -72,8 +69,10 @@ class VideoService: Service() {
         val trackSelector = DefaultTrackSelector(this).apply {
             setParameters(buildUponParameters().setMaxVideoSizeSd())
         }
-        exoPlayer = SimpleExoPlayer.Builder(this)
+        exoPlayer = ExoPlayer.Builder(this)
             .setTrackSelector(trackSelector)
+            .setSeekForwardIncrementMs(10000)
+            .setSeekBackIncrementMs(10000)
             .build()
         exoPlayer.addListener(object: Player.Listener{
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
