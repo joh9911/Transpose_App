@@ -1,7 +1,10 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
+import android.content.BroadcastReceiver
 import android.content.Context
-import android.graphics.drawable.Drawable
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,10 +14,9 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.video_transpose.databinding.FragmentPlayerBinding
-import com.example.video_transpose.databinding.MainBinding
+import com.myFile.Transpose.databinding.FragmentPlayerBinding
+import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import java.lang.Math.abs
 
@@ -28,6 +30,8 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     val binding get() = fbinding!!
     var playerModel = PlayerModel(playMusicList = videoDataList,
     currentPosition = position)
+
+    private val mediaReceiver = MediaReceiver()
 
 
     val position = position
@@ -54,14 +58,22 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         return view
     }
 
+    inner class MediaReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY == intent.action) {
+                player?.playWhenReady = false
+            }
+        }
+    }
+
     override fun onPause() {
         super.onPause()
-        Log.d("프레그먼트","온퍼즈")
+        activity.unregisterReceiver(mediaReceiver)
     }
 
     override fun onResume() {
         super.onResume()
-        Log.d("프레그먼트","온리줌")
+        activity.registerReceiver(mediaReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
     }
 
     override fun onStop() {
