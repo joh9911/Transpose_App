@@ -2,7 +2,7 @@
 <MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:motion="http://schemas.android.com/apk/res-auto"
     >
-
+<!--    최대화-->
     <Transition
         motion:constraintSetEnd="@+id/end"
         motion:constraintSetStart="@id/start"
@@ -35,6 +35,7 @@
 
     </Transition>
 
+<!--    축소화-->
     <ConstraintSet android:id="@+id/start">
         <!--        layout_marginBottom 바텀 메뉴뷰 있기 때문에 위에서 좀 뗌-->
         <Constraint
@@ -61,7 +62,7 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             motion:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
-            motion:layout_constraintDimensionRatio="H, 1:2.5"
+            motion:layout_constraintDimensionRatio="H, 1:2.3"
             motion:layout_constraintStart_toStartOf="@id/mainContainerLayout"
             motion:layout_constraintTop_toTopOf="@id/mainContainerLayout" />
 
@@ -85,22 +86,24 @@
             motion:layout_constraintTop_toTopOf="parent"
             motion:layout_constraintStart_toStartOf="parent" />
 
+
         <Constraint
-            android:id="@+id/fragmentTitleLinearLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"/>
-        <Constraint
-            android:id="@+id/channel_linear_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            motion:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout"/>
-        <Constraint
-            android:id="@+id/fragmentRecyclerView"
+            android:id="@+id/player_fragment_scroll_view"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            motion:layout_constraintTop_toBottomOf="@id/channel_linear_layout"
+            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintBottom_toBottomOf="parent"/>
+
+        <Constraint
+            android:id="@+id/bottomPlayerPauseButton"
+            motion:layout_constraintEnd_toEndOf="@id/mainContainerLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            motion:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
+            android:alpha="0"
+            android:layout_marginEnd="24dp"
+            android:visibility="gone"
+            motion:layout_constraintTop_toTopOf="@id/mainContainerLayout" />
 
         <Constraint
             android:id="@+id/bottomPlayerCloseButton"

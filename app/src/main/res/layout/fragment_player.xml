@@ -13,7 +13,7 @@
         android:id="@+id/mainContainerLayout"
         android:layout_width="0dp"
         android:layout_height="250dp"
-        android:background="#AAAAAA"
+        android:background="#2196F3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -34,11 +34,22 @@
         android:id="@+id/bottomPlayerCloseButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="24dp"
+        android:layout_marginEnd="10dp"
         android:src="@drawable/ic_baseline_close_24"
         app:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
         app:layout_constraintEnd_toEndOf="@id/mainContainerLayout"
         app:layout_constraintTop_toTopOf="@id/mainContainerLayout" />
+
+    <ImageView
+        android:id="@+id/bottomPlayerPauseButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:src="@drawable/ic_baseline_pause_24"
+        app:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
+        app:layout_constraintEnd_toStartOf="@id/bottomPlayerCloseButton"
+        app:layout_constraintTop_toTopOf="@id/mainContainerLayout" />
+
 
     <!--
     ellipsize="end" 길이 넘어가면 ...으로
@@ -52,75 +63,92 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:singleLine="true"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="@id/bottomPlayerCloseButton"
-        app:layout_constraintEnd_toStartOf="@id/bottomPlayerCloseButton"
+        app:layout_constraintEnd_toStartOf="@id/bottomPlayerPauseButton"
         app:layout_constraintStart_toEndOf="@id/playerView"
         app:layout_constraintTop_toTopOf="@id/bottomPlayerCloseButton"
         tools:text="Title." />
 
-    <LinearLayout
-        android:id="@+id/fragmentTitleLinearLayout"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/player_fragment_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingTop="10dp"
-        android:background="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
-        >
-        <TextView
-            android:id="@+id/fragmentVideoTitle"
+        app:layout_constraintTop_toBottomOf="@id/mainContainerLayout">
+        <LinearLayout
+            android:id="@+id/scroll_view_linear_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:textSize="20dp"
-            android:textStyle="bold"
-            android:text="title" />
+            android:orientation="vertical">
+            <LinearLayout
+                android:id="@+id/fragmentTitleLinearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="10dp"
+                android:background="@color/white"
 
-        <TextView
-            android:id="@+id/fragmentVideoDetail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingLeft="8dp"
-            android:paddingTop="5dp"
-            android:maxLines="1"
-            android:textColor="@color/description_color"
-            android:text="detail" />
+                >
+                <TextView
+                    android:id="@+id/fragmentVideoTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="10dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textSize="20dp"
+                    android:textColor="@color/black"
+                    android:textStyle="bold"
+                    android:text="title" />
 
-    </LinearLayout>
+                <TextView
+                    android:id="@+id/fragmentVideoDetail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="8dp"
+                    android:paddingTop="5dp"
+                    android:maxLines="1"
+                    android:textColor="@color/description_color"
+                    android:text="detail" />
 
-    <LinearLayout
-        android:id="@+id/channel_linear_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="10dp"
-        android:background="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout">
+            </LinearLayout>
 
-        <ImageView
-            android:id="@+id/channel_image_view"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_margin="10dp"
-            android:src="@drawable/ic_launcher_background" />
+            <LinearLayout
+                android:id="@+id/channel_linear_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@color/white"
+                app:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout">
 
-        <TextView
-            android:id="@+id/channel_text_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:paddingLeft="10dp"
-            android:text="channel" />
-    </LinearLayout>
+                <ImageView
+                    android:id="@+id/channel_image_view"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_margin="10dp"
+                    android:src="@drawable/ic_launcher_background" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/fragmentRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/channel_linear_layout"/>
+                <TextView
+                    android:id="@+id/channel_text_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:textColor="@color/black"
+                    android:paddingLeft="10dp"
+                    android:text="channel" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/fragmentRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/white"
+                android:nestedScrollingEnabled="false"
+                app:layout_constraintTop_toBottomOf="@id/channel_linear_layout"/>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+
 
 </com.example.video_transpose.CustomMotionLayout>

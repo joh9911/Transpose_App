@@ -1,6 +1,7 @@
 package com.example.video_transpose
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.video_transpose.databinding.FragmentPlayerBinding
 import com.example.video_transpose.databinding.MainBinding
+import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import java.lang.Math.abs
@@ -31,7 +33,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     val position = position
     val mode = mode
 
-    var player: SimpleExoPlayer? = null
+    var player: ExoPlayer? = null
     lateinit var playerView: PlayerView
 
     override fun onCreateView(
@@ -75,7 +77,18 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     private fun initView(){
         val currentPlayingVideoData = playerModel.currentMusicModel()!!
         binding.bottomPlayerCloseButton.setOnClickListener {
-            getActivity()?.supportFragmentManager?.beginTransaction()?.remove(this)?.commit()
+            activity.supportFragmentManager.beginTransaction().remove(this).commit()
+        }
+        binding.bottomPlayerPauseButton.setOnClickListener {
+            if (player?.isPlaying!!){
+                player?.pause()
+                binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+            }
+            else{
+                player?.play()
+                binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
+            }
+
         }
         binding.bottomTitleTextView.text = currentPlayingVideoData.title
         binding.fragmentVideoTitle.text = currentPlayingVideoData.title
@@ -169,9 +182,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     }
 
     private fun updatePlayerView(){
-        Log.d("updatePlayerVIew","${playerModel.getCurrentPosition()}")
         val currentVideoData = playerModel.currentMusicModel()!!
-        Log.d("updatePlayerVIew","${playerModel.getCurrentPosition()}")
         binding.bottomTitleTextView.text = currentVideoData.title
         binding.fragmentVideoTitle.text = currentVideoData.title
         binding.fragmentVideoDetail.text = currentVideoData.date
@@ -216,6 +227,9 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
             }
 
             override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
+                // 화면이 축소된 상태에서는 엑소 플레이어의 컨트롤러 없애기
+                binding.playerView.useController = binding.playerMotionLayout.currentState != R.id.start
+
             }
 
             override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
