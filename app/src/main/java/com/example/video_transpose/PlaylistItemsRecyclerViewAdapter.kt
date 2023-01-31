@@ -14,12 +14,14 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
 
     inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
         private fun selected(){
-            binding.dataItem.setBackgroundColor(Color.parseColor("#484848"))
-            binding.optionButton.setBackgroundColor(Color.parseColor("#484848"))
+            binding.rankingTextView.setTextColor(Color.parseColor("#2196F3"))
+            binding.channelTextView.setTextColor(Color.parseColor("#2196F3"))
+            binding.titleTextView.setTextColor(Color.parseColor("#2196F3"))
         }
         private fun unSelected(){
-            binding.dataItem.setBackgroundColor(Color.parseColor("#010101"))
-            binding.optionButton.setBackgroundColor(Color.parseColor("#010101"))
+            binding.rankingTextView.setTextColor(Color.parseColor("#FF000000"))
+            binding.channelTextView.setTextColor(Color.parseColor("#898989"))
+            binding.titleTextView.setTextColor(Color.parseColor("#FF000000"))
         }
 
         fun bind(videoData: VideoData, position: Int){
