@@ -72,6 +72,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
 
     fun initPlaylistId(){
         playlistId = channelData.channelPlaylistId
+        Log.d("플레이리스트 아이디","$playlistId")
     }
 
     fun initView(){
@@ -83,13 +84,16 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
         binding.channelInfo.text = "동영상 ${channelData.channelVideoCount}개"
         binding.scrollView.viewTreeObserver?.addOnScrollChangedListener {
             val view = binding.scrollView.getChildAt(binding.scrollView.childCount - 1)
-            Log.d("Count==============${binding.scrollView.childCount}","Asdf")
 
             val diff = view.bottom - (binding.scrollView.height + binding.scrollView.scrollY)
-            Log.d("diff==============$diff","Asdf")
 
             if (diff == 0) {
-                getData()
+                if (pageToken != "")
+                    getData()
+                else{
+                    videoDataList.remove(VideoData(" ", " ", " ", " ", " ", " ", false))
+                    searchResultAdapter.submitList(videoDataList.toMutableList())
+                }
             }
         }
 
@@ -101,14 +105,17 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
     }
     private suspend fun getVideoData(){
         val retrofit = RetrofitData.initRetrofit()
+        Log.d("요청 할 때의 토큰","$pageToken")
         val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY, "snippet", playlistId, pageToken, "50")
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
                 withContext(Dispatchers.Main){
                     videoMapping(response.body()!!)
                 }
-                if (response.body()?.nextPageToken != null)
-                    pageToken = response.body()?.nextPageToken!!
+                pageToken = if (response.body()?.nextPageToken != null){
+                    response.body()?.nextPageToken!!
+                } else
+                    ""
             }
         }
     }
