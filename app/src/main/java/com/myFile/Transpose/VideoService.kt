@@ -1,8 +1,11 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.app.*
 import android.content.ContentValues
+import android.content.Context
+import android.content.Context.AUDIO_SERVICE
 import android.content.Intent
+import android.media.AudioManager
 import android.media.MediaMetadata
 import android.os.Binder
 import android.os.Build
@@ -95,6 +98,31 @@ class VideoService: Service() {
                 }
             }
         })
+        setAudioFocus()
+    }
+    private fun setAudioFocus() {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val afChangeListener: AudioManager.OnAudioFocusChangeListener =
+            AudioManager.OnAudioFocusChangeListener {
+                when (it) {
+                    AudioManager.AUDIOFOCUS_LOSS -> {
+                        exoPlayer.playWhenReady = false
+                    }
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                        exoPlayer.playWhenReady = false
+                    }
+                    AudioManager.AUDIOFOCUS_GAIN -> {
+                        exoPlayer.playWhenReady = true
+
+                    }
+                }
+            }
+        val result: Int = audioManager.requestAudioFocus(
+            afChangeListener,
+            AudioManager.STREAM_MUSIC,
+            AudioManager.AUDIOFOCUS_GAIN
+        )
+        exoPlayer.playWhenReady = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
     }
 
     inner class VideoServiceBinder: Binder(){
