@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.video_transpose.databinding.MainBinding
+import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -29,7 +30,7 @@ class Activity: AppCompatActivity() {
     var mBinding: MainBinding? = null
     val binding get() = mBinding!!
 
-    lateinit var exoPlayer: SimpleExoPlayer
+    lateinit var exoPlayer: ExoPlayer
     lateinit var transposePage: LinearLayout
     lateinit var floatButton: ExtendedFloatingActionButton
     lateinit var toolbar: androidx.appcompat.widget.Toolbar
@@ -115,15 +116,13 @@ class Activity: AppCompatActivity() {
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         bindService(Intent(this, VideoService::class.java), connection, BIND_AUTO_CREATE)
-        initView()
         initRecyclerView()
+        initView()
         initToolbar()
         getAllData()
     }
 
-
     private fun initView() {
-        initToolbar()
         initTranspose()
         initBottomNavigationView()
     }
@@ -146,6 +145,22 @@ class Activity: AppCompatActivity() {
         })
         binding.pitchInitButton.setOnClickListener {
             pitchSeekBar.progress = 0
+            for(fragment in supportFragmentManager.fragments) {
+                if(fragment.isVisible && fragment is PlayerFragment) {
+                    videoService!!.setPitch(pitchSeekBar.progress)
+                }
+            }
+        }
+        binding.pitchSeekBarMinusButton.setOnClickListener {
+            pitchSeekBar.progress -= 1
+            for(fragment in supportFragmentManager.fragments) {
+                if(fragment.isVisible && fragment is PlayerFragment) {
+                    videoService!!.setPitch(pitchSeekBar.progress)
+                }
+            }
+        }
+        binding.pitchSeekBarPlusButton.setOnClickListener {
+            pitchSeekBar.progress += 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
                     videoService!!.setPitch(pitchSeekBar.progress)
@@ -176,7 +191,25 @@ class Activity: AppCompatActivity() {
                 }
             }
         }
+        binding.tempoSeekBarMinusButton.setOnClickListener {
+            tempoSeekBar.progress -= 0
+            for(fragment in supportFragmentManager.fragments) {
+                if(fragment.isVisible && fragment is PlayerFragment) {
+                    videoService!!.setTempo(tempoSeekBar.progress!!)
+                }
+            }
+        }
+        binding.tempoSeekBarPlusButton.setOnClickListener {
+            tempoSeekBar.progress += 0
+            for(fragment in supportFragmentManager.fragments) {
+                if(fragment.isVisible && fragment is PlayerFragment) {
+                    videoService!!.setTempo(tempoSeekBar.progress!!)
+                }
+            }
+        }
+
         binding.transposePage.setOnClickListener {
+            Log.d("asdf","ASdf")
         }
     }
     fun initToolbar(){
@@ -226,6 +259,7 @@ class Activity: AppCompatActivity() {
                     val searchWord = suggestionKeywords[position]
                     suggestionKeywords.clear()
                     searchAdapter.submitList(suggestionKeywords.toMutableList())
+                    searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                     searchView.clearFocus()
                     supportFragmentManager.beginTransaction()
                         .replace(binding.searchResultFragment.id,SearchResultFragment(searchWord))
@@ -512,10 +546,14 @@ class Activity: AppCompatActivity() {
             setSearchableInfo(searchManager.getSearchableInfo(componentName))
             searchView = this
             val searchAutoComplete = searchView.findViewById<SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
+            val searchViewCloseButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
+            val searchViewBackButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
             searchAutoComplete.setTextColor(resources.getColor(R.color.white))
-            searchAutoComplete.setHintTextColor(resources.getColor(R.color.description_color))
+            searchAutoComplete.setHintTextColor(resources.getColor(R.color.white))
             searchAutoComplete.hint = "Youtube 검색"
-            searchView.setOnQueryTextFocusChangeListener { p0, p1 ->
+            searchViewCloseButton.setColorFilter(resources.getColor(R.color.white))
+            searchViewBackButton.setColorFilter(resources.getColor(R.color.white))
+            searchView.setOnQueryTextFocusChangeListener { p0, p1 -> // 서치뷰 검색창을 클릭할 때 이벤트
                 if (p1){
                     Log.d("눌림","ㄴㅇㄹ")
                     binding.searchRecyclerView.visibility = View.VISIBLE
@@ -529,7 +567,6 @@ class Activity: AppCompatActivity() {
                         binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked =
                             true
                     }
-                    binding.toolBar.setBackgroundColor(resources.getColor(R.color.drawer_background))
                     binding.bottomNavigationView.visibility = View.GONE
                     return true
                 }
@@ -574,6 +611,7 @@ class Activity: AppCompatActivity() {
                 //SwipeRefreshLayout 새로고침
                 override fun onQueryTextChange(newText: String?): Boolean {
                     if (newText != ""){
+                        Log.d("연관검색어 결과를","자겨옴")
                         getSuggestionKeyword(newText!!)
                     }
                     if (newText == ""){
@@ -581,7 +619,6 @@ class Activity: AppCompatActivity() {
                         suggestionKeywords.clear()
                         searchAdapter.submitList(suggestionKeywords.toMutableList())
                     }
-                    Log.d("TAG", "SearchVies Text is changed : $newText")
                     return false
                 }
             })
@@ -597,7 +634,7 @@ class Activity: AppCompatActivity() {
                 supportFragmentManager.popBackStackImmediate()
             }
         }
-        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
+//        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         binding.bottomNavigationView.visibility = View.VISIBLE
         binding.searchRecyclerView.visibility = View.INVISIBLE
         suggestionKeywords.clear()
