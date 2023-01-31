@@ -1,4 +1,4 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.os.Bundle
 import android.os.SystemClock
@@ -9,8 +9,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.video_transpose.databinding.FragmentSearchResultBinding
-import com.example.video_transpose.databinding.MainBinding
+import com.myFile.Transpose.databinding.FragmentSearchResultBinding
+import com.myFile.Transpose.databinding.MainBinding
 import kotlinx.coroutines.*
 
 class SearchResultFragment(search: String): Fragment() {

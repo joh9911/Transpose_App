@@ -1,4 +1,4 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.content.Context
 import android.os.Bundle
@@ -9,8 +9,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.video_transpose.databinding.FragmentPlaylistBinding
-import com.example.video_transpose.databinding.MainBinding
+import com.myFile.Transpose.databinding.FragmentPlaylistBinding
+import com.myFile.Transpose.databinding.MainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
     private val playListData = playListData
 
-    val API_KEY = com.example.video_transpose.BuildConfig.API_KEY
+    val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
     lateinit var activity: Activity
     lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
     lateinit var mainBinding: MainBinding

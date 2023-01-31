@@ -1,4 +1,4 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.view.LayoutInflater
 import android.view.View
@@ -7,8 +7,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.example.video_transpose.databinding.ProgressBarItemBinding
-import com.example.video_transpose.databinding.SearchResultRecyclerItemBinding
+import com.myFile.Transpose.databinding.ProgressBarItemBinding
+import com.myFile.Transpose.databinding.SearchResultRecyclerItemBinding
 
 class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewHolder>(diffUtil) {
     private val VIEW_TYPE_ITEM = 0

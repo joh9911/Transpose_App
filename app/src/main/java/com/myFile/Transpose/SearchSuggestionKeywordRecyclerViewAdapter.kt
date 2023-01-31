@@ -1,4 +1,4 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.video_transpose.databinding.SearchRecyclerItemBinding
+import com.myFile.Transpose.databinding.SearchRecyclerItemBinding
 
 class SearchSuggestionKeywordRecyclerViewAdapter: ListAdapter<String, SearchSuggestionKeywordRecyclerViewAdapter.MyViewHolder>(diffUtil) {
 

@@ -1,4 +1,4 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.content.Context
 import android.graphics.Rect

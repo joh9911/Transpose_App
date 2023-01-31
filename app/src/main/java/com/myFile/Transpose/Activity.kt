@@ -1,4 +1,4 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.app.SearchManager
 import android.content.*
@@ -16,9 +16,8 @@ import androidx.appcompat.widget.SearchView.SearchAutoComplete
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.video_transpose.databinding.MainBinding
+import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.*
@@ -65,7 +64,7 @@ class Activity: AppCompatActivity() {
     }
 
 
-    val API_KEY = com.example.video_transpose.BuildConfig.API_KEY
+    val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
     val suggestionKeywords = ArrayList<String>()
     val popularTop100Playlist = ArrayList<VideoData>()
     val thisYearPlaylistData = ArrayList<PlayListData>()
@@ -192,7 +191,7 @@ class Activity: AppCompatActivity() {
             }
         }
         binding.tempoSeekBarMinusButton.setOnClickListener {
-            tempoSeekBar.progress -= 0
+            tempoSeekBar.progress -= 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
                     videoService!!.setTempo(tempoSeekBar.progress!!)
@@ -200,12 +199,15 @@ class Activity: AppCompatActivity() {
             }
         }
         binding.tempoSeekBarPlusButton.setOnClickListener {
-            tempoSeekBar.progress += 0
+            tempoSeekBar.progress += 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
                     videoService!!.setTempo(tempoSeekBar.progress!!)
                 }
             }
+        }
+        binding.transposeBackButton.setOnClickListener {
+            transposePageInvisibleEvent()
         }
 
         binding.transposePage.setOnClickListener {
@@ -514,7 +516,6 @@ class Activity: AppCompatActivity() {
     }
 
     private fun popularTop100MusicDataMapping(responseData: PlayListVideoSearchData){
-        Log.d("매핑","했다")
         for (index in responseData.items.indices){
             val thumbnail = responseData.items[index].snippet?.thumbnails?.default?.url!!
             val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
@@ -523,7 +524,7 @@ class Activity: AppCompatActivity() {
             val videoId = responseData.items[index].snippet?.resourceId?.videoId!!
             popularTop100Playlist.add(VideoData(thumbnail, title, channelTitle, videoId, date, thumbnail, false))
             }
-        popular100PlaylistAdapter.submitList(popularTop100Playlist)
+        popular100PlaylistAdapter.submitList(popularTop100Playlist.toMutableList())
         binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
         binding.popularTop100PlaylistVideoRecyclerView.visibility = View.VISIBLE
     }

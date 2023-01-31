@@ -10,11 +10,12 @@
         app:showAsAction="always|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         />
-<!--    <item-->
-<!--        android:id="@+id/transpose_icon"-->
-<!--        android:title="transpose"-->
-<!--        android:icon="@drawable/ic_baseline_menu_24"-->
-<!--        app:showAsAction="always|collapseActionView"/>-->
+
+    <item
+        android:id="@+id/transpose_icon"
+        android:title="transpose"
+        android:icon="@drawable/ic_baseline_menu_24"
+        app:showAsAction="always|collapseActionView"/>
 
 
 </menu>

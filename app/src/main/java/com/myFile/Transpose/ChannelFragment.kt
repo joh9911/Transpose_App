@@ -1,4 +1,4 @@
-package com.example.video_transpose
+package com.myFile.Transpose
 
 import android.content.Context
 import android.os.Bundle
@@ -10,8 +10,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.example.video_transpose.databinding.FragmentChannelBinding
-import com.example.video_transpose.databinding.MainBinding
+import com.myFile.Transpose.databinding.FragmentChannelBinding
+import com.myFile.Transpose.databinding.MainBinding
 import kotlinx.coroutines.*
 
 class ChannelFragment(val channelData: ChannelData): Fragment() {
@@ -23,7 +23,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
     val videoDataList = ArrayList<VideoData>()
     var pageToken = ""
 
-    val API_KEY = com.example.video_transpose.BuildConfig.API_KEY
+    val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
     lateinit var playlistId: String
     override fun onCreateView(
         inflater: LayoutInflater,
