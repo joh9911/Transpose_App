@@ -12,7 +12,11 @@ class SearchSuggestionKeywordRecyclerViewAdapter: ListAdapter<String, SearchSugg
 
     inner class MyViewHolder(private val binding: SearchRecyclerItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
-
+        init {
+            itemView.setOnClickListener {
+                itemClickListener.onClick(it, adapterPosition)
+            }
+        }
         fun bind(searchKeywordData: String) {
             binding.suggestionKeyword.text = searchKeywordData
         }
@@ -30,9 +34,7 @@ class SearchSuggestionKeywordRecyclerViewAdapter: ListAdapter<String, SearchSugg
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         holder.bind(currentList[position])
-        holder.itemView.setOnClickListener {
-            itemClickListener.onClick(it, position)
-        }
+
     }
 
     // (2) 리스너 인터페이스
