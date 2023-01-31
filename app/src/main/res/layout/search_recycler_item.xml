@@ -5,9 +5,9 @@
     android:layout_height="40dp">
     <ImageView
         android:id="@+id/search_icon"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:src="@drawable/ic_baseline_search_24"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:src="@drawable/ic_baseline_search_24_black"
         android:layout_margin="10dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -17,15 +17,16 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:text="연관 검색어"
+        android:textSize="15dp"
         android:textColor="@color/black"
         android:gravity="center_vertical"
-        android:paddingLeft="20dp"
+        android:paddingLeft="25dp"
         app:layout_constraintStart_toEndOf="@id/search_icon"
         app:layout_constraintEnd_toStartOf="@id/move_icon"/>
     <ImageView
         android:id="@+id/move_icon"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
         android:src="@drawable/ic_baseline_arrow_outward_24"
         android:layout_margin="10dp"
         app:layout_constraintEnd_toEndOf="parent"
