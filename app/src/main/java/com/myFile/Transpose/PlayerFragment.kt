@@ -48,9 +48,6 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         fbinding = FragmentPlayerBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
-        Log.d("프레그먼트","onccreateview")
-        Log.d("현재 포지션","${playerModel.getCurrentPosition()}")
-        Log.d("현재 곡","${playerModel.currentMusicModel()}")
         initView()
         initMotionLayout()
         initRecyclerView()
@@ -115,6 +112,13 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         }
     }
 
+    fun settingBottomPlayButton(){
+        if (player?.isPlaying!!)
+            binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
+        else
+            binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+    }
+
     private fun initRecyclerView(){
         val videoDataList = playerModel.getPlayMusicList()
         if (mode == "playlist"){
@@ -139,7 +143,6 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
                 }
                 override fun videoClick(v: View, position: Int) {
-                    Log.d("누른 포지션","$position")
                     replaceVideo(position)
                     playCurrentVideo()
 
@@ -240,8 +243,12 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
 
             override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
                 // 화면이 축소된 상태에서는 엑소 플레이어의 컨트롤러 없애기
-                binding.playerView.useController = binding.playerMotionLayout.currentState != R.id.start
-
+                if (binding.playerMotionLayout.currentState == R.id.start){
+                    settingBottomPlayButton()
+                    binding.playerView.useController = false
+                }
+                else
+                    binding.playerView.useController = true
             }
 
             override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
