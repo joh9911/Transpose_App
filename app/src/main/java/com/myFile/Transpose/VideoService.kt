@@ -99,6 +99,7 @@ class VideoService: Service() {
             }
         })
         setAudioFocus()
+
     }
     private fun setAudioFocus() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -235,8 +236,10 @@ class VideoService: Service() {
             .createMediaSource(MediaItem.fromUri(convertedUrl))
         exoPlayer?.setMediaSource(videoSource)
         exoPlayer?.prepare()
+        exoPlayer.playWhenReady = true
         setTempo(activity.tempoSeekBar.progress)
         setPitch(activity.pitchSeekBar.progress)
+
     }
 
     fun setPitch(value: Int){
