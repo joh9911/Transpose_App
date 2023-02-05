@@ -10,36 +10,51 @@ android {
     compileSdk 32
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
+
     }
     defaultConfig {
         applicationId "com.myFile.transpose"
         minSdk 21
         targetSdk 32
-        versionCode 1
-        versionName "1.0"
+        versionCode 4
+        versionName "1.0.2"
+        vectorDrawables.generatedDensities = []
         buildConfigField "String", "API_KEY", properties["api_key"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
-            abiFilters "armeabi-v7a", 'arm64-v8a', 'x86', 'x86_64'
+            abiFilters "armeabi-v7a", 'x86', 'x86_64', 'arm64-v8a'
         }
         buildFeatures {
             viewBinding true
         }
     }
+    aaptOptions {
+        additionalParameters "--no-version-vectors"
+    }
 
     buildTypes {
 
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            ndk {
+                abiFilters "armeabi-v7a", 'x86', 'x86_64', 'arm64-v8a'
+            }
+        }
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
+            universalApk true
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
     kotlinOptions {
         jvmTarget = '1.8'
     }
@@ -55,9 +70,9 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
-    implementation 'com.github.yausername.youtubedl-android:library:-SNAPSHOT'
-    implementation 'com.github.yausername.youtubedl-android:ffmpeg:-SNAPSHOT' // Optional
-    implementation 'com.github.yausername.youtubedl-android:aria2c:-SNAPSHOT' // Optional
+    implementation 'com.github.yausername.youtubedl-android:library:master-SNAPSHOT'
+//    implementation 'com.github.yausername.youtubedl-android:ffmpeg:-SNAPSHOT' // Optional
+//    implementation 'com.github.yausername.youtubedl-android:aria2c:-SNAPSHOT' // Optional
 
     implementation "com.google.android.exoplayer:exoplayer-core:2.16.1"
     implementation "com.google.android.exoplayer:exoplayer-ui:2.16.1"
