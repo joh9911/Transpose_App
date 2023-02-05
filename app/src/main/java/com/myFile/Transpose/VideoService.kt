@@ -81,6 +81,8 @@ class VideoService: Service() {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                 when (playbackState){
                     Player.STATE_READY -> {
+                        val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
+                        playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
                     Player.STATE_ENDED -> {
