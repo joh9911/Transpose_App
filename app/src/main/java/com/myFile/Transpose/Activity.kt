@@ -63,7 +63,6 @@ class Activity: AppCompatActivity() {
 
     }
 
-
     val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
     val suggestionKeywords = ArrayList<String>()
     val popularTop100Playlist = ArrayList<VideoData>()
@@ -562,7 +561,7 @@ class Activity: AppCompatActivity() {
 
             }
             menu.findItem(R.id.youtube_search_icon).setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
-                override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
+                override fun onMenuItemActionExpand(p0: MenuItem): Boolean {
                     if (transposePage.visibility == View.VISIBLE){
                         transposePage.visibility = View.INVISIBLE
                         binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked =
@@ -571,8 +570,7 @@ class Activity: AppCompatActivity() {
                     binding.bottomNavigationView.visibility = View.GONE
                     return true
                 }
-
-                override fun onMenuItemActionCollapse(p0: MenuItem?): Boolean {
+                override fun onMenuItemActionCollapse(p0: MenuItem): Boolean {
                     if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
                         return if (transposePage.visibility == View.VISIBLE) {
                             transposePageInvisibleEvent()

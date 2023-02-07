@@ -83,6 +83,6 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
     //따라서 안의 뷰는 터치가 안먹음
     //이거 로그로 gestureDetector.onTouchEvent(event) 이거 하면 작동안함 왤까?
     override fun onInterceptTouchEvent(event: MotionEvent?): Boolean {
-        return gestureDetector.onTouchEvent(event)
+        return gestureDetector.onTouchEvent(event!!)
     }
 }
