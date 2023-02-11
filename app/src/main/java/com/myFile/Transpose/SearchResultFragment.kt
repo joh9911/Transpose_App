@@ -52,7 +52,7 @@ class SearchResultFragment(search: String): Fragment() {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.channelFragment.id,ChannelFragment(channelDataList[position]))
+                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
                         .addToBackStack(null)
                         .commit()
                 }

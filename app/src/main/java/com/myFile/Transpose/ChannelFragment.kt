@@ -49,7 +49,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.channelFragment.id,ChannelFragment(channelData))
+                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelData))
                         .addToBackStack(null)
                         .commit()
                 }
@@ -149,6 +149,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
+        activity.searchView.setQuery(channelData.channelTitle,false)
     }
 
 }
