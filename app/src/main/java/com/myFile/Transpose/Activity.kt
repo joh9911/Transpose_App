@@ -263,7 +263,7 @@ class Activity: AppCompatActivity() {
                     searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                     searchView.clearFocus()
                     supportFragmentManager.beginTransaction()
-                        .replace(binding.searchResultFragment.id,SearchResultFragment(searchWord))
+                        .replace(binding.anyFrameLayout.id,SearchResultFragment(searchWord))
                         .addToBackStack(null)
                         .commit()
                     binding.searchRecyclerView.visibility = View.INVISIBLE
@@ -281,7 +281,7 @@ class Activity: AppCompatActivity() {
             var mLastClickTime = 0L
             override fun onClick(v: View, position: Int) {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(thisYearPlaylistData[position]))
+                    supportFragmentManager.beginTransaction().replace(binding.anyFrameLayout.id,PlaylistItemsFragment(thisYearPlaylistData[position]))
                         .addToBackStack(null)
                         .commit()
                 }
@@ -297,7 +297,7 @@ class Activity: AppCompatActivity() {
         todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         todayHotPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(todayHotPlaylistData[position]))
+                supportFragmentManager.beginTransaction().replace(binding.anyFrameLayout.id,PlaylistItemsFragment(todayHotPlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
@@ -311,7 +311,7 @@ class Activity: AppCompatActivity() {
         latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         latestMusicPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(latestMusicPlaylistData[position]))
+                supportFragmentManager.beginTransaction().replace(binding.anyFrameLayout.id,PlaylistItemsFragment(latestMusicPlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
@@ -326,7 +326,7 @@ class Activity: AppCompatActivity() {
         bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         bestAtmospherePlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                supportFragmentManager.beginTransaction().replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(bestAtmospherePlaylistData[position]))
+                supportFragmentManager.beginTransaction().replace(binding.anyFrameLayout.id,PlaylistItemsFragment(bestAtmospherePlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
@@ -343,7 +343,7 @@ class Activity: AppCompatActivity() {
         bestSituationPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 supportFragmentManager.beginTransaction()
-                    .replace(binding.playlistItemsFragment.id,PlaylistItemsFragment(bestSituationPlaylistData[position]))
+                    .replace(binding.anyFrameLayout.id,PlaylistItemsFragment(bestSituationPlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
@@ -550,7 +550,7 @@ class Activity: AppCompatActivity() {
             val searchViewBackButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
             searchAutoComplete.setTextColor(resources.getColor(R.color.white))
             searchAutoComplete.setHintTextColor(resources.getColor(R.color.white))
-            searchAutoComplete.hint = "Youtube 검색"
+            searchAutoComplete.hint = resources.getString(R.string.searchView_hint)
             searchViewCloseButton.setColorFilter(resources.getColor(R.color.white))
             searchViewBackButton.setColorFilter(resources.getColor(R.color.white))
             searchView.setOnQueryTextFocusChangeListener { p0, p1 -> // 서치뷰 검색창을 클릭할 때 이벤트
@@ -558,7 +558,6 @@ class Activity: AppCompatActivity() {
                     Log.d("눌림","ㄴㅇㄹ")
                     binding.searchRecyclerView.visibility = View.VISIBLE
                 }
-
             }
             menu.findItem(R.id.youtube_search_icon).setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
                 override fun onMenuItemActionExpand(p0: MenuItem): Boolean {
@@ -576,8 +575,13 @@ class Activity: AppCompatActivity() {
                             transposePageInvisibleEvent()
                             false
                         } else{
-                            searchViewCollapseEvent()
-                            true
+                            if (supportFragmentManager.backStackEntryCount != 0){
+                                searchViewCollapseEvent()
+                                false
+                            }
+                            else{
+                                true
+                            }
                         }
                     } else {
                         val playerFragment =
@@ -601,7 +605,7 @@ class Activity: AppCompatActivity() {
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     searchView.clearFocus()
                     supportFragmentManager.beginTransaction()
-                        .replace(binding.searchResultFragment.id,SearchResultFragment(query!!))
+                        .replace(binding.anyFrameLayout.id,SearchResultFragment(query!!))
                         .addToBackStack(null)
                         .commit()
                     binding.searchRecyclerView.visibility = View.INVISIBLE
@@ -628,11 +632,7 @@ class Activity: AppCompatActivity() {
 
     private fun searchViewCollapseEvent(){
         Log.d("이게 실행이 됏잖아","왜")
-        for (fragment in supportFragmentManager.fragments) {
-            if (fragment.isVisible && fragment is SearchResultFragment) {
-                supportFragmentManager.popBackStackImmediate()
-            }
-        }
+        supportFragmentManager.popBackStackImmediate()
 //        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         binding.bottomNavigationView.visibility = View.VISIBLE
         binding.searchRecyclerView.visibility = View.INVISIBLE
