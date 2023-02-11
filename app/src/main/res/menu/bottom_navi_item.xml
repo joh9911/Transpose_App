@@ -5,17 +5,17 @@
     >
     <item
         android:id="@+id/home_icon"
-        android:title="홈"
+        android:title="@string/home_icon"
         android:icon="@drawable/bottom_navi_home_selector"
         app:showAsAction="always"/>
     <item
         android:id="@+id/transpose_icon"
-        android:title="변환"
+        android:title="@string/convert_icon"
         android:icon="@drawable/bottom_navi_transpose_selector"
         app:showAsAction="always"/>
     <item
         android:id="@+id/my_playlist_icon"
-        android:title="보관함"
+        android:title="@string/library_icon"
         android:icon="@drawable/bottom_navi_playlist_selector"
         app:showAsAction="always"/>
 </menu>

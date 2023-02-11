@@ -16,8 +16,8 @@ android {
         applicationId "com.myFile.transpose"
         minSdk 21
         targetSdk 32
-        versionCode 4
-        versionName "1.0.2"
+        versionCode 5
+        versionName "1.0.3"
         vectorDrawables.generatedDensities = []
         buildConfigField "String", "API_KEY", properties["api_key"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
