@@ -32,8 +32,6 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     currentPosition = position)
 
     private val mediaReceiver = MediaReceiver()
-
-
     val position = position
     val mode = mode
 

@@ -25,6 +25,7 @@ class SearchResultFragment(search: String): Fragment() {
     val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
     val videoDataList = ArrayList<VideoData>()
     val channelDataList = ArrayList<ChannelData>()
+    var videoDataListForPlayerFragment = ArrayList<VideoData>()
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -58,23 +59,31 @@ class SearchResultFragment(search: String): Fragment() {
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
-
             override fun videoClick(v: View, position: Int) {
+                setVideoDataListForPlayerFragment()
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    Log.d("이번거 클릭","${position}")
                     activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList, position, "video"),"playerFragment")
+                        .replace(activity.binding.playerFragment.id,
+                            PlayerFragment(videoDataListForPlayerFragment, position, "video"),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
-
             override fun optionButtonClick(v: View, position: Int) {
-
             }
         })
 
+    }
+    fun setVideoDataListForPlayerFragment(){
+        if (videoDataList.size > 48){
+            for (index in 0 until 49){
+                videoDataListForPlayerFragment.add(videoDataList[index])
+            }
+        }
+        else{
+            videoDataListForPlayerFragment = videoDataList
+        }
     }
 
     private fun getData(pageToken: String?) {

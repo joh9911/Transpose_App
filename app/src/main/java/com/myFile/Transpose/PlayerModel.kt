@@ -7,7 +7,6 @@ data class PlayerModel (
     private var currentPosition: Int = -1, // -1: 초기화 되지 않은 값
 ){
     init {
-        Log.d("ㅑㅜㅑㅅ","init함수")
         refreshPlaylist()
     }
     fun getCurrentPosition(): Int{
