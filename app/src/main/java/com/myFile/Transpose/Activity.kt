@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.*
@@ -31,7 +30,6 @@ class Activity: AppCompatActivity() {
 
     lateinit var exoPlayer: ExoPlayer
     lateinit var transposePage: LinearLayout
-    lateinit var floatButton: ExtendedFloatingActionButton
     lateinit var toolbar: androidx.appcompat.widget.Toolbar
     lateinit var bottomNavigationView: BottomNavigationView
     lateinit var pitchSeekBar: SeekBar
@@ -107,6 +105,7 @@ class Activity: AppCompatActivity() {
         "RDCLAK5uy_mS7UhvWzUZdjauupjE5JO6VCn-CCwaRoI","RDCLAK5uy_krjFmKbzWzkGvhqkYvvNnUbdrHy0QN1S8",
         "RDCLAK5uy_kQ09S7a68znbjr7h26ur1RJb2tCXDlruY"
     )
+    val channelDataList = arrayListOf<ChannelData>() // 재생 프레그먼트에 넣기 위한 그냥 빈 리스트
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -185,7 +184,7 @@ class Activity: AppCompatActivity() {
             tempoSeekBar.progress = 0
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setTempo(tempoSeekBar.progress!!)
+                    videoService!!.setTempo(tempoSeekBar.progress)
                 }
             }
         }
@@ -193,7 +192,7 @@ class Activity: AppCompatActivity() {
             tempoSeekBar.progress -= 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setTempo(tempoSeekBar.progress!!)
+                    videoService!!.setTempo(tempoSeekBar.progress)
                 }
             }
         }
@@ -201,7 +200,7 @@ class Activity: AppCompatActivity() {
             tempoSeekBar.progress += 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setTempo(tempoSeekBar.progress!!)
+                    videoService!!.setTempo(tempoSeekBar.progress)
                 }
             }
         }
@@ -255,20 +254,16 @@ class Activity: AppCompatActivity() {
         searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
         searchAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                var mLastClickTime = 0L
-                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    val searchWord = suggestionKeywords[position]
-                    suggestionKeywords.clear()
-                    searchAdapter.submitList(suggestionKeywords.toMutableList())
-                    searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
-                    searchView.clearFocus()
-                    supportFragmentManager.beginTransaction()
-                        .replace(binding.anyFrameLayout.id,SearchResultFragment(searchWord))
-                        .addToBackStack(null)
-                        .commit()
-                    binding.searchRecyclerView.visibility = View.INVISIBLE
-                }
-                mLastClickTime = SystemClock.elapsedRealtime()
+                val searchWord = suggestionKeywords[position]
+                suggestionKeywords.clear()
+                searchAdapter.submitList(suggestionKeywords.toMutableList())
+                searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
+                searchView.clearFocus()
+                supportFragmentManager.beginTransaction()
+                    .replace(binding.anyFrameLayout.id,SearchResultFragment(searchWord))
+                    .addToBackStack(null)
+                    .commit()
+                binding.searchRecyclerView.visibility = View.INVISIBLE
             }
         })
         binding.searchRecyclerView.adapter = searchAdapter
@@ -364,7 +359,7 @@ class Activity: AppCompatActivity() {
             override fun onClick(v: View, position: Int) {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     supportFragmentManager.beginTransaction()
-                        .replace(binding.playerFragment.id,PlayerFragment(popularTop100Playlist, position, "playlist"),"playerFragment")
+                        .replace(binding.playerFragment.id,PlayerFragment(popularTop100Playlist, channelDataList, position, "playlist"),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
@@ -428,7 +423,7 @@ class Activity: AppCompatActivity() {
     }
 
     private fun getAllData(){
-        val job = CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             async { getPopularTop100MusicData(null) }
             async { getPlaylistData(thisYearMusicId) }
             async { getPlaylistData(todayHotMusicId) }
@@ -580,6 +575,7 @@ class Activity: AppCompatActivity() {
                                 false
                             }
                             else{
+                                searchViewCollapseEvent()
                                 true
                             }
                         }
@@ -641,7 +637,7 @@ class Activity: AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item?.itemId){
+        return when (item.itemId){
             R.id.transpose_icon -> {
                 true
             }

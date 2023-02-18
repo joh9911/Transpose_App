@@ -27,6 +27,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
     val binding get() = fbinding!!
 
     val playlistVideoData = arrayListOf<VideoData>()
+    val channelDataList = ArrayList<ChannelData>() // 재생 프레그먼트를 위한 빈 배열
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -57,7 +58,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 activity.supportFragmentManager.beginTransaction()
-                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData, position,"playlist"),"playerFragment")
+                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData, channelDataList, position,"playlist"),"playerFragment")
                     .commit()
             }
 

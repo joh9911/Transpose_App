@@ -21,7 +21,7 @@ import com.google.android.exoplayer2.ui.PlayerView
 import java.lang.Math.abs
 
 
-class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: String): Fragment() {
+class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: ArrayList<ChannelData>, position: Int, mode: String): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
@@ -31,7 +31,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
     var playerModel = PlayerModel(playMusicList = videoDataList,
     currentPosition = position)
 
-    private val mediaReceiver = MediaReceiver()
+
     val position = position
     val mode = mode
 
@@ -53,22 +53,14 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
         return view
     }
 
-    inner class MediaReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY == intent.action) {
-                player?.playWhenReady = false
-            }
-        }
-    }
-
     override fun onPause() {
         super.onPause()
-        activity.unregisterReceiver(mediaReceiver)
     }
 
     override fun onResume() {
+        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
+        Log.d("리줌","왜안되지")
         super.onResume()
-        activity.registerReceiver(mediaReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
     }
 
     override fun onStop() {
@@ -138,7 +130,11 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>, position: Int, mode: S
             searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
 
                 override fun channelClick(v: View, position: Int) {
-
+                    binding.playerMotionLayout.transitionToState(R.id.start)
+                    activity.supportFragmentManager.beginTransaction()
+                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
+                        .addToBackStack(null)
+                        .commit()
                 }
                 override fun videoClick(v: View, position: Int) {
                     replaceVideo(position)

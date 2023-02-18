@@ -26,6 +26,7 @@ class SearchResultFragment(search: String): Fragment() {
     val videoDataList = ArrayList<VideoData>()
     val channelDataList = ArrayList<ChannelData>()
     var videoDataListForPlayerFragment = ArrayList<VideoData>()
+    var channelDataListForPlayerFragment = ArrayList<ChannelData>()
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -60,12 +61,12 @@ class SearchResultFragment(search: String): Fragment() {
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
             override fun videoClick(v: View, position: Int) {
-                setVideoDataListForPlayerFragment()
+                setDataListForPlayerFragment()
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
                         .replace(activity.binding.playerFragment.id,
-                            PlayerFragment(videoDataListForPlayerFragment, position, "video"),"playerFragment")
+                            PlayerFragment(videoDataListForPlayerFragment, channelDataList, position, "video"),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
@@ -75,14 +76,16 @@ class SearchResultFragment(search: String): Fragment() {
         })
 
     }
-    fun setVideoDataListForPlayerFragment(){
+    fun setDataListForPlayerFragment(){
         if (videoDataList.size > 48){
             for (index in 0 until 49){
                 videoDataListForPlayerFragment.add(videoDataList[index])
+                channelDataListForPlayerFragment.add(channelDataList[index])
             }
         }
         else{
             videoDataListForPlayerFragment = videoDataList
+            channelDataListForPlayerFragment = channelDataList
         }
     }
 

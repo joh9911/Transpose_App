@@ -21,6 +21,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
     val videoDataList = ArrayList<VideoData>()
+    val channelDataList = arrayListOf<ChannelData>()
     var pageToken = ""
 
     val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
@@ -59,7 +60,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList, position, "video"),"playerFragment")
+                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList, channelDataList, position, "video"),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
@@ -121,8 +122,10 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
     }
 
     fun videoMapping(responseData: PlayListVideoSearchData) {
-        if (videoDataList.contains(VideoData(" ", " ", " ", " ", " ", " ", false)))
+        if (videoDataList.contains(VideoData(" ", " ", " ", " ", " ", " ", false))){
             videoDataList.remove(VideoData(" ", " ", " ", " ", " ", " ", false))
+            channelDataList.removeAt(channelDataList.size-1)
+        }
         for (index in responseData.items.indices){
             val thumbnail = responseData.items[index].snippet?.thumbnails?.high?.url!!
             val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
@@ -131,8 +134,10 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
             val channelThumbnail = channelData.channelThumbnail
             val channelTitle = channelData.channelTitle
             videoDataList.add(VideoData(thumbnail, title, channelTitle, videoId, date, channelThumbnail, false))
+            channelDataList.add(channelData) // 재생 프레그먼트에 전달하기 위해 걍 인자 개수를 비디오 리스트와 맞춰줌
         }
         videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+        channelDataList.add(channelData)
         searchResultAdapter.submitList(videoDataList.toMutableList())
         binding.progressBar.visibility = View.GONE
         binding.videoRecyclerView.visibility = View.VISIBLE
