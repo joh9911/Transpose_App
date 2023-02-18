@@ -192,6 +192,7 @@ class VideoService: Service() {
     private fun initYoutubeDL(){
         try {
             YoutubeDL.getInstance().init(this)
+
         } catch (e: YoutubeDLException) {
             Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
         }
@@ -214,6 +215,7 @@ class VideoService: Service() {
             isConverting = true
             val request = YoutubeDLRequest(url)
             request.addOption("-f b", "")
+
             YoutubeDL.getInstance().getInfo(request)
         }
             .subscribeOn(Schedulers.io())
@@ -226,8 +228,9 @@ class VideoService: Service() {
                     setUpVideo(videoUrl)
                 }
             }) { e ->
-                if (BuildConfig.DEBUG) Log.e(ContentValues.TAG, "failed to get stream info", e)
+                if (BuildConfig.DEBUG) Log.d(ContentValues.TAG, "failed to get stream info", e)
                 Toast.makeText(activity, "streaming failed. failed to get stream info", Toast.LENGTH_LONG).show()
+                Log.d("오류",e.toString())
             }
         CompositeDisposable().add(disposable)
     }
