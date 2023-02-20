@@ -75,6 +75,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
 
     private fun initView(){
         val currentPlayingVideoData = playerModel.currentMusicModel()!!
+        val currentPlayingChannelData = channelDataList[position]
         binding.bottomPlayerCloseButton.setOnClickListener {
             activity.supportFragmentManager.beginTransaction().remove(this).commit()
         }
@@ -87,11 +88,10 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
                 player?.play()
                 binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
             }
-
         }
         binding.bottomTitleTextView.text = currentPlayingVideoData.title
         binding.fragmentVideoTitle.text = currentPlayingVideoData.title
-        binding.fragmentVideoDetail.text = currentPlayingVideoData.date
+        binding.fragmentVideoDetail.text = currentPlayingVideoData.date.substring(0, 10)
         binding.channelTextView.text = currentPlayingVideoData.channel
         Glide.with(binding.channelImageView)
             .load(currentPlayingVideoData.channelThumbnail)
@@ -99,6 +99,11 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         binding.fragmentTitleLinearLayout.setOnClickListener {
         }
         binding.channelLinearLayout.setOnClickListener {
+            binding.playerMotionLayout.transitionToState(R.id.start)
+            activity.supportFragmentManager.beginTransaction()
+                .replace(activity.binding.anyFrameLayout.id,ChannelFragment(currentPlayingChannelData))
+                .addToBackStack(null)
+                .commit()
         }
     }
 

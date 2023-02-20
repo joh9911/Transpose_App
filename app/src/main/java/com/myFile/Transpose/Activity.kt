@@ -590,8 +590,14 @@ class Activity: AppCompatActivity() {
                                 transposePageInvisibleEvent()
                                 false
                             } else{
-                                searchViewCollapseEvent()
-                                true
+                                if (supportFragmentManager.backStackEntryCount != 0){
+                                    searchViewCollapseEvent()
+                                    false
+                                }
+                                else{
+                                    searchViewCollapseEvent()
+                                    true
+                                }
                             }
                         }
                     }
@@ -634,6 +640,7 @@ class Activity: AppCompatActivity() {
         binding.searchRecyclerView.visibility = View.INVISIBLE
         suggestionKeywords.clear()
         searchAdapter.submitList(suggestionKeywords.toMutableList())
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
