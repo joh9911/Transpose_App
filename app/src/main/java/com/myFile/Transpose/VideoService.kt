@@ -1,10 +1,8 @@
 package com.myFile.Transpose
 
 import android.app.*
-import android.content.ContentValues
-import android.content.Context
+import android.content.*
 import android.content.Context.AUDIO_SERVICE
-import android.content.Intent
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.os.Binder
@@ -19,7 +17,9 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
+import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
@@ -39,6 +39,7 @@ class VideoService: Service() {
     lateinit var mediaSession: MediaSessionCompat
     lateinit var activity: Activity
     lateinit var currentVideoData: VideoData
+    private val mediaReceiver = MediaReceiver()
     var isConverting = false // url 변환이 진행중인지를 확인하기 위한 변수
 
     val CHANNEL_ID = "foreground_service_channel" // 임의의 채널 ID
@@ -69,6 +70,7 @@ class VideoService: Service() {
     override fun onCreate() {
         super.onCreate()
         initYoutubeDL()
+        updateYoutubeDL()
         val trackSelector = DefaultTrackSelector(this).apply {
             setParameters(buildUponParameters().setMaxVideoSizeSd())
         }
@@ -102,6 +104,13 @@ class VideoService: Service() {
         })
         setAudioFocus()
 
+    }
+    inner class MediaReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY == intent.action) {
+                exoPlayer.playWhenReady = false
+            }
+        }
     }
     private fun setAudioFocus() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -197,11 +206,18 @@ class VideoService: Service() {
             Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
         }
     }
+    private fun updateYoutubeDL(){
+        CoroutineScope(Dispatchers.IO).launch{
+            YoutubeDL.getInstance().updateYoutubeDL(this@VideoService)
+        }
+    }
 
     fun playVideo(videoData: VideoData){
         if (exoPlayer.isPlaying)
             exoPlayer.removeMediaItem(0)
         currentVideoData = videoData
+
+
         val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}".trim()
         startStream(youtubeUrl)
     }
@@ -236,9 +252,19 @@ class VideoService: Service() {
     }
 
     private fun setUpVideo(convertedUrl: String){
-        val videoSource = ProgressiveMediaSource
-            .Factory(DefaultHttpDataSource.Factory())
-            .createMediaSource(MediaItem.fromUri(convertedUrl))
+        Log.d("유알엘","$convertedUrl")
+        var videoSource: MediaSource
+        if (convertedUrl.contains("m3u8")){
+            videoSource = HlsMediaSource
+                .Factory(DefaultHttpDataSource.Factory())
+                .createMediaSource(MediaItem.fromUri(convertedUrl))
+        }
+        else{
+            videoSource = ProgressiveMediaSource
+                .Factory(DefaultHttpDataSource.Factory())
+                .createMediaSource(MediaItem.fromUri(convertedUrl))
+        }
+
         exoPlayer?.setMediaSource(videoSource)
         exoPlayer?.prepare()
         exoPlayer.playWhenReady = true
@@ -405,6 +431,14 @@ class VideoService: Service() {
     }
 
     inner class MediaSessionCallback(): MediaSessionCompat.Callback(){
+        override fun onPlay() {
+            registerReceiver(mediaReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
+        }
+
+        override fun onStop() {
+            unregisterReceiver(mediaReceiver)
+        }
+
         override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
             return super.onMediaButtonEvent(mediaButtonEvent)
         }
@@ -430,9 +464,7 @@ class VideoService: Service() {
             super.onPause()
         }
 
-        override fun onStop() {
-            super.onStop()
-        }
+
     }
 
 }
