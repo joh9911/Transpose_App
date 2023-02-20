@@ -136,7 +136,7 @@ class SearchResultFragment(search: String): Fragment() {
         if (videoDataList.contains(VideoData(" ", " ", " ", " ", " ", " ", false)))
             videoDataList.remove(VideoData(" ", " ", " ", " ", " ", " ", false))
         val thumbnail = searchResponseData.items[index].snippet?.thumbnails?.high?.url!!
-        val date = searchResponseData.items[index].snippet?.publishedAt!!
+        val date = searchResponseData.items[index].snippet?.publishedAt!!.substring(0, 10)
         val title = stringToHtmlSign(searchResponseData.items[index].snippet?.title!!)
         val videoId = searchResponseData.items[index].id?.videoId!!
         val channelThumbnail = channelResponseData.items[0].snippet?.thumbnails?.default?.url!!

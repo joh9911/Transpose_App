@@ -91,7 +91,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         }
         binding.bottomTitleTextView.text = currentPlayingVideoData.title
         binding.fragmentVideoTitle.text = currentPlayingVideoData.title
-        binding.fragmentVideoDetail.text = currentPlayingVideoData.date.substring(0, 10)
+        binding.fragmentVideoDetail.text = currentPlayingVideoData.date
         binding.channelTextView.text = currentPlayingVideoData.channel
         Glide.with(binding.channelImageView)
             .load(currentPlayingVideoData.channelThumbnail)
