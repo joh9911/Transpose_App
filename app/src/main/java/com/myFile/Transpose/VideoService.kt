@@ -213,10 +213,10 @@ class VideoService: Service() {
     }
 
     fun playVideo(videoData: VideoData){
-        if (exoPlayer.isPlaying)
+        if (exoPlayer.currentMediaItem != null)
             exoPlayer.removeMediaItem(0)
-        currentVideoData = videoData
 
+        currentVideoData = videoData
 
         val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}".trim()
         startStream(youtubeUrl)
