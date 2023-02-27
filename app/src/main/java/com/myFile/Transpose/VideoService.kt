@@ -39,6 +39,7 @@ class VideoService: Service() {
     lateinit var mediaSession: MediaSessionCompat
     lateinit var activity: Activity
     lateinit var currentVideoData: VideoData
+    lateinit var playerFragment: PlayerFragment
     private val mediaReceiver = MediaReceiver()
     var isConverting = false // url 변환이 진행중인지를 확인하기 위한 변수
 
@@ -83,14 +84,12 @@ class VideoService: Service() {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                 when (playbackState){
                     Player.STATE_READY -> {
-                        val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
                         playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
                     Player.STATE_ENDED -> {
                         if (exoPlayer.mediaItemCount == 0) // play중이면 mediaItem을 제거하는데, 제거할 때 state_ended가 실행됨
                             return
-                        val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
                         playerFragment.playNextVideo()
                         startForegroundService()
                     }
@@ -197,6 +196,9 @@ class VideoService: Service() {
     fun initActivity(param: Activity) {
         activity = param
     }
+    fun initPlayerFragment(param: PlayerFragment){
+        playerFragment = param
+    }
 
     private fun initYoutubeDL(){
         try {
@@ -217,7 +219,7 @@ class VideoService: Service() {
             exoPlayer.removeMediaItem(0)
 
         currentVideoData = videoData
-
+        playerFragment.playerViewInvisibleEvent()
         val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}".trim()
         startStream(youtubeUrl)
     }
@@ -247,11 +249,13 @@ class VideoService: Service() {
                 if (BuildConfig.DEBUG) Log.d(ContentValues.TAG, "failed to get stream info", e)
                 Toast.makeText(activity, "streaming failed. failed to get stream info", Toast.LENGTH_LONG).show()
                 Log.d("오류",e.toString())
+                playerFragment.playerViewInvisibleEvent()
             }
         CompositeDisposable().add(disposable)
     }
 
     private fun setUpVideo(convertedUrl: String){
+        playerFragment.playerViewVisibleEvent()
         Log.d("유알엘","$convertedUrl")
         var videoSource: MediaSource
         if (convertedUrl.contains("m3u8")){

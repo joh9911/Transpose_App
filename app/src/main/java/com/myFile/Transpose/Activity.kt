@@ -511,7 +511,7 @@ class Activity: AppCompatActivity() {
 
     private fun popularTop100MusicDataMapping(responseData: PlayListVideoSearchData){
         for (index in responseData.items.indices){
-            val thumbnail = responseData.items[index].snippet?.thumbnails?.default?.url!!
+            val thumbnail = responseData.items[index].snippet?.thumbnails?.high?.url!!
             val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
             val channelTitle = responseData.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!
             val title = stringToHtmlSign(responseData.items[index].snippet?.title!!)

@@ -1,10 +1,6 @@
 package com.myFile.Transpose
 
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.media.AudioManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -45,6 +41,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
     ): View? {
         fbinding = FragmentPlayerBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
+        activity.videoService!!.initPlayerFragment(this)
         val view = binding.root
         initView()
         initMotionLayout()
@@ -75,7 +72,6 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
 
     private fun initView(){
         val currentPlayingVideoData = playerModel.currentMusicModel()!!
-        val currentPlayingChannelData = channelDataList[position]
         binding.bottomPlayerCloseButton.setOnClickListener {
             activity.supportFragmentManager.beginTransaction().remove(this).commit()
         }
@@ -93,17 +89,20 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         binding.fragmentVideoTitle.text = currentPlayingVideoData.title
         binding.fragmentVideoDetail.text = currentPlayingVideoData.date
         binding.channelTextView.text = currentPlayingVideoData.channel
+
+        Glide.with(binding.playerThumbnailView)
+            .load(currentPlayingVideoData.thumbnail)
+            .placeholder(R.drawable.black_background)
+            .into(binding.playerThumbnailView)
+
         Glide.with(binding.channelImageView)
             .load(currentPlayingVideoData.channelThumbnail)
             .into(binding.channelImageView)
+
         binding.fragmentTitleLinearLayout.setOnClickListener {
         }
         binding.channelLinearLayout.setOnClickListener {
-            binding.playerMotionLayout.transitionToState(R.id.start)
-            activity.supportFragmentManager.beginTransaction()
-                .replace(activity.binding.anyFrameLayout.id,ChannelFragment(currentPlayingChannelData))
-                .addToBackStack(null)
-                .commit()
+
         }
     }
 
@@ -112,6 +111,18 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
             binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
         else
             binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+    }
+
+    fun playerViewInvisibleEvent(){
+        binding.playerView.visibility = View.INVISIBLE
+        binding.bufferingProgressBar.visibility = View.VISIBLE
+        binding.playerThumbnailView.visibility = View.VISIBLE
+    }
+
+    fun playerViewVisibleEvent(){
+        binding.playerView.visibility = View.VISIBLE
+        binding.bufferingProgressBar.visibility = View.GONE
+        binding.playerThumbnailView.visibility = View.GONE
     }
 
     private fun initRecyclerView(){
@@ -201,6 +212,13 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         binding.fragmentVideoTitle.text = currentVideoData.title
         binding.fragmentVideoDetail.text = currentVideoData.date
         binding.channelTextView.text = currentVideoData.channel
+
+        Glide.with(binding.playerThumbnailView)
+            .load(currentVideoData.thumbnail)
+            .centerCrop()
+            .placeholder(R.drawable.black_background)
+            .into(binding.playerThumbnailView)
+
         Glide.with(binding.channelImageView)
             .load(currentVideoData.channelThumbnail)
             .into(binding.channelImageView)

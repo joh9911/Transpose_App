@@ -26,6 +26,7 @@
                 motion:curveFit="linear"
                 motion:percentWidth="1"
                 motion:percentX="1" />
+
         </KeyFrameSet>
         <OnSwipe
             motion:touchAnchorId="@+id/mainContainerLayout"
@@ -61,10 +62,30 @@
             android:id="@+id/playerView"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            motion:visibilityMode="ignore"
             motion:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintDimensionRatio="H, 1:2.3"
             motion:layout_constraintStart_toStartOf="@id/mainContainerLayout"
             motion:layout_constraintTop_toTopOf="@id/mainContainerLayout" />
+        <Constraint
+            android:id="@+id/playerThumbnailView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
+            motion:layout_constraintDimensionRatio="H, 1:2.3"
+            motion:layout_constraintStart_toStartOf="@id/mainContainerLayout"
+            motion:layout_constraintTop_toTopOf="@id/mainContainerLayout" />
+
+        <Constraint
+            android:id="@+id/bufferingProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintBottom_toBottomOf="@+id/playerView"
+            motion:layout_constraintStart_toStartOf="@+id/playerView"
+            motion:layout_constraintEnd_toEndOf="@+id/playerView"
+            motion:layout_constraintTop_toTopOf="@+id/playerView" />
 
     </ConstraintSet>
 
@@ -74,10 +95,31 @@
             android:id="@+id/playerView"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            motion:visibilityMode="ignore"
             motion:layout_constraintEnd_toEndOf="@id/mainContainerLayout"
             motion:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintTop_toTopOf="@id/mainContainerLayout"
             motion:layout_constraintStart_toStartOf="@id/mainContainerLayout" />
+        <Constraint
+            android:id="@+id/playerThumbnailView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintEnd_toEndOf="@id/mainContainerLayout"
+            motion:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
+            motion:layout_constraintTop_toTopOf="@id/mainContainerLayout"
+            motion:layout_constraintStart_toStartOf="@id/mainContainerLayout" />
+
+        <Constraint
+            android:id="@+id/bufferingProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintEnd_toEndOf="@id/mainContainerLayout"
+            motion:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
+            motion:layout_constraintTop_toTopOf="@id/mainContainerLayout"
+            motion:layout_constraintStart_toStartOf="@id/mainContainerLayout" />
+
         <Constraint
             android:id="@+id/mainContainerLayout"
             motion:layout_constraintEnd_toEndOf="parent"
