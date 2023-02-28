@@ -19,6 +19,7 @@ class HomePopular100RecyclerViewAdapter: ListAdapter<VideoData,HomePopular100Rec
             binding.rankingTextView.text = (position + 1).toString()
             Glide.with(binding.thumbnailImageView)
                 .load(videoData.thumbnail)
+                .centerCrop()
                 .into(binding.thumbnailImageView)
         }
     }
