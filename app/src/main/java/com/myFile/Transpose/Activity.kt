@@ -13,6 +13,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SearchView.SearchAutoComplete
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +23,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.*
+import java.lang.Exception
 
 
 class Activity: AppCompatActivity() {
@@ -46,7 +48,9 @@ class Activity: AppCompatActivity() {
     private lateinit var bestAtmospherePlaylistAdapter: HomePlaylistRecyclerViewAdapter
     private lateinit var bestSituationPlaylistAdapter: HomePlaylistRecyclerViewAdapter
 
-    private val connection = object: ServiceConnection{
+    private lateinit var connection: NetworkConnection
+
+    private val bindConnection = object: ServiceConnection{
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             val b = p1 as VideoService.VideoServiceBinder
             videoService = b.getService()
@@ -60,7 +64,7 @@ class Activity: AppCompatActivity() {
         }
 
     }
-
+    private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
     val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
     val suggestionKeywords = ArrayList<String>()
     val popularTop100Playlist = ArrayList<VideoData>()
@@ -112,11 +116,35 @@ class Activity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        bindService(Intent(this, VideoService::class.java), connection, BIND_AUTO_CREATE)
         initRecyclerView()
         initView()
         initToolbar()
+        initExceptionHandler()
+        connection = NetworkConnection(this)
+        bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
         getAllData()
+        connection.observe(this, Observer { isConnected ->
+            if (isConnected)
+            {
+                if (binding.popularTop100PlaylistVideoProgressBar.visibility == View.VISIBLE){
+                    getAllData()
+                    bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
+                }
+
+            } else
+            {
+                Log.d("네트워크 연결 안됨","ㅁㄴㅇㄹ")
+            }
+        })
+
+    }
+    private fun initExceptionHandler(){
+        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+            Log.d("코루틴 에러","$throwable")
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(this@Activity,resources.getString(R.string.network_error_message),Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun initView() {
@@ -423,13 +451,16 @@ class Activity: AppCompatActivity() {
     }
 
     private fun getAllData(){
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+
             async { getPopularTop100MusicData(null) }
             async { getPlaylistData(thisYearMusicId) }
             async { getPlaylistData(todayHotMusicId) }
             async { getPlaylistData(latestMusicId) }
             async { getPlaylistData(bestAtmosphereMusicId) }
             async { getPlaylistData(bestSituationMusicId) }
+
+
         }
     }
 
@@ -689,7 +720,7 @@ class Activity: AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d("액티비티의","onDestroy")
-        unbindService(connection)
+        unbindService(bindConnection)
         val intent = Intent(this, VideoService::class.java)
         stopService(intent)
     }
