@@ -32,6 +32,7 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
+import java.lang.Exception
 
 class VideoService: Service() {
     lateinit var exoPlayer: ExoPlayer
@@ -41,6 +42,8 @@ class VideoService: Service() {
     lateinit var currentVideoData: VideoData
     lateinit var playerFragment: PlayerFragment
     private val mediaReceiver = MediaReceiver()
+    private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+        Log.d("코루틴 에러","$throwable")}
     var isConverting = false // url 변환이 진행중인지를 확인하기 위한 변수
 
     val CHANNEL_ID = "foreground_service_channel" // 임의의 채널 ID
@@ -209,7 +212,7 @@ class VideoService: Service() {
         }
     }
     private fun updateYoutubeDL(){
-        CoroutineScope(Dispatchers.IO).launch{
+        CoroutineScope(Dispatchers.IO+coroutineExceptionHandler).launch{
             YoutubeDL.getInstance().updateYoutubeDL(this@VideoService)
         }
     }
