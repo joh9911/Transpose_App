@@ -1,13 +1,17 @@
 package com.myFile.Transpose
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.FragmentChannelBinding
@@ -23,6 +27,8 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
     val videoDataList = ArrayList<VideoData>()
     val channelDataList = arrayListOf<ChannelData>()
     var pageToken = ""
+    private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
+
 
     val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
     lateinit var playlistId: String
@@ -34,11 +40,20 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
         fbinding = FragmentChannelBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        initExceptionHandler()
         initPlaylistId()
         initRecyclerView()
         initView()
         getData()
         return view
+    }
+    private fun initExceptionHandler(){
+        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+            Log.d("코루틴 에러","$throwable")
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun initRecyclerView(){
@@ -100,7 +115,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
 
     }
     private fun getData(){
-        val job = CoroutineScope(Dispatchers.IO).launch {
+        val job = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
             getVideoData()
         }
     }

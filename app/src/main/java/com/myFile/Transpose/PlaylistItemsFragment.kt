@@ -6,15 +6,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.FragmentPlaylistBinding
 import com.myFile.Transpose.databinding.MainBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 
 class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
     private val playListData = playListData
@@ -25,6 +23,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
     lateinit var mainBinding: MainBinding
     var fbinding: FragmentPlaylistBinding? = null
     val binding get() = fbinding!!
+    lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
 
     val playlistVideoData = arrayListOf<VideoData>()
     val channelDataList = ArrayList<ChannelData>() // 재생 프레그먼트를 위한 빈 배열
@@ -37,9 +36,18 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         fbinding = FragmentPlaylistBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        initExceptionHandler()
         initView()
         getData()
         return view
+    }
+    private fun initExceptionHandler(){
+        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+            Log.d("코루틴 에러","$throwable")
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onAttach(context: Context) {
@@ -67,7 +75,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
     }
 
     fun getData(){
-        val job = CoroutineScope(Dispatchers.IO).launch {
+        val job = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
             getPlaylistItemsData(null)
         }
     }

@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,11 +23,11 @@ class SearchResultFragment(search: String): Fragment() {
 
     var nextPageToken = ""
     val search = search
-    val API_KEY = "AIzaSyBZlnQ_kRZ7mvs0wL31ezbBeEPYAoIM3EM"
     val videoDataList = ArrayList<VideoData>()
     val channelDataList = ArrayList<ChannelData>()
     var videoDataListForPlayerFragment = ArrayList<VideoData>()
     var channelDataListForPlayerFragment = ArrayList<ChannelData>()
+    lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -35,11 +36,17 @@ class SearchResultFragment(search: String): Fragment() {
         fbinding = FragmentSearchResultBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
-        Log.d("searchResultFragment","onccreateview")
         initRecyclerView()
         getData(null)
-//        getResultData()
         return view
+    }
+    private fun initExceptionHandler(){
+        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+            Log.d("코루틴 에러","$throwable")
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun initRecyclerView(){
@@ -90,7 +97,7 @@ class SearchResultFragment(search: String): Fragment() {
     }
 
     private fun getData(pageToken: String?) {
-        val job = CoroutineScope(Dispatchers.IO).launch {
+        val job = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
             getSearchVideoData(pageToken)
             withContext(Dispatchers.Main){
             }
