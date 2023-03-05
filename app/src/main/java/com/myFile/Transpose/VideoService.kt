@@ -41,6 +41,8 @@ class VideoService: Service() {
     lateinit var activity: Activity
     lateinit var currentVideoData: VideoData
     lateinit var playerFragment: PlayerFragment
+    private lateinit var audioManager: AudioManager
+    private lateinit var afChangeListener: AudioManager.OnAudioFocusChangeListener
     private val mediaReceiver = MediaReceiver()
     private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
         Log.d("코루틴 에러","$throwable")}
@@ -63,18 +65,21 @@ class VideoService: Service() {
     override fun onDestroy() {
         super.onDestroy()
         stopForegroundService()
+        unregisterReceiver(mediaReceiver)
         exoPlayer.release()
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        return super.onUnbind(intent)
         stopForegroundService()
+        return super.onUnbind(intent)
     }
 
     override fun onCreate() {
         super.onCreate()
         initYoutubeDL()
         updateYoutubeDL()
+        setAudioFocus()
+        registerReceiver(mediaReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
         val trackSelector = DefaultTrackSelector(this).apply {
             setParameters(buildUponParameters().setMaxVideoSizeSd())
         }
@@ -87,6 +92,10 @@ class VideoService: Service() {
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                 when (playbackState){
                     Player.STATE_READY -> {
+                        if (exoPlayer.isPlaying)
+                            requestAudioFocus()
+                        if (!exoPlayer.isPlaying)
+                            audioManager.abandonAudioFocus(afChangeListener)
                         playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
@@ -104,7 +113,6 @@ class VideoService: Service() {
                 }
             }
         })
-        setAudioFocus()
 
     }
     inner class MediaReceiver : BroadcastReceiver() {
@@ -114,9 +122,19 @@ class VideoService: Service() {
             }
         }
     }
+    private fun requestAudioFocus(){
+        val result: Int = audioManager.requestAudioFocus(
+            afChangeListener,
+            // Use the music stream.
+            AudioManager.STREAM_MUSIC,
+            // Request permanent focus.
+            AudioManager.AUDIOFOCUS_GAIN
+        )
+        exoPlayer.playWhenReady = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+    }
     private fun setAudioFocus() {
-        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val afChangeListener: AudioManager.OnAudioFocusChangeListener =
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        afChangeListener =
             AudioManager.OnAudioFocusChangeListener {
                 when (it) {
                     AudioManager.AUDIOFOCUS_LOSS -> {
@@ -131,12 +149,6 @@ class VideoService: Service() {
                     }
                 }
             }
-        val result: Int = audioManager.requestAudioFocus(
-            afChangeListener,
-            AudioManager.STREAM_MUSIC,
-            AudioManager.AUDIOFOCUS_GAIN
-        )
-        exoPlayer.playWhenReady = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
     }
 
     inner class VideoServiceBinder: Binder(){
@@ -272,8 +284,10 @@ class VideoService: Service() {
                 .createMediaSource(MediaItem.fromUri(convertedUrl))
         }
 
-        exoPlayer?.setMediaSource(videoSource)
-        exoPlayer?.prepare()
+        exoPlayer.setMediaSource(videoSource)
+        exoPlayer.prepare()
+        requestAudioFocus()
+
         exoPlayer.playWhenReady = true
         setTempo(activity.tempoSeekBar.progress)
         setPitch(activity.pitchSeekBar.progress)
@@ -421,7 +435,6 @@ class VideoService: Service() {
                 .setSilent(true)
                 .build()
         }
-        // 알림
 
         // Oreo 부터는 Notification Channel을 만들어야 함
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -439,11 +452,10 @@ class VideoService: Service() {
 
     inner class MediaSessionCallback(): MediaSessionCompat.Callback(){
         override fun onPlay() {
-            registerReceiver(mediaReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
+            Log.d("콜백 ","눌렀음")
         }
 
         override fun onStop() {
-            unregisterReceiver(mediaReceiver)
         }
 
         override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
