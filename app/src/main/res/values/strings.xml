@@ -12,4 +12,6 @@
     <string name="home_icon">Home</string>
     <string name="convert_icon">Convert</string>
     <string name="library_icon">Library</string>
+    <string name="network_error_message">Please check the Internet connection</string>
+    <string name="add_playlist_text">New playlist</string>
 </resources>

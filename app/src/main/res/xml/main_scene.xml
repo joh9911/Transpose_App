@@ -26,6 +26,11 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
+        <Constraint android:id="@+id/basic_frame_layout">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore" />
+        </Constraint>
         <Constraint android:id="@+id/bottom_navigation_view"
             motion:layout_constraintEnd_toEndOf="parent"
             android:layout_width="0dp"
@@ -52,6 +57,11 @@
                 app:visibilityMode="ignore" />
         </Constraint>
         <Constraint android:id="@+id/search_recycler_view">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore" />
+        </Constraint>
+        <Constraint android:id="@+id/basic_frame_layout">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
