@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.ImageView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,13 +24,12 @@ class MyPlaylistFragment: Fragment() {
     val binding get() = fbinding!!
     lateinit var activity: Activity
 
-    lateinit var toolbar: androidx.appcompat.widget.Toolbar
+    lateinit var playlistToolBar: androidx.appcompat.widget.Toolbar
     val suggestionKeywords = ArrayList<String>()
 
     private lateinit var searchAdapter: SearchSuggestionKeywordRecyclerViewAdapter
     lateinit var searchView: SearchView
-    val channelDataList = arrayListOf<ChannelData>() // 재생 프레그먼트에 넣기 위한 그냥 빈 리스트
-
+    private lateinit var callback: OnBackPressedCallback
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -83,8 +83,8 @@ class MyPlaylistFragment: Fragment() {
 
 
     fun initToolbar(){
-        toolbar = binding.toolBar
-        activity.setSupportActionBar(toolbar)
+        playlistToolBar = binding.playlistToolBar
+        activity.setSupportActionBar(playlistToolBar)
         activity.supportActionBar?.setDisplayShowTitleEnabled(false)
     }
 
@@ -121,19 +121,15 @@ class MyPlaylistFragment: Fragment() {
                     return true
                 }
                 override fun onMenuItemActionCollapse(p0: MenuItem): Boolean {
+                    Log.d("뒤로가기","서치뷰")
                     if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
                         return if (activity.transposePage.visibility == View.VISIBLE) {
+                            Log.d("1","1")
                             activity.transposePageInvisibleEvent()
                             false
                         } else{
-                            if (activity.supportFragmentManager.backStackEntryCount != 0){
-                                searchViewCollapseEvent()
-                                false
-                            }
-                            else{
-                                searchViewCollapseEvent()
-                                true
-                            }
+                            searchViewCollapseEvent()
+                            true
                         }
                     } else {
                         val playerFragment =
@@ -143,17 +139,12 @@ class MyPlaylistFragment: Fragment() {
                             false
                         } else {
                             if (activity.transposePage.visibility == View.VISIBLE) {
+                                Log.d("1","2")
                                 activity.transposePageInvisibleEvent()
                                 false
                             } else{
-                                if (activity.supportFragmentManager.backStackEntryCount != 0){
-                                    searchViewCollapseEvent()
-                                    false
-                                }
-                                else{
-                                    searchViewCollapseEvent()
-                                    true
-                                }
+                                searchViewCollapseEvent()
+                                true
                             }
                         }
                     }
@@ -161,7 +152,7 @@ class MyPlaylistFragment: Fragment() {
             })
             this.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
                 override fun onQueryTextSubmit(query: String?): Boolean {
-                    Log.d("난 분명","쳤다")
+                    Log.d("난 분명","쳤다123131")
                     searchView.clearFocus()
                     childFragmentManager.beginTransaction()
                         .replace(binding.resultFrameLayout.id,SearchResultFragment(query!!))
@@ -173,7 +164,6 @@ class MyPlaylistFragment: Fragment() {
                 //SwipeRefreshLayout 새로고침
                 override fun onQueryTextChange(newText: String?): Boolean {
                     if (newText != ""){
-                        Log.d("연관검색어 결과를","자겨옴")
                         getSuggestionKeyword(newText!!)
                     }
                     if (newText == ""){
@@ -250,8 +240,37 @@ class MyPlaylistFragment: Fragment() {
         searchAdapter.submitList(suggestionKeywords.toMutableList())
 
     }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (hidden){
+            callback.remove()
+        }
+        else{
+            if (childFragmentManager.backStackEntryCount != 0)
+                activity.onBackPressedDispatcher.addCallback(this, callback)
+        }
+    }
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
+        callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                Log.d("myPlaylistFragment","backPress")
+                if (playlistToolBar.menu.findItem(R.id.youtube_search_icon).isActionViewExpanded)
+                    playlistToolBar.collapseActionView()
+                else
+                    childFragmentManager.popBackStack()
+
+            }
+        }
+        childFragmentManager.addOnBackStackChangedListener {
+            if (childFragmentManager.backStackEntryCount == 0) {
+                Log.d("콜백 ", "해제")
+                callback.remove()
+            }
+            else
+                activity.onBackPressedDispatcher.addCallback(this, callback)
+        }
     }
 }
