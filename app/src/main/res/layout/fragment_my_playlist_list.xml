@@ -5,14 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/tool_bar"
+        android:id="@+id/playlist_tool_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/blue_background"
         app:collapseIcon="@drawable/ic_baseline_arrow_back_24"
         app:layout_constraintTop_toTopOf="parent"
         android:fitsSystemWindows="true"
-        app:menu="@menu/toolbar_item">
+        app:menu="@menu/my_playlist_fragment_tool_bar">
         <ImageView
             android:layout_width="50dp"
             android:layout_height="50dp"
@@ -32,7 +32,7 @@
         android:id="@+id/my_playlist_list_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar"
+        app:layout_constraintTop_toBottomOf="@id/playlist_tool_bar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -69,22 +69,23 @@
 
 
     </androidx.core.widget.NestedScrollView>
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/search_recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:background="@color/white"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:visibility="invisible"/>
+
 
     <FrameLayout
         android:id="@+id/result_frame_layout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/tool_bar"
+        app:layout_constraintTop_toBottomOf="@id/playlist_tool_bar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/search_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/white"
+        app:layout_constraintTop_toBottomOf="@id/playlist_tool_bar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:visibility="invisible"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

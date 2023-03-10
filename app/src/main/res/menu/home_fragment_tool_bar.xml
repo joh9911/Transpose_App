@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     >
     <item
-        android:id="@+id/youtube_search_icon"
+        android:id="@+id/home_fragment_youtube_search_icon"
         android:title="search"
         android:icon="@drawable/ic_baseline_search_24"
         app:showAsAction="always|collapseActionView"
@@ -12,7 +12,7 @@
         />
 
     <item
-        android:id="@+id/transpose_icon"
+        android:id="@+id/home_fragment_transpose_icon"
         android:title="transpose"
         android:icon="@drawable/ic_baseline_menu_24"
         app:showAsAction="always|collapseActionView"/>
