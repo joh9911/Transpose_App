@@ -8,9 +8,9 @@ import android.view.*
 import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.MenuItemCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.myFile.Transpose.databinding.FragmentChannelBinding
 import com.myFile.Transpose.databinding.FragmentMyPlaylistListBinding
 import com.myFile.Transpose.databinding.MainBinding
 import okhttp3.ResponseBody
@@ -28,7 +28,7 @@ class MyPlaylistFragment: Fragment() {
     val suggestionKeywords = ArrayList<String>()
 
     private lateinit var searchAdapter: SearchSuggestionKeywordRecyclerViewAdapter
-    lateinit var searchView: SearchView
+    lateinit var playlistSearchView: SearchView
     private lateinit var callback: OnBackPressedCallback
 
     override fun onCreateView(
@@ -38,7 +38,7 @@ class MyPlaylistFragment: Fragment() {
     ): View? {
         fbinding = FragmentMyPlaylistListBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
-        setHasOptionsMenu(true)
+//        setHasOptionsMenu(true)
         val view = binding.root
         initRecyclerView()
         initToolbar()
@@ -53,8 +53,8 @@ class MyPlaylistFragment: Fragment() {
                 val searchWord = suggestionKeywords[position]
                 suggestionKeywords.clear()
                 searchAdapter.submitList(suggestionKeywords.toMutableList())
-                searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
-                searchView.clearFocus()
+                playlistSearchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
+                playlistSearchView.clearFocus()
                 activity.supportFragmentManager.beginTransaction()
                     .replace(binding.resultFrameLayout.id,SearchResultFragment(searchWord))
                     .addToBackStack(null)
@@ -68,10 +68,11 @@ class MyPlaylistFragment: Fragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId){
-            R.id.transpose_icon -> {
+            R.id.my_playlist_transpose_icon -> {
+                Log.d("버튼","${playlistToolBar.menu.findItem(R.id.my_playlist_youtube_search_icon).isActionViewExpanded}")
                 true
             }
-            R.id.youtube_search_icon -> {
+            R.id.my_playlist_youtube_search_icon -> {
                 Log.d("서치 버튼이1","눌림")
 //                binding.searchRecyclerView.visibility = View.VISIBLE
                 true
@@ -84,98 +85,93 @@ class MyPlaylistFragment: Fragment() {
 
     fun initToolbar(){
         playlistToolBar = binding.playlistToolBar
-        activity.setSupportActionBar(playlistToolBar)
-        activity.supportActionBar?.setDisplayShowTitleEnabled(false)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu,inflater)
-        inflater.inflate(R.menu.toolbar_item, menu)
-        val searchManager = activity.getSystemService(Context.SEARCH_SERVICE) as SearchManager
-        (menu.findItem(R.id.youtube_search_icon).actionView as SearchView).apply {
-            setSearchableInfo(searchManager.getSearchableInfo(activity.componentName))
-            searchView = this
-            val searchAutoComplete = searchView.findViewById<SearchView.SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
-            val searchViewCloseButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
-            val searchViewBackButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
-            searchAutoComplete.setTextColor(resources.getColor(R.color.white))
-            searchAutoComplete.setHintTextColor(resources.getColor(R.color.white))
-            searchAutoComplete.hint = resources.getString(R.string.searchView_hint)
-            searchViewCloseButton.setColorFilter(resources.getColor(R.color.white))
-            searchViewBackButton.setColorFilter(resources.getColor(R.color.white))
-            searchView.setOnQueryTextFocusChangeListener { p0, p1 -> // 서치뷰 검색창을 클릭할 때 이벤트
-                if (p1){
-                    Log.d("눌림","ㄴㅇㄹ")
-                    binding.searchRecyclerView.visibility = View.VISIBLE
-                }
+        val menu = playlistToolBar.menu
+        val searchViewItem = menu.findItem(R.id.my_playlist_youtube_search_icon)
+        playlistSearchView = searchViewItem.actionView as SearchView
+        playlistSearchView.setIconifiedByDefault(true)
+        val searchAutoComplete = playlistSearchView.findViewById<SearchView.SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
+        val searchViewCloseButton = playlistSearchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
+        val searchViewBackButton = playlistSearchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
+        searchAutoComplete.setTextColor(resources.getColor(R.color.white))
+        searchAutoComplete.setHintTextColor(resources.getColor(R.color.white))
+        searchAutoComplete.hint = resources.getString(R.string.searchView_hint)
+        searchViewCloseButton.setColorFilter(resources.getColor(R.color.white))
+        searchViewBackButton.setColorFilter(resources.getColor(R.color.white))
+        playlistSearchView.setOnQueryTextFocusChangeListener { p0, p1 -> // 서치뷰 검색창을 클릭할 때 이벤트
+            if (p1){
+                Log.d("눌림","ㄴㅇㄹ")
+                binding.searchRecyclerView.visibility = View.VISIBLE
             }
-            menu.findItem(R.id.youtube_search_icon).setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
-                override fun onMenuItemActionExpand(p0: MenuItem): Boolean {
-                    if (activity.transposePage.visibility == View.VISIBLE){
-                        activity.transposePage.visibility = View.INVISIBLE
-                        activity.binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked =
-                            true
-                    }
-                    Log.d("호갖","장")
-                    activity.binding.bottomNavigationView.visibility = View.GONE
-                    return true
+        }
+        searchViewItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
+            override fun onMenuItemActionExpand(p0: MenuItem): Boolean {
+                if (activity.transposePage.visibility == View.VISIBLE){
+                    activity.transposePage.visibility = View.INVISIBLE
+                    activity.binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked =
+                        true
                 }
-                override fun onMenuItemActionCollapse(p0: MenuItem): Boolean {
-                    Log.d("뒤로가기","서치뷰")
-                    if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
-                        return if (activity.transposePage.visibility == View.VISIBLE) {
-                            Log.d("1","1")
+                Log.d("호갖","장")
+                activity.binding.bottomNavigationView.visibility = View.GONE
+                return true
+            }
+            override fun onMenuItemActionCollapse(p0: MenuItem): Boolean {
+                Log.d("playlist","서치뷰닫힘")
+                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
+                    return if (activity.transposePage.visibility == View.VISIBLE) {
+                        Log.d("1","1")
+                        activity.transposePageInvisibleEvent()
+                        false
+                    } else{
+                        searchViewCollapseEvent()
+                        true
+                    }
+                } else {
+                    val playerFragment =
+                        activity.supportFragmentManager.findFragmentById(activity.binding.playerFragment.id) as PlayerFragment
+                    return if (playerFragment.binding.playerMotionLayout.currentState == R.id.end) {
+                        playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+                        false
+                    } else {
+                        if (activity.transposePage.visibility == View.VISIBLE) {
+                            Log.d("1","2")
                             activity.transposePageInvisibleEvent()
                             false
                         } else{
                             searchViewCollapseEvent()
                             true
                         }
-                    } else {
-                        val playerFragment =
-                            activity.supportFragmentManager.findFragmentById(activity.binding.playerFragment.id) as PlayerFragment
-                        return if (playerFragment.binding.playerMotionLayout.currentState == R.id.end) {
-                            playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
-                            false
-                        } else {
-                            if (activity.transposePage.visibility == View.VISIBLE) {
-                                Log.d("1","2")
-                                activity.transposePageInvisibleEvent()
-                                false
-                            } else{
-                                searchViewCollapseEvent()
-                                true
-                            }
-                        }
                     }
                 }
-            })
-            this.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
-                override fun onQueryTextSubmit(query: String?): Boolean {
-                    Log.d("난 분명","쳤다123131")
-                    searchView.clearFocus()
-                    childFragmentManager.beginTransaction()
-                        .replace(binding.resultFrameLayout.id,SearchResultFragment(query!!))
-                        .addToBackStack(null)
-                        .commit()
-                    binding.searchRecyclerView.visibility = View.INVISIBLE
-                    return false
+            }
+        })
+        playlistSearchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                Log.d("playlist","쿼리를 보냈어요")
+                Log.d("playlist","${playlistSearchView.query}")
+                playlistSearchView.clearFocus()
+                childFragmentManager.beginTransaction()
+                    .replace(binding.resultFrameLayout.id,SearchResultFragment(query!!))
+                    .addToBackStack(null)
+                    .commit()
+                binding.searchRecyclerView.visibility = View.INVISIBLE
+                return false
+            }
+            //SwipeRefreshLayout 새로고침
+            override fun onQueryTextChange(newText: String?): Boolean {
+                if (newText != ""){
+                    getSuggestionKeyword(newText!!)
                 }
-                //SwipeRefreshLayout 새로고침
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    if (newText != ""){
-                        getSuggestionKeyword(newText!!)
-                    }
-                    if (newText == ""){
-                        Log.d("빈","칸")
-                        suggestionKeywords.clear()
-                        searchAdapter.submitList(suggestionKeywords.toMutableList())
-                    }
-                    return false
+                if (newText == ""){
+                    Log.d("빈","칸")
+                    suggestionKeywords.clear()
+                    searchAdapter.submitList(suggestionKeywords.toMutableList())
                 }
-            })
-        }
+                return false
+            }
+        })
     }
+
+
     private fun getSuggestionKeyword(newText: String){
         val retrofit = RetrofitSuggestionKeyword.initRetrofit()
         retrofit.create(RetrofitService::class.java).getSuggestionKeyword("firefox","yt",newText)
@@ -244,6 +240,7 @@ class MyPlaylistFragment: Fragment() {
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (hidden){
+//            Log.d("playlist","hidden ${playlistSearchView.query}")
             callback.remove()
         }
         else{
@@ -257,7 +254,7 @@ class MyPlaylistFragment: Fragment() {
         callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 Log.d("myPlaylistFragment","backPress")
-                if (playlistToolBar.menu.findItem(R.id.youtube_search_icon).isActionViewExpanded)
+                if (playlistToolBar.menu.findItem(R.id.my_playlist_youtube_search_icon).isActionViewExpanded)
                     playlistToolBar.collapseActionView()
                 else
                     childFragmentManager.popBackStack()
