@@ -10,28 +10,27 @@ import android.view.View
 import android.widget.ImageView
 import androidx.constraintlayout.motion.widget.MotionLayout
 
-class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) : MotionLayout(context, attributeSet) {
+class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) : MotionLayout(context, attributeSet) {
 
     private var motionTouchStarted = false
-    private var scrollViewTouchStarted = false
+    private var startX: Float? = null
+    private var startY: Float? = null
 
     private val mainContainerView by lazy {
         findViewById<View>(R.id.mainContainerLayout)
     }
-//    private val playerFragmentScrollView by lazy {
-//        findViewById<View>(R.id.fragment_scroll_view)
-//    }
 
     private val playerMotionLayout by lazy {
         findViewById<MotionLayout>(R.id.player_motion_layout)
     }
-
-    private val bottomCloseButton by lazy {
+    private val bottomPlayerPlayButton by lazy{
+        findViewById<ImageView>(R.id.bottomPlayerPauseButton)
+    }
+    private val bottomPlayerCloseButton by lazy{
         findViewById<ImageView>(R.id.bottomPlayerCloseButton)
     }
 
     private val hitRect = Rect()
-
 
     init {
         playerMotionLayout.transitionToState(R.id.end)
@@ -65,13 +64,49 @@ class CustomMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         return super.onTouchEvent(event) && motionTouchStarted
     }
 
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        Log.d("idsafsdf","Adfsafsaff")
+        bottomPlayerCloseButton.getHitRect(hitRect)
+        if (hitRect.contains(ev.x.toInt(), ev.y.toInt()))
+            return super.dispatchTouchEvent(ev)
+        bottomPlayerPlayButton.getHitRect(hitRect)
+        if (hitRect.contains(ev.x.toInt(), ev.y.toInt()))
+            return super.dispatchTouchEvent(ev)
+        mainContainerView.getHitRect(hitRect)
+        if (hitRect.contains(ev.x.toInt(), ev.y.toInt())){
+            when (ev.action){
+                MotionEvent.ACTION_DOWN -> {
+                    startX = ev.x
+                    startY = ev.y
+                }
+                MotionEvent.ACTION_UP -> {
+                    val endX = ev.x
+                    val endY = ev.y
+
+                    if (playerMotionLayout.currentState == R.id.start){
+                        if (isAClick(startX!!, endX, startY!!, endY)){
+                            playerMotionLayout.transitionToEnd()
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+    private fun isAClick(startX: Float, endX: Float, startY: Float, endY: Float): Boolean {
+        val differenceX = Math.abs(startX - endX)
+        val differenceY = Math.abs(startY - endY)
+        return !(differenceX > 200 || differenceY > 200)
+    }
+
     private val gestureListener by lazy {
         object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
                 mainContainerView.getHitRect(hitRect)
-                Log.d("onscroll","${hitRect.contains(e1.x.toInt(), e1.y.toInt())}")
                 return hitRect.contains(e1.x.toInt(), e1.y.toInt())
             }
+
         }
     }
 

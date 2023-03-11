@@ -2,9 +2,8 @@
 <MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:motion="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     >
-<!--    축소화-->
+
     <ConstraintSet android:id="@+id/start">
         <Constraint android:id="@+id/transpose_page">
             <PropertySet
@@ -39,7 +38,7 @@
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintStart_toStartOf="parent" />
     </ConstraintSet>
-<!--    최대화-->
+
     <ConstraintSet android:id="@+id/end">
         <Constraint android:id="@+id/tool_bar">
             <PropertySet

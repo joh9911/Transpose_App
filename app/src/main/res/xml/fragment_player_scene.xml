@@ -6,10 +6,14 @@
     <Transition
         motion:constraintSetEnd="@+id/end"
         motion:constraintSetStart="@id/start"
-        motion:duration="100"
+        motion:duration="200"
 
         >
         <KeyFrameSet>
+            <KeyAttribute
+                motion:motionTarget="@+id/bottomPlayerPauseButton"
+                motion:framePosition="10"
+                android:alpha="0.0" />
             <KeyAttribute
                 motion:motionTarget="@+id/bottomTitleTextView"
                 motion:framePosition="10"
@@ -18,6 +22,7 @@
                 motion:motionTarget="@+id/bottomPlayerCloseButton"
                 motion:framePosition="10"
                 android:alpha="0.0" />
+
 
             <KeyPosition
                 motion:motionTarget="@+id/playerView"
@@ -36,19 +41,18 @@
 
     </Transition>
 
-<!--    축소화-->
+
     <ConstraintSet android:id="@+id/start">
-        <!--        layout_marginBottom 바텀 메뉴뷰 있기 때문에 위에서 좀 뗌-->
-        <Constraint
-            android:id="@+id/fragmentRecyclerView"
-            android:layout_width="0dp"
-            android:layout_height="0.1dp"
-            android:layout_marginBottom="66dp"
-            motion:layout_constraintBottom_toBottomOf="parent"
-            motion:layout_constraintEnd_toEndOf="parent"
-            motion:layout_constraintStart_toStartOf="parent"
-            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
-            motion:layout_constraintVertical_bias="1.0" />
+<!--        <Constraint-->
+<!--            android:id="@+id/fragmentRecyclerView"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="0.1dp"-->
+<!--            android:layout_marginBottom="66dp"-->
+<!--            motion:layout_constraintBottom_toBottomOf="parent"-->
+<!--            motion:layout_constraintEnd_toEndOf="parent"-->
+<!--            motion:layout_constraintStart_toStartOf="parent"-->
+<!--            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"-->
+<!--            motion:layout_constraintVertical_bias="1.0" />-->
         <Constraint
             android:id="@+id/mainContainerLayout"
             android:layout_width="0dp"
