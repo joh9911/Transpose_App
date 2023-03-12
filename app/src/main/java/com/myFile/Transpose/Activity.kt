@@ -13,6 +13,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.SearchView.SearchAutoComplete
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -37,7 +38,7 @@ class Activity: AppCompatActivity() {
     lateinit var pitchSeekBar: SeekBar
     lateinit var tempoSeekBar: SeekBar
     lateinit var homeFragment: HomeFragment
-    var myPlaylistFragment: MyPlaylistFragment? = null
+    lateinit var myPlaylistFragment: MyPlaylistFragment
 
 
     var videoService: VideoService? = null
@@ -86,9 +87,15 @@ class Activity: AppCompatActivity() {
     }
     fun initFragment(){
         homeFragment = HomeFragment()
+        myPlaylistFragment = MyPlaylistFragment()
         supportFragmentManager.beginTransaction()
-            .replace(binding.basicFrameLayout.id,homeFragment)
+            .add(binding.basicFrameLayout.id,homeFragment)
             .commit()
+        supportFragmentManager.beginTransaction()
+            .add(binding.basicFrameLayout.id,myPlaylistFragment)
+            .commit()
+        supportFragmentManager.beginTransaction().hide(myPlaylistFragment).commit()
+        supportFragmentManager.beginTransaction().show(homeFragment).commit()
     }
 
     private fun initExceptionHandler(){
@@ -194,32 +201,35 @@ class Activity: AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        Log.d("activity","onPause")
+    }
+
     fun initBottomNavigationView(){
         bottomNavigationView = binding.bottomNavigationView
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.home_icon -> {
-                    supportFragmentManager.beginTransaction().hide(myPlaylistFragment!!).commit()
-                    supportFragmentManager.beginTransaction().show(homeFragment).commit()
+                    if (homeFragment.isVisible)
+                        homeFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    else{
+                        supportFragmentManager.beginTransaction().hide(myPlaylistFragment).commit()
+                        supportFragmentManager.beginTransaction().show(homeFragment).commit()
+                    }
                     transposePage.visibility = View.INVISIBLE
-//                    toolbar.collapseActionView()
-//                    while (supportFragmentManager.backStackEntryCount != 0) {
-//                        supportFragmentManager.popBackStackImmediate()
-//                    }
                 }
                 R.id.transpose_icon -> {
                     transposePage.visibility = View.VISIBLE
                 }
                 R.id.my_playlist_icon -> {
-                    if (myPlaylistFragment == null){
-                        myPlaylistFragment = MyPlaylistFragment()
-                        supportFragmentManager.beginTransaction()
-                            .add(binding.basicFrameLayout.id,myPlaylistFragment!!)
-                            .commit()
+                    if (myPlaylistFragment.isVisible)
+                        myPlaylistFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    else{
+                        supportFragmentManager.beginTransaction().show(myPlaylistFragment).commit()
+                        supportFragmentManager.beginTransaction().hide(homeFragment).commit()
                     }
-                    supportFragmentManager.beginTransaction().show(myPlaylistFragment!!).commit()
-                    supportFragmentManager.beginTransaction().hide(homeFragment).commit()
-
+                    transposePage.visibility = View.INVISIBLE
                 }
             }
             true
@@ -233,9 +243,6 @@ class Activity: AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-//        if (toolbar.menu.findItem(R.id.youtube_search_icon).isActionViewExpanded)
-//            return
-        Log.d("activity","backPress")
         if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null){
             if (transposePage.visibility == View.VISIBLE)
                 transposePageInvisibleEvent()
@@ -253,7 +260,6 @@ class Activity: AppCompatActivity() {
                 else
                     return super.onBackPressed()
             }
-
         }
     }
 

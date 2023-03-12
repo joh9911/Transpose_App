@@ -1,24 +1,27 @@
 package com.myFile.Transpose
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.FragmentChannelBinding
 import com.myFile.Transpose.databinding.MainBinding
 import kotlinx.coroutines.*
 
-class ChannelFragment(val channelData: ChannelData): Fragment() {
+class ChannelFragment(
+    val channelData: ChannelData,
+    frameLayout: FrameLayout,
+    searchView: SearchView
+): Fragment() {
     lateinit var mainBinding: MainBinding
     var fbinding: FragmentChannelBinding? = null
     val binding get() = fbinding!!
@@ -32,6 +35,9 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
 
     val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
     lateinit var playlistId: String
+
+    val parentFrameLayout = frameLayout
+    val parentSearchView = searchView
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -56,6 +62,11 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        parentSearchView.setQuery(channelData.channelTitle,false)
+    }
+
     fun initRecyclerView(){
         binding.videoRecyclerView.layoutManager = LinearLayoutManager(activity)
         searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
@@ -64,8 +75,12 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
             override fun channelClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelData))
+                    parentFragmentManager.beginTransaction()
+                        .replace(parentFrameLayout.id,ChannelFragment(
+                            channelDataList[position],
+                            parentFrameLayout,
+                            parentSearchView
+                        ))
                         .addToBackStack(null)
                         .commit()
                 }
@@ -169,7 +184,7 @@ class ChannelFragment(val channelData: ChannelData): Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
-        activity.searchView.setQuery(channelData.channelTitle,false)
+//        activity.searchView.setQuery(channelData.channelTitle,false)
     }
 
 }

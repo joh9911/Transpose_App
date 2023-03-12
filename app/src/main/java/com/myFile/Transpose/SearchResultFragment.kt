@@ -6,7 +6,9 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.Toast
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -14,7 +16,7 @@ import com.myFile.Transpose.databinding.FragmentSearchResultBinding
 import com.myFile.Transpose.databinding.MainBinding
 import kotlinx.coroutines.*
 
-class SearchResultFragment(search: String): Fragment() {
+class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView: SearchView): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
@@ -22,12 +24,14 @@ class SearchResultFragment(search: String): Fragment() {
     val binding get() = fbinding!!
 
     var nextPageToken = ""
-    val search = search
+    val searchWord = search
     val videoDataList = ArrayList<VideoData>()
     val channelDataList = ArrayList<ChannelData>()
     var videoDataListForPlayerFragment = ArrayList<VideoData>()
     var channelDataListForPlayerFragment = ArrayList<ChannelData>()
     lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
+    val parentFrameLayout = frameLayout
+    val parentSearchView = searchView
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -36,7 +40,9 @@ class SearchResultFragment(search: String): Fragment() {
         fbinding = FragmentSearchResultBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        initExceptionHandler()
         initRecyclerView()
+        Log.d("searchResultFragment","실행")
         getData(null)
         return view
     }
@@ -47,6 +53,11 @@ class SearchResultFragment(search: String): Fragment() {
                 Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        parentSearchView.setQuery(searchWord,false)
     }
 
     fun initRecyclerView(){
@@ -60,8 +71,8 @@ class SearchResultFragment(search: String): Fragment() {
             override fun channelClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
+                    parentFragmentManager.beginTransaction()
+                        .replace(parentFrameLayout.id,ChannelFragment(channelDataList[position],parentFrameLayout, parentSearchView))
                         .addToBackStack(null)
                         .commit()
                 }
@@ -106,7 +117,7 @@ class SearchResultFragment(search: String): Fragment() {
 
     private suspend fun getSearchVideoData(pageToken: String?) {
         val retrofit = RetrofitYT.initRetrofit()
-        val response = retrofit.create(RetrofitService::class.java).getVideoDetails("snippet",search,"50","video",
+        val response = retrofit.create(RetrofitService::class.java).getVideoDetails("snippet",searchWord,"50","video",
             pageToken
         )
         if (response.isSuccessful) {

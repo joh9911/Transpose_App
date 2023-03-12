@@ -1,16 +1,15 @@
 package com.myFile.Transpose
 
-import android.app.SearchManager
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.*
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
-import androidx.core.view.MenuItemCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,6 +21,7 @@ import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.collections.ArrayList
 
 
 class HomeFragment: Fragment() {
@@ -93,6 +93,7 @@ class HomeFragment: Fragment() {
 
     private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
     private lateinit var callback: OnBackPressedCallback
+    lateinit var frameLayout: FrameLayout
 
 
     override fun onCreateView(
@@ -110,6 +111,7 @@ class HomeFragment: Fragment() {
         initSearchRecyclerView()
         initExceptionHandler()
         getAllData()
+        frameLayout = binding.searchResultFrameLayout
         return view
     }
 
@@ -357,7 +359,7 @@ class HomeFragment: Fragment() {
                 searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
-                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(searchWord))
+                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(searchWord, frameLayout, searchView))
                     .addToBackStack(null)
                     .commit()
 //                activity.supportFragmentManager.beginTransaction()
@@ -432,7 +434,6 @@ class HomeFragment: Fragment() {
 
     private fun searchViewCollapseEvent(){
         Log.d("이게 실행이 됏잖아","왜")
-        activity.supportFragmentManager.popBackStackImmediate()
 //        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.searchRecyclerView.visibility = View.INVISIBLE
@@ -443,11 +444,11 @@ class HomeFragment: Fragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId){
-            R.id.home_fragment_transpose_icon -> {
+            R.id.transpose_icon -> {
                 Log.d("Adfsaf","Adfsadfadfad")
                 true
             }
-            R.id.home_fragment_youtube_search_icon -> {
+            R.id.search_icon -> {
                 Log.d("서치 버튼이","눌림")
                 binding.searchRecyclerView.visibility = View.VISIBLE
                 true
@@ -460,8 +461,7 @@ class HomeFragment: Fragment() {
     fun initToolbar(){
         homeFragmentToolBar = binding.homeFragmentToolBar
         val menu = homeFragmentToolBar.menu
-        val searchViewItem = menu.findItem(R.id.home_fragment_youtube_search_icon)
-
+        searchViewItem = menu.findItem(R.id.search_icon)
         searchView = searchViewItem.actionView as SearchView
         val searchAutoComplete = searchView.findViewById<SearchView.SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
         val searchViewCloseButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
@@ -479,6 +479,7 @@ class HomeFragment: Fragment() {
         }
         searchViewItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
             override fun onMenuItemActionExpand(p0: MenuItem): Boolean {
+                activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
                 if (activity.transposePage.visibility == View.VISIBLE){
                     activity.transposePage.visibility = View.INVISIBLE
                     activity.binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked =
@@ -490,32 +491,38 @@ class HomeFragment: Fragment() {
             }
             override fun onMenuItemActionCollapse(p0: MenuItem): Boolean {
                 Log.d("뒤로가기","서치뷰")
-                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
-                    return if (activity.transposePage.visibility == View.VISIBLE) {
-                        Log.d("1","1")
-                        activity.transposePageInvisibleEvent()
-                        false
-                    } else{
-                        searchViewCollapseEvent()
-                        true
-                    }
-                } else {
-                    val playerFragment =
-                        activity.supportFragmentManager.findFragmentById(activity.binding.playerFragment.id) as PlayerFragment
-                    return if (playerFragment.binding.playerMotionLayout.currentState == R.id.end) {
-                        playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
-                        false
-                    } else {
-                        if (activity.transposePage.visibility == View.VISIBLE) {
-                            Log.d("1","2")
-                            activity.transposePageInvisibleEvent()
-                            false
-                        } else{
-                            searchViewCollapseEvent()
-                            true
-                        }
-                    }
+                var count = 0
+                childFragmentManager.addOnBackStackChangedListener {
+                    count = childFragmentManager.backStackEntryCount
                 }
+                searchViewCollapseEvent()
+                return count == 0
+//                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
+//                    return if (activity.transposePage.visibility == View.VISIBLE) {
+//                        Log.d("1","1")
+//                        activity.transposePageInvisibleEvent()
+//                        false
+//                    } else{
+//                        searchViewCollapseEvent()
+//                        true
+//                    }
+//                } else {
+//                    val playerFragment =
+//                        activity.supportFragmentManager.findFragmentById(activity.binding.playerFragment.id) as PlayerFragment
+//                    return if (playerFragment.binding.playerMotionLayout.currentState == R.id.end) {
+//                        playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+//                        false
+//                    } else {
+//                        if (activity.transposePage.visibility == View.VISIBLE) {
+//                            Log.d("1","2")
+//                            activity.transposePageInvisibleEvent()
+//                            false
+//                        } else{
+//                            searchViewCollapseEvent()
+//                            true
+//                        }
+//                    }
+//                }
             }
         })
         searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
@@ -524,7 +531,11 @@ class HomeFragment: Fragment() {
                 Log.d("homeFragment","${searchView.query}")
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
-                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(query!!))
+                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(
+                        query!!,
+                        frameLayout,
+                        searchView
+                    ))
                     .addToBackStack(null)
                     .commit()
                 binding.searchRecyclerView.visibility = View.INVISIBLE
@@ -565,16 +576,17 @@ class HomeFragment: Fragment() {
 
         callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                Log.d("homeFragment","backPress")
-                if (homeFragmentToolBar.menu.findItem(R.id.home_fragment_youtube_search_icon).isActionViewExpanded)
-                     homeFragmentToolBar.collapseActionView()
-                else
-                    childFragmentManager.popBackStack()
+                if (childFragmentManager.backStackEntryCount == 0) {
+                    if (searchViewItem.isActionViewExpanded)
+                        searchViewItem.collapseActionView()
                 }
+                childFragmentManager.popBackStack()
             }
+        }
         childFragmentManager.addOnBackStackChangedListener {
             if (childFragmentManager.backStackEntryCount == 0) {
-                Log.d("콜백 ", "해제")
+                if (searchViewItem.isActionViewExpanded)
+                    searchViewItem.collapseActionView()
                 callback.remove()
             }
             else
