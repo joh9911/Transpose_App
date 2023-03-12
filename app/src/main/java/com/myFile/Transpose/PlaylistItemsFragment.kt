@@ -95,7 +95,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         for (index in 0 until playlistItemsResponse.items.size!!) {
             Log.d("맴퍼","진행햇음")
             val thumbnail =
-                playlistItemsResponse.items[index].snippet?.thumbnails?.default?.url!!
+                playlistItemsResponse.items[index].snippet?.thumbnails?.high?.url!!
             val date =
                 playlistItemsResponse.items[index].snippet?.publishedAt!!.substring(0, 10)
             val account = playlistItemsResponse.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic", "")!!
