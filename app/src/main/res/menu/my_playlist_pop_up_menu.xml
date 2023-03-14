@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/delete_my_playlist"
+        android:title="@string/my_playlist_pop_up_menu_delete_playlist_text"/>
+</menu>
