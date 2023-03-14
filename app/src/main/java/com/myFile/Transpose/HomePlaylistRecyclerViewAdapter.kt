@@ -13,6 +13,11 @@ class HomePlaylistRecyclerViewAdapter: ListAdapter<PlayListData, HomePlaylistRec
 
     inner class MyViewHolder(private val binding: HomePlaylistRecyclerItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
+        init {
+            itemView.setOnClickListener {
+                itemClickListener.onClick(it, position)
+            }
+        }
         fun bind(playlistData: PlayListData) {
             binding.playlistTitle.text = playlistData.title
             binding.playlistDescription.text = playlistData.description
@@ -34,9 +39,7 @@ class HomePlaylistRecyclerViewAdapter: ListAdapter<PlayListData, HomePlaylistRec
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         holder.bind(currentList[position])
-        holder.itemView.setOnClickListener {
-            itemClickListener.onClick(it, position)
-        }
+
     }
 
     // (2) 리스너 인터페이스

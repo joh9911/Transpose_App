@@ -13,6 +13,11 @@ import com.myFile.Transpose.databinding.HomePlaylistItemsRecyclerViewItemBinding
 class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecyclerViewAdapter.MyViewHolder>(diffUtil) {
 
     inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
+        init{
+            itemView.setOnClickListener {
+                itemClickListener.onClick(it, position)
+            }
+        }
         private fun selected(){
             binding.rankingTextView.setTextColor(Color.parseColor("#2196F3"))
             binding.channelTextView.setTextColor(Color.parseColor("#2196F3"))
@@ -47,9 +52,7 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
         }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        holder.itemView.setOnClickListener {
-            itemClickListener.onClick(it, position)
-        }
+
         holder.bind(currentList[position], position)
     }
 

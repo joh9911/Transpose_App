@@ -3,6 +3,7 @@ package com.myFile.Transpose
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -11,6 +12,14 @@ import com.myFile.Transpose.databinding.MyPlaylistRecyclerItemBinding
 
 class MyPlaylistRecyclerViewAdapter: ListAdapter<MyPlaylist, MyPlaylistRecyclerViewAdapter.MyViewHolder>(diffUtil) {
     inner class MyViewHolder(private val binding: MyPlaylistRecyclerItemBinding): RecyclerView.ViewHolder(binding.root){
+        init {
+            itemView.setOnClickListener {
+                itemClickListener.onClick(it, adapterPosition)
+            }
+            itemView.findViewById<ImageButton>(R.id.option_button).setOnClickListener {
+                itemClickListener.optionButtonClick(it, adapterPosition)
+            }
+        }
         fun bind(myPlaylist: MyPlaylist, position: Int){
             binding.playlistTitle.text = myPlaylist.playlistTitle
         }
@@ -23,14 +32,12 @@ class MyPlaylistRecyclerViewAdapter: ListAdapter<MyPlaylist, MyPlaylistRecyclerV
         return MyViewHolder(binding)
     }
     override fun onBindViewHolder(holder: MyPlaylistRecyclerViewAdapter.MyViewHolder, position: Int) {
-        holder.itemView.setOnClickListener {
-            itemClickListener.onClick(it, position)
-        }
         holder.bind(currentList[position], position)
     }
     // (2) 리스너 인터페이스
     interface OnItemClickListener {
         fun onClick(v: View, position: Int)
+        fun optionButtonClick(v: View, position: Int)
     }
     // (3) 외부에서 클릭 시 이벤트 설정
     fun setItemClickListener(onItemClickListener: OnItemClickListener) {
