@@ -1,12 +1,31 @@
 package com.myFile.Transpose
 
 import androidx.room.*
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Entity
 data class MyPlaylist(
-    @PrimaryKey val uid: Int,
+    @PrimaryKey(autoGenerate = true) val uid: Int,
     @ColumnInfo(name = "playlist_title") val playlistTitle: String?
 )
+
+@Entity(
+    foreignKeys = [
+        ForeignKey(
+            entity = MyPlaylist::class,
+            parentColumns = arrayOf("uid"),
+            childColumns = arrayOf("playlistId"),
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
+data class Musics(
+    @PrimaryKey(autoGenerate = true) val musicId: Int,
+    val musicData: VideoData,
+    val playlistId: Int
+)
+
 
 @Dao
 interface MyPlaylistDao{
@@ -21,9 +40,26 @@ interface MyPlaylistDao{
 
     @Delete
     fun delete(myPlaylist: MyPlaylist)
+
+    @Query("DELETE FROM MyPlaylist")
+    fun deleteAll()
+
+    @Query("SELECT * FROM Musics WHERE playlistId = (:playlistId)")
+    fun getMusicItemsByPlaylistId(playlistId: Int): List<Musics>
+
+    @Query("DELETE FROM musics")
+    fun deleteMusicAll()
+
+    @Insert
+    fun insertMusic(vararg musics: Musics)
+
+    @Delete
+    fun deleteMusic(musics: Musics)
 }
 
-@Database(entities = [MyPlaylist::class], version = 1)
+@Database(entities = [MyPlaylist::class, Musics::class], version = 3)
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase(){
     abstract fun myPlaylistDao(): MyPlaylistDao
 }
+
