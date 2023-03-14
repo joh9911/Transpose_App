@@ -14,4 +14,9 @@
     <string name="library_icon">Library</string>
     <string name="network_error_message">Please check the Internet connection</string>
     <string name="add_playlist_text">New playlist</string>
+    <string name="title_hint">title</string>
+    <string name="dialog_create_text">create</string>
+    <string name="dialog_cancel_text">cancel</string>
+    <string name="video_pop_up_menu_add_playlist_text">Add to playlist</string>
+    <string name="my_playlist_pop_up_menu_delete_playlist_text">Delete playlist</string>
 </resources>
