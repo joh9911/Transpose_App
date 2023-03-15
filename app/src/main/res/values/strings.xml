@@ -19,4 +19,10 @@
     <string name="dialog_cancel_text">cancel</string>
     <string name="video_pop_up_menu_add_playlist_text">Add to playlist</string>
     <string name="my_playlist_pop_up_menu_delete_playlist_text">Delete playlist</string>
+    <string name="publish_date_second">%dseconds ago</string>
+    <string name="publish_date_minute">%dminutes ago</string>
+    <string name="publish_date_hour">%dhours ago</string>
+    <string name="publish_date_day">%ddays ago</string>
+    <string name="publish_date_month">%dmonths ago</string>
+    <string name="publish_date_year">%dyears ago</string>
 </resources>
