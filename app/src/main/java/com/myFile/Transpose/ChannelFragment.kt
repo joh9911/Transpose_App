@@ -122,7 +122,7 @@ class ChannelFragment(
                 if (pageToken != "")
                     getData()
                 else{
-                    videoDataList.remove(VideoData(" ", " ", " ", " ", " ", " ", false))
+                    videoDataList.remove(VideoData(" ", " ", " ", " ", " ",  " ",false))
                     searchResultAdapter.submitList(videoDataList.toMutableList())
                 }
             }
@@ -161,9 +161,10 @@ class ChannelFragment(
             val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
             val title = stringToHtmlSign(responseData.items[index].snippet?.title!!)
             val videoId = responseData.items[index].snippet?.resourceId?.videoId!!
+            val channelId = responseData.items[index].snippet?.channelId!!
             val channelThumbnail = channelData.channelThumbnail
             val channelTitle = channelData.channelTitle
-            videoDataList.add(VideoData(thumbnail, title, channelTitle, videoId, date, channelThumbnail, false))
+            videoDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
             channelDataList.add(channelData) // 재생 프레그먼트에 전달하기 위해 걍 인자 개수를 비디오 리스트와 맞춰줌
         }
         videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
