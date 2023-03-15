@@ -98,10 +98,11 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
                 playlistItemsResponse.items[index].snippet?.thumbnails?.high?.url!!
             val date =
                 playlistItemsResponse.items[index].snippet?.publishedAt!!.substring(0, 10)
-            val account = playlistItemsResponse.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic", "")!!
+            val channelTitle = playlistItemsResponse.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic", "")!!
             val title = stringToHtmlSign(playlistItemsResponse.items[index].snippet?.title!!)
             val videoId = playlistItemsResponse.items[index].snippet?.resourceId?.videoId!!
-            playlistVideoData.add(VideoData(thumbnail, title, account, videoId, date, thumbnail, false))
+            val channelId = playlistItemsResponse.items[index].snippet?.channelId!!
+            playlistVideoData.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
         }
         playlistItemsRecyclerViewAdapter.submitList(playlistVideoData.toMutableList())
         binding.playlistProgressBar.visibility = View.GONE
