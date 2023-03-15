@@ -2,14 +2,23 @@ package com.myFile.Transpose
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Context
+import android.content.Context.INPUT_METHOD_SERVICE
 import android.content.DialogInterface
 import android.os.Bundle
 import android.text.Editable
+import android.util.Log
+import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.content.getSystemService
 import androidx.fragment.app.DialogFragment
 
-class MyPlaylistDialogFragment: DialogFragment() {
+
+class DialogCreatePlaylist: DialogFragment() {
     private lateinit var listener: NoticeDialogListener
+    lateinit var editTextTitle: EditText
 
     interface NoticeDialogListener {
         fun onDialogPositiveClick(dialog: DialogFragment, text: Editable?)
@@ -22,6 +31,8 @@ class MyPlaylistDialogFragment: DialogFragment() {
             // Get the layout inflater
             val inflater = requireActivity().layoutInflater;
             val dialogView = inflater.inflate(R.layout.dialog_my_playlist, null)
+            editTextTitle = dialogView.findViewById(R.id.title)
+            editTextTitle.requestFocus()
             // Inflate and set the layout for the dialog
             // Pass null as the parent view because its going in the dialog layout
             builder
@@ -30,7 +41,7 @@ class MyPlaylistDialogFragment: DialogFragment() {
                 // Add action buttons
                 .setPositiveButton(R.string.dialog_create_text,
                     DialogInterface.OnClickListener { dialog, id ->
-                        val text = dialogView.findViewById<EditText>(R.id.title).text
+                        val text = editTextTitle.text
                         listener.onDialogPositiveClick(this, text)
                     })
                 .setNegativeButton(R.string.dialog_cancel_text,
@@ -41,7 +52,13 @@ class MyPlaylistDialogFragment: DialogFragment() {
         } ?: throw IllegalStateException("Activity cannot be null")
     }
 
+    override fun onResume() {
+        super.onResume()
+        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+    }
+
     fun setListener(noticeDialogListener: NoticeDialogListener){
         this.listener = noticeDialogListener
     }
+
 }
