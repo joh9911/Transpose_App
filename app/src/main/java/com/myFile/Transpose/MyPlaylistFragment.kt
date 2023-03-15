@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.PopupMenu
@@ -14,7 +15,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
-import com.myFile.Transpose.databinding.FragmentMyPlaylistSortBinding
+import com.myFile.Transpose.databinding.FragmentMyPlaylistBinding
 import com.myFile.Transpose.databinding.MainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,7 @@ import retrofit2.Response
 
 class MyPlaylistFragment: Fragment() {
     lateinit var mainBinding: MainBinding
-    var fbinding: FragmentMyPlaylistSortBinding? = null
+    var fbinding: FragmentMyPlaylistBinding? = null
     val binding get() = fbinding!!
     lateinit var activity: Activity
 
@@ -51,7 +52,7 @@ class MyPlaylistFragment: Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        fbinding = FragmentMyPlaylistSortBinding.inflate(inflater, container, false)
+        fbinding = FragmentMyPlaylistBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
 //        setHasOptionsMenu(true)
         val view = binding.root
@@ -67,24 +68,19 @@ class MyPlaylistFragment: Fragment() {
     }
     fun getMyPlaylist(){
         CoroutineScope(Dispatchers.IO).launch{
-            Log.d("정볼르 받ㄷ","다옴")
             myPlaylists = myPlaylistDao.getAll()
             withContext(Dispatchers.Main){
-                Log.d("제출","햇나")
                 myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
             }
         }
     }
     fun deleteAndRefreshMyPlaylist(position: Int){
-        Log.d("delete","${myPlaylists[position]}")
         CoroutineScope(Dispatchers.IO).launch {
-            Log.d("코루틴","1")
             myPlaylistDao.delete(myPlaylists[position])
             myPlaylists = myPlaylistDao.getAll()
             withContext(Dispatchers.Main){
                 myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
             }
-            Log.d("코루틴","2")
         }
     }
     fun initPlaylistRecyclerView(){
@@ -157,6 +153,7 @@ class MyPlaylistFragment: Fragment() {
     fun showNoticeDialog() {
         // Create an instance of the dialog fragment and show it
         val dialog = DialogCreatePlaylist()
+
         dialog.setListener(object: DialogCreatePlaylist.NoticeDialogListener{
             override fun onDialogPositiveClick(dialog: DialogFragment, text: Editable?) {
                 CoroutineScope(Dispatchers.IO).launch{

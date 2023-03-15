@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
 import com.myFile.Transpose.databinding.FragmentMyPlaylistBinding
-import com.myFile.Transpose.databinding.FragmentMyPlaylistSortBinding
+import com.myFile.Transpose.databinding.FragmentMyPlaylistItemBinding
 import com.myFile.Transpose.databinding.MainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
 
 class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
     lateinit var mainBinding: MainBinding
-    var fbinding: FragmentMyPlaylistBinding? = null
+    var fbinding: FragmentMyPlaylistItemBinding? = null
     val binding get() = fbinding!!
     lateinit var activity: Activity
     var myMusics = listOf<Musics>()
@@ -38,7 +38,7 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        fbinding = FragmentMyPlaylistBinding.inflate(inflater, container, false)
+        fbinding = FragmentMyPlaylistItemBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
         initDb()

@@ -12,10 +12,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.HomePlaylistItemsRecyclerViewItemBinding
 import com.myFile.Transpose.databinding.HomePlaylistRecyclerItemBinding
+import com.myFile.Transpose.databinding.MyPlaylistItemRecyclerViewItemBinding
+import com.myFile.Transpose.databinding.MyPlaylistRecyclerItemBinding
 
 class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoData, MyPlaylistItemRecyclerViewAdapter.MyViewHolder>(diffUtil) {
 
-    inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
+    inner class MyViewHolder(private val binding: MyPlaylistItemRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
         init {
             itemView.setOnClickListener {
                 itemClickListener.onClick(it, adapterPosition)
@@ -25,20 +27,17 @@ class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoData, MyPlaylistItemRe
             }
         }
         private fun selected(){
-            binding.rankingTextView.setTextColor(Color.parseColor("#2196F3"))
             binding.channelTextView.setTextColor(Color.parseColor("#2196F3"))
             binding.titleTextView.setTextColor(Color.parseColor("#2196F3"))
         }
         private fun unSelected(){
-            binding.rankingTextView.setTextColor(Color.parseColor("#FF000000"))
             binding.channelTextView.setTextColor(Color.parseColor("#898989"))
             binding.titleTextView.setTextColor(Color.parseColor("#FF000000"))
         }
 
         fun bind(videoData: VideoData, position: Int){
-            binding.channelTextView.text = videoData.channel
+            binding.channelTextView.text = videoData.channelTitle
             binding.titleTextView.text = videoData.title
-            binding.rankingTextView.text = (position + 1).toString()
             Glide.with(binding.thumbnailImageView)
                 .load(videoData.thumbnail)
                 .into(binding.thumbnailImageView)
@@ -51,7 +50,7 @@ class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoData, MyPlaylistItemRe
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = HomePlaylistItemsRecyclerViewItemBinding.inflate(
+        val binding = MyPlaylistItemRecyclerViewItemBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false)
