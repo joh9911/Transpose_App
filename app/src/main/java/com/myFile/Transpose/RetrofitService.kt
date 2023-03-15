@@ -9,7 +9,7 @@ import retrofit2.http.Query
 
 interface RetrofitService {
     @GET("search")
-    suspend fun getVideoDetails(
+    suspend fun getVideoSearchResult(
                         @Query("part") part: String,
                         @Query("q") q: String,
                         @Query("maxResults") maxResults: String,
@@ -52,6 +52,14 @@ interface RetrofitService {
                        @Query("part") part: String,
                        @Query("id") id: String?
     ): Response<ChannelSearchData>
+
+    @GET("videos")
+    suspend fun getVideoDetail(
+        @Query("key") key: String,
+        @Query("part") part: String,
+        @Query("id") id: String
+
+    ): Response<VideoDetail>
 }
 
 /**
@@ -525,20 +533,59 @@ data class YTVideoSnippet (
 )
 
 data class YTVideoItems (
-
     @SerializedName("kind"    ) var kind    : String?  = null,
     @SerializedName("etag"    ) var etag    : String?  = null,
     @SerializedName("id"      ) var id      : YTVideoId?      = YTVideoId(),
     @SerializedName("snippet" ) var snippet : YTVideoSnippet? = YTVideoSnippet()
 
 )
+data class VideoDetail (
+
+    @SerializedName("kind"     ) var kind     : String?          = null,
+    @SerializedName("etag"     ) var etag     : String?          = null,
+    @SerializedName("items"    ) var items    : ArrayList<VideoDetailItems> = arrayListOf(),
+    @SerializedName("pageInfo" ) var pageInfo : VideoDetailPageInfo?        = VideoDetailPageInfo()
+
+)
+data class VideoDetailStatistics (
+
+    @SerializedName("viewCount"     ) var viewCount     : String? = null,
+    @SerializedName("likeCount"     ) var likeCount     : String? = null,
+    @SerializedName("favoriteCount" ) var favoriteCount : String? = null,
+    @SerializedName("commentCount"  ) var commentCount  : String? = null
+
+)
+data class VideoDetailItems (
+
+    @SerializedName("kind"       ) var kind       : String?     = null,
+    @SerializedName("etag"       ) var etag       : String?     = null,
+    @SerializedName("id"         ) var id         : String?     = null,
+    @SerializedName("statistics" ) var statistics : VideoDetailStatistics? = VideoDetailStatistics()
+
+)
+data class VideoDetailPageInfo (
+
+    @SerializedName("totalResults"   ) var totalResults   : Int? = null,
+    @SerializedName("resultsPerPage" ) var resultsPerPage : Int? = null
+
+)
 data class VideoData(
+    val thumbnail: String,
+    val title: String,
+    val channelTitle: String,
+    val channelId: String,
+    val videoId: String,
+    val date: String,
+    val isPlaying: Boolean
+)
+data class Exam(
     val thumbnail: String,
     val title: String,
     val channel: String,
     val videoId: String,
     val date: String,
-    val channelThumbnail: String?,
+    val channelThumbnail: String,
+    val viewCount: String,
     val isPlaying: Boolean
 )
 
