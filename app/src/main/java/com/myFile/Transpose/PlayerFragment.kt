@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,10 +15,15 @@ import com.myFile.Transpose.databinding.FragmentPlayerBinding
 import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
+import kotlinx.coroutines.*
 import java.lang.Math.abs
+import java.text.DecimalFormat
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.math.roundToInt
 
 
-class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: ArrayList<ChannelData>, position: Int, mode: String): Fragment() {
+class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayList<ChannelData>, position: Int, mode: String): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
@@ -27,6 +33,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
     var playerModel = PlayerModel(playMusicList = videoDataList,
     currentPosition = position)
 
+    private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
 
     val position = position
     val mode = mode
@@ -43,32 +50,99 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         mainBinding = MainBinding.inflate(layoutInflater)
         activity.videoService!!.initPlayerFragment(this)
         val view = binding.root
+        initExceptionHandler()
+        getData()
         initView()
         initMotionLayout()
         initRecyclerView()
         initListener()
         return view
     }
-
-    override fun onPause() {
-        super.onPause()
+    private fun initExceptionHandler(){
+        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+            Log.d("코루틴 에러","$throwable")
+            CoroutineScope(Dispatchers.Main).launch {
+                Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    private fun getData() {
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+            async { getVideoDetail() }
+            async { getChannelData() }
+        }
     }
 
-    override fun onResume() {
-        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
-        Log.d("리줌","왜안되지")
-        super.onResume()
+    private suspend fun getVideoDetail(){
+        val retrofit = RetrofitData.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java)
+            .getVideoDetail(BuildConfig.API_KEY, "statistics",playerModel.currentMusicModel()?.videoId!!)
+        if (response.isSuccessful){
+            if (response.body()?.items?.size != 0){
+                withContext(Dispatchers.Main){
+                    binding.fragmentVideoDetail.text = viewCountCalculator(response.body()!!.items[0].statistics?.viewCount!!)
+                }
+            }
+        }
+    }
+    private fun viewCountCalculator(viewCountString: String): String {
+        val country = Locale.getDefault().language
+        Log.d("viewCount","${country}")
+        val viewCount = viewCountString.toInt()
+        val df = DecimalFormat("#.#")
+        var string = ""
+        if (country == "ko"){
+            if (viewCount < 1000)
+                string = String.format(activity.resources.getString(R.string.view_count_under_thousand), viewCount.toString())
+            else if (viewCount in 1000..9999){
+                val convertedViewCount = df.format(viewCount/1000.0)
+                string = String.format(activity.resources.getString(R.string.view_count_over_thousand), convertedViewCount)
+            }
+            else if (viewCount in 10000 .. 99999){
+                val convertedViewCount = df.format(viewCount/10000.0)
+                string = String.format(activity.resources.getString(R.string.view_count_over_hundred_thousand), convertedViewCount)
+            }
+            else if (viewCount in 100000.. 99999999){
+                val convertedViewCount = (viewCount / 10000).toString()
+                string = String.format(activity.resources.getString(R.string.view_count_over_hundred_thousand), convertedViewCount)
+            }
+            else{
+                val convertedViewCount = df.format(viewCount/100000000.0)
+                string = String.format(activity.resources.getString(R.string.view_count_over_hundred_million), convertedViewCount)
+            }
+        }
+        else{
+            if (viewCount < 1000)
+                string = String.format(activity.resources.getString(R.string.view_count_under_thousand), viewCount)
+            else if (viewCount in 1000..9999){
+                val convertedViewCount = df.format(viewCount/1000.0)
+                string = String.format(activity.resources.getString(R.string.view_count_over_thousand), convertedViewCount)
+            }
+            else if (viewCount in 10000..999999){
+                val convertedViewCount = (viewCount/1000).toString()
+                string = String.format(activity.resources.getString(R.string.view_count_over_thousand), convertedViewCount)
+            }
+            else if (viewCount in 1000000..9999999){
+                val convertedViewCount = df.format(viewCount/1000000.0)
+                string = String.format(activity.resources.getString(R.string.view_count_over_million), convertedViewCount)
+            }
+            else if (viewCount in 10000000..999999999){
+                val convertedViewCount = (viewCount/1000000).toString()
+                string = String.format(activity.resources.getString(R.string.view_count_over_million), convertedViewCount)
+            }
+            else{
+                val convertedViewCount = df.format(viewCount/1000000000.0)
+                string = String.format(activity.resources.getString(R.string.view_count_over_billion), convertedViewCount)
+            }
+        }
+        return string
     }
 
-    override fun onStop() {
-        super.onStop()
-        Log.d("프레그먼트","온스탑")
+    private suspend fun getChannelData(){
+
     }
 
-    override fun onStart() {
-        super.onStart()
-        Log.d("프레그먼트","온스타트")
-    }
+
 
     private fun initView(){
         val currentPlayingVideoData = playerModel.currentMusicModel()!!
@@ -88,16 +162,13 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         binding.bottomTitleTextView.text = currentPlayingVideoData.title
         binding.fragmentVideoTitle.text = currentPlayingVideoData.title
         binding.fragmentVideoDetail.text = currentPlayingVideoData.date
-        binding.channelTextView.text = currentPlayingVideoData.channel
+        binding.channelTextView.text = currentPlayingVideoData.channelTitle
 
         Glide.with(binding.playerThumbnailView)
             .load(currentPlayingVideoData.thumbnail)
             .placeholder(R.drawable.black_background)
             .into(binding.playerThumbnailView)
 
-        Glide.with(binding.channelImageView)
-            .load(currentPlayingVideoData.channelThumbnail)
-            .into(binding.channelImageView)
 
         binding.fragmentTitleLinearLayout.setOnClickListener {
         }
@@ -147,10 +218,10 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
 
                 override fun channelClick(v: View, position: Int) {
                     binding.playerMotionLayout.transitionToState(R.id.start)
-                    activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
-                        .addToBackStack(null)
-                        .commit()
+//                    activity.supportFragmentManager.beginTransaction()
+//                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
+//                        .addToBackStack(null)
+//                        .commit()
                 }
                 override fun videoClick(v: View, position: Int) {
                     replaceVideo(position)
@@ -211,7 +282,7 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         binding.bottomTitleTextView.text = currentVideoData.title
         binding.fragmentVideoTitle.text = currentVideoData.title
         binding.fragmentVideoDetail.text = currentVideoData.date
-        binding.channelTextView.text = currentVideoData.channel
+        binding.channelTextView.text = currentVideoData.channelTitle
 
         Glide.with(binding.playerThumbnailView)
             .load(currentVideoData.thumbnail)
@@ -219,9 +290,6 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
             .placeholder(R.drawable.black_background)
             .into(binding.playerThumbnailView)
 
-        Glide.with(binding.channelImageView)
-            .load(currentVideoData.channelThumbnail)
-            .into(binding.channelImageView)
     }
 
     private fun initListener(){
@@ -238,21 +306,15 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
             override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
             }
 
-            override fun onTransitionChange( // 재정의를 통해 메인 엑티비티(모션 레이아웃)과 연동한다.
+            override fun onTransitionChange(
                 motionLayout: MotionLayout?,
                 startId: Int,
                 endId: Int,
                 progress: Float
             ) {
 
-                /**
-                 * 메인 엑티비티 모션 레이아웃에 값을 전달
-                 */
-                /**
-                 * Fragment 는 자기 단독으로 존재할 수 없기 떄문에 activity 가 존재 할수밖에 없고
-                 * activity 를 가져오면 해당 Fragment 가 attach 되어있는 액티비티를 가져온다.
-                 */
-                (activity as Activity).also { main ->
+
+                (activity).also { main ->
                     main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
                         abs(progress)
                 }
@@ -279,6 +341,25 @@ class PlayerFragment(videoDataList: ArrayList<VideoData>,val channelDataList: Ar
         Log.d("프레그먼트의","onDestroy")
         activity.videoService!!.stopForegroundService()
         fbinding = null
+    }
+    override fun onPause() {
+        super.onPause()
+    }
+
+    override fun onResume() {
+        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
+        Log.d("리줌","왜안되지")
+        super.onResume()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("프레그먼트","온스탑")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d("프레그먼트","온스타트")
     }
 
     override fun onAttach(context: Context) {
