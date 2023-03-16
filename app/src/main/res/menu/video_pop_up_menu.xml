@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/add_my_playlist"
+        android:title="@string/video_pop_up_menu_add_playlist_text"/>
+</menu>
