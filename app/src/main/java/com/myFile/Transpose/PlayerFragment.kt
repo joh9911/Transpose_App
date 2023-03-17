@@ -15,15 +15,17 @@ import com.myFile.Transpose.databinding.FragmentPlayerBinding
 import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
+import com.myFile.Transpose.model.ChannelSearchData
+import com.myFile.Transpose.model.RelatedVideoData
+import com.myFile.Transpose.model.VideoDetailData
 import kotlinx.coroutines.*
 import java.lang.Math.abs
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.roundToInt
 
 
-class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayList<ChannelData>, position: Int, mode: String): Fragment() {
+class PlayerFragment(videoDataList: List<VideoData>, position: Int): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
@@ -34,9 +36,10 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
     currentPosition = position)
 
     private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
+    var nextPageToken = ""
 
     val position = position
-    val mode = mode
+    private val relatedVideoList = ArrayList<VideoData>()
 
     var player: ExoPlayer? = null
     lateinit var playerView: PlayerView
@@ -50,11 +53,11 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
         mainBinding = MainBinding.inflate(layoutInflater)
         activity.videoService!!.initPlayerFragment(this)
         val view = binding.root
+        initRecyclerView()
         initExceptionHandler()
-        getData()
+        getDetailData()
         initView()
         initMotionLayout()
-        initRecyclerView()
         initListener()
         return view
     }
@@ -66,83 +69,107 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
             }
         }
     }
-    private fun getData() {
+    private fun getDetailData() {
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            async { getVideoDetail() }
-            async { getChannelData() }
+            async {getVideoDetail()}
+            async { getRelatedVideo() }
         }
     }
 
-    private suspend fun getVideoDetail(){
+    private suspend fun getRelatedVideo() {
+        val retrofit = RetrofitYT.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java)
+            .getRelatedVideo("id, snippet",playerModel.currentMusicModel()?.videoId!!,"video","50")
+        if (response.isSuccessful) {
+            if (response.body()?.RelatedVideoDataitems?.size != 0) {
+                withContext(Dispatchers.Main){
+                    relatedVideoMapping(response.body()!!)
+                }
+            }
+        }
+        else{
+            Log.d("안됐음","ㄴㅇㄹㄴㅁㄹ")
+        }
+    }
+    private fun relatedVideoMapping(relatedVideoData: RelatedVideoData){
+        for (index in relatedVideoData.RelatedVideoDataitems.indices){
+            val thumbnail = relatedVideoData.RelatedVideoDataitems[index].snippet?.thumbnails?.high?.url!!
+            val date = relatedVideoData.RelatedVideoDataitems[index].snippet?.publishedAt!!
+            val title = stringToHtmlSign(relatedVideoData.RelatedVideoDataitems[index].snippet?.title!!)
+            val videoId = relatedVideoData.RelatedVideoDataitems[index].id?.videoId!!
+            val channelTitle = relatedVideoData.RelatedVideoDataitems[index].snippet?.channelTitle!!
+            val channelId = relatedVideoData.RelatedVideoDataitems[index].snippet?.channelId!!
+            relatedVideoList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date, false))
+        }
+        binding.relatedVideoProgressBar.visibility = View.GONE
+//        searchResultAdapter.submitList(relatedVideoList.toMutableList())
+//        binding.relatedVideoProgressBar.visibility = View.GONE
+    }
+    private fun initRecyclerView(){
+        binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
+        searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
+        searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
+            override fun channelClick(v: View, position: Int) {
+                binding.playerMotionLayout.transitionToState(R.id.start)
+//                    activity.supportFragmentManager.beginTransaction()
+//                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
+//                        .addToBackStack(null)
+//                        .commit()
+            }
+            override fun videoClick(v: View, position: Int) {
+                replaceVideo(position)
+                playCurrentVideo()
+            }
+            override fun optionButtonClick(v: View, position: Int) {
+            }
+        })
+        searchResultAdapter.submitList(relatedVideoList)
+        binding.fragmentRecyclerView.adapter = searchResultAdapter
+    }
+
+    private suspend fun getVideoDetail() {
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java)
-            .getVideoDetail(BuildConfig.API_KEY, "statistics",playerModel.currentMusicModel()?.videoId!!)
+            .getVideoDetail(BuildConfig.API_KEY, "snippet, statistics",playerModel.currentMusicModel()?.videoId!!)
+        if (response.isSuccessful){
+            if (response.body()?.items?.size != 0){
+                getChannelData(response.body()!!)
+            }
+        }
+    }
+
+    private suspend fun getChannelData(videoDetailResponseData: VideoDetailData) {
+        val retrofit = RetrofitData.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java)
+            .getChannelData(BuildConfig.API_KEY, "snippet, contentDetails, statistics, brandingSettings"
+                ,videoDetailResponseData.items[0].snippet?.channelId)
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
                 withContext(Dispatchers.Main){
-                    binding.fragmentVideoDetail.text = viewCountCalculator(response.body()!!.items[0].statistics?.viewCount!!)
+                    detailMapping(videoDetailResponseData, response.body()!!)
                 }
             }
         }
     }
-    private fun viewCountCalculator(viewCountString: String): String {
-        val country = Locale.getDefault().language
-        Log.d("viewCount","${country}")
-        val viewCount = viewCountString.toInt()
-        val df = DecimalFormat("#.#")
-        var string = ""
-        if (country == "ko"){
-            if (viewCount < 1000)
-                string = String.format(activity.resources.getString(R.string.view_count_under_thousand), viewCount.toString())
-            else if (viewCount in 1000..9999){
-                val convertedViewCount = df.format(viewCount/1000.0)
-                string = String.format(activity.resources.getString(R.string.view_count_over_thousand), convertedViewCount)
-            }
-            else if (viewCount in 10000 .. 99999){
-                val convertedViewCount = df.format(viewCount/10000.0)
-                string = String.format(activity.resources.getString(R.string.view_count_over_hundred_thousand), convertedViewCount)
-            }
-            else if (viewCount in 100000.. 99999999){
-                val convertedViewCount = (viewCount / 10000).toString()
-                string = String.format(activity.resources.getString(R.string.view_count_over_hundred_thousand), convertedViewCount)
-            }
-            else{
-                val convertedViewCount = df.format(viewCount/100000000.0)
-                string = String.format(activity.resources.getString(R.string.view_count_over_hundred_million), convertedViewCount)
-            }
-        }
-        else{
-            if (viewCount < 1000)
-                string = String.format(activity.resources.getString(R.string.view_count_under_thousand), viewCount)
-            else if (viewCount in 1000..9999){
-                val convertedViewCount = df.format(viewCount/1000.0)
-                string = String.format(activity.resources.getString(R.string.view_count_over_thousand), convertedViewCount)
-            }
-            else if (viewCount in 10000..999999){
-                val convertedViewCount = (viewCount/1000).toString()
-                string = String.format(activity.resources.getString(R.string.view_count_over_thousand), convertedViewCount)
-            }
-            else if (viewCount in 1000000..9999999){
-                val convertedViewCount = df.format(viewCount/1000000.0)
-                string = String.format(activity.resources.getString(R.string.view_count_over_million), convertedViewCount)
-            }
-            else if (viewCount in 10000000..999999999){
-                val convertedViewCount = (viewCount/1000000).toString()
-                string = String.format(activity.resources.getString(R.string.view_count_over_million), convertedViewCount)
-            }
-            else{
-                val convertedViewCount = df.format(viewCount/1000000000.0)
-                string = String.format(activity.resources.getString(R.string.view_count_over_billion), convertedViewCount)
-            }
-        }
-        return string
+
+    private fun detailMapping(videoDetailResponseData: VideoDetailData, channelDetailResponseData: ChannelSearchData){
+        val youtubeDigitConverter = YoutubeDigitConverter(activity)
+        binding.bottomTitleTextView.text = playerModel.currentMusicModel()!!.title
+        binding.fragmentVideoTitle.text = playerModel.currentMusicModel()!!.title
+        binding.videoViewCount.text = youtubeDigitConverter.viewCountCalculator(videoDetailResponseData.items[0].statistics?.viewCount!!)
+        binding.videoTime.text = youtubeDigitConverter.intervalBetweenDateText(playerModel.currentMusicModel()?.date!!)
+        binding.videoViewCount.setBackgroundColor(activity.resources.getColor(R.color.white))
+        binding.videoTime.setBackgroundColor(activity.resources.getColor(R.color.white))
+        binding.channelTextView.setBackgroundColor(activity.resources.getColor(R.color.white))
+        binding.channelSubscriptionCount.setBackgroundColor(activity.resources.getColor(R.color.white))
+
+        binding.channelTextView.text = channelDetailResponseData.items[0].snippet?.title
+        binding.channelSubscriptionCount.text = youtubeDigitConverter.subscriberCountConverter(channelDetailResponseData.items[0].statistics?.subscriberCount!!)
+        Glide.with(binding.channelImageView)
+            .load(channelDetailResponseData.items[0].snippet?.thumbnails?.high?.url)
+            .placeholder(R.drawable.black_background)
+            .into(binding.channelImageView)
     }
-
-    private suspend fun getChannelData(){
-
-    }
-
-
 
     private fun initView(){
         val currentPlayingVideoData = playerModel.currentMusicModel()!!
@@ -161,14 +188,12 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
         }
         binding.bottomTitleTextView.text = currentPlayingVideoData.title
         binding.fragmentVideoTitle.text = currentPlayingVideoData.title
-        binding.fragmentVideoDetail.text = currentPlayingVideoData.date
         binding.channelTextView.text = currentPlayingVideoData.channelTitle
 
         Glide.with(binding.playerThumbnailView)
             .load(currentPlayingVideoData.thumbnail)
             .placeholder(R.drawable.black_background)
             .into(binding.playerThumbnailView)
-
 
         binding.fragmentTitleLinearLayout.setOnClickListener {
         }
@@ -196,65 +221,65 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
         binding.playerThumbnailView.visibility = View.GONE
     }
 
-    private fun initRecyclerView(){
-        val videoDataList = playerModel.getPlayMusicList()
-        if (mode == "playlist"){
-            binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-            playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter()
-            playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
-                override fun onClick(v: View, position: Int) {
-                        replaceVideo(position)
-                        playCurrentVideo()
-                }
-            })
-            playlistItemsRecyclerViewAdapter.submitList(videoDataList)
-            binding.fragmentRecyclerView.adapter = playlistItemsRecyclerViewAdapter
-        }
 
-        if (mode == "video"){
-            binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-            searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
-            searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
 
-                override fun channelClick(v: View, position: Int) {
-                    binding.playerMotionLayout.transitionToState(R.id.start)
-//                    activity.supportFragmentManager.beginTransaction()
-//                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
-//                        .addToBackStack(null)
-//                        .commit()
-                }
-                override fun videoClick(v: View, position: Int) {
-                    replaceVideo(position)
-                    playCurrentVideo()
-
-                }
-
-                override fun optionButtonClick(v: View, position: Int) {
-
-                }
-            })
-            searchResultAdapter.submitList(videoDataList)
-            binding.fragmentRecyclerView.adapter = searchResultAdapter
-        }
-    }
+//    private fun initRecyclerView(){
+//        val videoDataList = playerModel.getPlayMusicList()
+//        if (mode == "playlist"){
+//            binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
+//            playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter()
+//            playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
+//                override fun onClick(v: View, position: Int) {
+//                        replaceVideo(position)
+//                        playCurrentVideo()
+//                }
+//            })
+//            playlistItemsRecyclerViewAdapter.submitList(videoDataList)
+//            binding.fragmentRecyclerView.adapter = playlistItemsRecyclerViewAdapter
+//        }
+//
+//        if (mode == "video"){
+//            binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
+//            searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
+//            searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
+//
+//                override fun channelClick(v: View, position: Int) {
+//                    binding.playerMotionLayout.transitionToState(R.id.start)
+////                    activity.supportFragmentManager.beginTransaction()
+////                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
+////                        .addToBackStack(null)
+////                        .commit()
+//                }
+//                override fun videoClick(v: View, position: Int) {
+//                    replaceVideo(position)
+//                    playCurrentVideo()
+//
+//                }
+//
+//                override fun optionButtonClick(v: View, position: Int) {
+//
+//                }
+//            })
+//            searchResultAdapter.submitList(videoDataList)
+//            binding.fragmentRecyclerView.adapter = searchResultAdapter
+//        }
+//    }
 
     fun playPrevVideo(){
         activity.videoService!!.playVideo(playerModel.prevMusic()!!)
         playerModel.refreshPlaylist()
-        if (mode == "playlist")
-            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-        if (mode == "video")
-            searchResultAdapter.submitList(playerModel.getPlayMusicList())
+//            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
+        searchResultAdapter.submitList(playerModel.getPlayMusicList())
         updatePlayerView()
     }
 
     fun playNextVideo(){
         activity.videoService!!.playVideo(playerModel.nextMusic()!!)
         playerModel.refreshPlaylist()
-        if (mode == "playlist")
-            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-        if (mode == "video")
-            searchResultAdapter.submitList(playerModel.getPlayMusicList())
+
+//            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
+
+        searchResultAdapter.submitList(playerModel.getPlayMusicList())
         updatePlayerView()
     }
 
@@ -266,30 +291,27 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
         binding.fragmentRecyclerView.scrollToPosition(position)
         playerModel.updateCurrentPosition(position)
         playerModel.refreshPlaylist()
-
-        if (mode == "playlist"){
-            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-
-        }
-        if (mode == "video"){
-            searchResultAdapter.submitList(playerModel.getPlayMusicList())
-        }
+//        playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
+        searchResultAdapter.submitList(playerModel.getPlayMusicList())
         updatePlayerView()
     }
 
     private fun updatePlayerView(){
-        val currentVideoData = playerModel.currentMusicModel()!!
-        binding.bottomTitleTextView.text = currentVideoData.title
-        binding.fragmentVideoTitle.text = currentVideoData.title
-        binding.fragmentVideoDetail.text = currentVideoData.date
-        binding.channelTextView.text = currentVideoData.channelTitle
+        binding.bottomTitleTextView.text = ""
+        binding.fragmentVideoTitle.text = ""
+        binding.videoViewCount.text = ""
+        binding.channelSubscriptionCount.text = ""
+        binding.channelTextView.text = ""
+        binding.videoTime.text = ""
+        binding.channelTextView.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
+        binding.videoViewCount.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
+        binding.videoTime.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
+        binding.channelSubscriptionCount.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
+        Glide.with(binding.channelImageView)
+            .load(R.color.before_getting_data_color)
+            .into(binding.channelImageView)
 
-        Glide.with(binding.playerThumbnailView)
-            .load(currentVideoData.thumbnail)
-            .centerCrop()
-            .placeholder(R.drawable.black_background)
-            .into(binding.playerThumbnailView)
-
+        getDetailData()
     }
 
     private fun initListener(){
@@ -347,7 +369,7 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
     }
 
     override fun onResume() {
-        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
+//        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
         Log.d("리줌","왜안되지")
         super.onResume()
     }
@@ -370,6 +392,12 @@ class PlayerFragment(videoDataList: List<VideoData>,val channelDataList: ArrayLi
     override fun onDetach() {
         super.onDetach()
     }
-
+    private fun stringToHtmlSign(str: String): String {
+        return str.replace("&amp;".toRegex(), "[&]")
+            .replace("[<]".toRegex(), "&lt;")
+            .replace("[>]".toRegex(), "&gt;")
+            .replace("&quot;".toRegex(), "'")
+            .replace("&#39;".toRegex(), "'")
+    }
 
 }
