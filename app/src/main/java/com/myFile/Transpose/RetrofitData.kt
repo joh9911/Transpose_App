@@ -7,7 +7,6 @@ object RetrofitData {
     var instance: Retrofit? = null
     private const val BASE_URL = "https://www.googleapis.com/youtube/v3/"
     fun initRetrofit(): Retrofit{
-
         if(instance == null) { // 이 객체를 또 다른 클래스에서 쓰면 안되기 때문에 이렇게 narrowing을 해줌줌
             instance = Retrofit
                 .Builder()
