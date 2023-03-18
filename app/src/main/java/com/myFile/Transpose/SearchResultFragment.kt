@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.myFile.Transpose.BuildConfig.API_KEY
 import com.myFile.Transpose.databinding.FragmentSearchResultBinding
 import com.myFile.Transpose.databinding.MainBinding
+import com.myFile.Transpose.model.ChannelSearchData
+import com.myFile.Transpose.model.VideoSearchData
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,8 +34,6 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
     private val searchWord = search
     private val videoDataList = ArrayList<VideoData>()
     private val channelDataList = ArrayList<ChannelData>()
-    var videoDataListForPlayerFragment = ArrayList<VideoData>()
-    var channelDataListForPlayerFragment = ArrayList<ChannelData>()
     lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
     val parentFrameLayout = frameLayout
     val parentSearchView = searchView
@@ -89,7 +89,7 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
                         .replace(activity.binding.playerFragment.id,
-                            PlayerFragment(videoDataList, channelDataList, position, "video"),"playerFragment")
+                            PlayerFragment(videoDataList,  position),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
@@ -135,13 +135,14 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
         }
     }
     private fun searchResultDataMapping(responseData: VideoSearchData){
+        val youtubeDigitConverter = YoutubeDigitConverter(activity)
         binding.progressBar.visibility = View.INVISIBLE
         binding.recyclerView.visibility = View.VISIBLE
         for (index in 0 until responseData.items.size){
 
             val thumbnail = responseData.items[index].snippet?.thumbnails?.high?.url!!
             val rawDate = responseData.items[index].snippet?.publishedAt!!
-            val date = intervalBetweenDateText(changeDateFormat(rawDate))
+            val date = youtubeDigitConverter.intervalBetweenDateText(rawDate)
             val title = stringToHtmlSign(responseData.items[index].snippet?.title!!)
             val videoId = responseData.items[index].id?.videoId!!
             val channelId = responseData.items[index].snippet?.channelId!!
@@ -151,78 +152,21 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
         }
         searchResultAdapter.submitList(videoDataList.toMutableList())
     }
-    /** 현재시간 구하기 ["yyyy-MM-dd HH:mm:ss"] (*HH: 24시간)*/
-    fun getTime(): String {
-        var now = System.currentTimeMillis()
-        var date = Date(now)
 
-        var dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-        var getTime = dateFormat.format(date)
-
-        return getTime
-    }
-    /** 두 날짜 사이의 간격 계산해서 텍스트로 반환 */
-    fun intervalBetweenDateText(beforeDate: String): String {
-        //현재 시간
-        val nowFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(getTime())
-        val beforeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(beforeDate)
-
-        val diffSec     = (nowFormat.time - beforeFormat.time) / 1000                                           //초 차이
-        val diffMin     = (nowFormat.time - beforeFormat.time) / (60*1000)                                      //분 차이
-        val diffHor     = (nowFormat.time - beforeFormat.time) / (60 * 60 * 1000)                               //시 차이
-        val diffDays    = diffSec / (24 * 60 * 60)                                                              //일 차이
-        val diffMonths  = (nowFormat.year*12 + nowFormat.month) - (beforeFormat.year*12 + beforeFormat.month)   //월 차이
-        val diffYears   = nowFormat.year - beforeFormat.year                                                    //연도 차이
-
-        if(diffYears > 0){
-            return String.format(activity.getString(R.string.publish_date_year),diffYears)
-        }
-        if(diffMonths > 0){
-            return String.format(activity.getString(R.string.publish_date_month),diffMonths)
-        }
-        if (diffDays > 0){
-            return String.format(activity.getString(R.string.publish_date_day),diffDays)
-        }
-        if(diffHor > 0){
-            return String.format(activity.getString(R.string.publish_date_hour),diffHor)
-        }
-        if(diffMin > 0){
-            return String.format(activity.getString(R.string.publish_date_minute),diffMin)
-        }
-        if(diffSec > 0){
-            return String.format(activity.getString(R.string.publish_date_second),diffSec)
-        }
-        return ""
-    }
-
-    /** 날짜 형식변경 */
-    fun changeDateFormat(date: String): String{
-        // ["yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"] -> ["yyyy-MM-dd HH:mm"]
-        try{
-            val old_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'") // 받은 데이터 형식
-            old_format.timeZone = TimeZone.getTimeZone("Asia/Seoul")
-            val new_format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss") // 바꿀 데이터 형식
-            val old_date = old_format.parse(date) //ex) "2016-11-01T15:25:31.000Z" // 000 - 밀리 세컨드
-            return new_format.format(old_date)
-        }catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return ""
-    }
-    private suspend fun getChannelData(videoDataList: ArrayList<VideoData>) {
-        val retrofit = RetrofitYT.initRetrofit()
-        for (index in videoDataList.indices) {
-            val channelResponseData = retrofit.create(RetrofitService::class.java).getChannelData(
-                "snippet, contentDetails, statistics, brandingSettings",
-                videoDataList[index].channelId
-            )
-            if (channelResponseData.isSuccessful) {
-                if (channelResponseData.body()?.items?.size != 0) {
-
-                }
-            }
-        }
-    }
+//    private suspend fun getChannelData(videoDataList: ArrayList<VideoData>) {
+//        val retrofit = RetrofitYT.initRetrofit()
+//        for (index in videoDataList.indices) {
+//            val channelResponseData = retrofit.create(RetrofitService::class.java).getChannelData(
+//                "snippet, contentDetails, statistics, brandingSettings",
+//                videoDataList[index].channelId
+//            )
+//            if (channelResponseData.isSuccessful) {
+//                if (channelResponseData.body()?.items?.size != 0) {
+//
+//                }
+//            }
+//        }
+//    }
     private fun addChannelData(channelResponseData: ChannelSearchData){
         val channelThumbnail = channelResponseData.items[0].snippet?.thumbnails?.default?.url!!
         val videoCount = channelResponseData.items[0].statistics?.videoCount!!
@@ -310,6 +254,10 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
     override fun onDetach() {
         Log.d("searchResultFragment","종료")
         super.onDetach()
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        fbinding = null
     }
 
 }

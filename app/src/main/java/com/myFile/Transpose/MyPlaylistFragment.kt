@@ -381,5 +381,6 @@ class MyPlaylistFragment: Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         callback.remove()
+        fbinding = null
     }
 }

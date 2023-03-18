@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.FragmentChannelBinding
 import com.myFile.Transpose.databinding.MainBinding
+import com.myFile.Transpose.model.PlayListVideoSearchData
 import kotlinx.coroutines.*
 
 class ChannelFragment(
@@ -90,7 +91,7 @@ class ChannelFragment(
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList, channelDataList, position, "video"),"playerFragment")
+                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList,  position),"playerFragment")
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()

@@ -76,9 +76,9 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
                         activity.binding.playerFragment.id,
                         PlayerFragment(
                             myMusicItems,
-                            channelDataList,
-                            position,
-                            "playlist"
+
+                            position
+
                         ),
                         "playerFragment"
                     )
@@ -108,5 +108,9 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        fbinding = null
     }
 }

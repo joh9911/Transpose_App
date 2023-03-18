@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.FragmentPlaylistBinding
 import com.myFile.Transpose.databinding.MainBinding
+import com.myFile.Transpose.model.PlayListVideoSearchData
 import kotlinx.coroutines.*
 
 class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
@@ -66,7 +67,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 activity.supportFragmentManager.beginTransaction()
-                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData, channelDataList, position,"playlist"),"playerFragment")
+                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData,  position),"playerFragment")
                     .commit()
             }
 
@@ -97,7 +98,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
             val thumbnail =
                 playlistItemsResponse.items[index].snippet?.thumbnails?.high?.url!!
             val date =
-                playlistItemsResponse.items[index].snippet?.publishedAt!!.substring(0, 10)
+                playlistItemsResponse.items[index].snippet?.publishedAt!!
             val channelTitle = playlistItemsResponse.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic", "")!!
             val title = stringToHtmlSign(playlistItemsResponse.items[index].snippet?.title!!)
             val videoId = playlistItemsResponse.items[index].snippet?.resourceId?.videoId!!
@@ -115,5 +116,9 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
             .replace("[>]".toRegex(), "&gt;")
             .replace("&quot;".toRegex(), "'")
             .replace("&#39;".toRegex(), "'")
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        fbinding = null
     }
 }

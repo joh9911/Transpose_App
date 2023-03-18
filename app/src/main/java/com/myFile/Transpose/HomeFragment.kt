@@ -5,9 +5,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.*
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
@@ -16,11 +14,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.myFile.Transpose.databinding.FragmentHomeBinding
 import com.myFile.Transpose.databinding.MainBinding
+import com.myFile.Transpose.model.PlayListSearchData
+import com.myFile.Transpose.model.PlayListVideoSearchData
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import retrofit2.create
 import kotlin.collections.ArrayList
 
 
@@ -103,15 +104,13 @@ class HomeFragment: Fragment() {
     ): View {
         fbinding = FragmentHomeBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
-        Log.d("실행됏내","ㄴㅇㄹ")
-//        setHasOptionsMenu(true)
+        frameLayout = binding.searchResultFrameLayout
         val view = binding.root
         initRecyclerView()
         initToolbar()
         initSearchRecyclerView()
         initExceptionHandler()
         getAllData()
-        frameLayout = binding.searchResultFrameLayout
         return view
     }
 
@@ -215,20 +214,40 @@ class HomeFragment: Fragment() {
         val gridLayoutManager = GridLayoutManager(activity,4, GridLayoutManager.HORIZONTAL,false)
         binding.popularTop100PlaylistVideoRecyclerView.layoutManager = gridLayoutManager
         popular100PlaylistAdapter = HomePopular100RecyclerViewAdapter()
-
-        popular100PlaylistAdapter.setItemClickListener(object: HomePopular100RecyclerViewAdapter.OnItemClickListener{
-            var mLastClickTime = 0L
+        popular100PlaylistAdapter.setItemClickListener(object: HomePopular100RecyclerViewAdapter.OnItemClickListener {
             override fun onClick(v: View, position: Int) {
-                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.playerFragment.id,PlayerFragment(popularTop100Playlist, channelDataList, position, "playlist"),"playerFragment")
-                        .commit()
-                }
-                mLastClickTime = SystemClock.elapsedRealtime()
+                activity.supportFragmentManager.beginTransaction()
+                    .replace(
+                        activity.binding.playerFragment.id,
+                        PlayerFragment(
+                            popularTop100Playlist,
+                            position
+                        ),
+                        "playerFragment"
+                    )
+                    .commit()
+            }
+            override fun optionButtonClick(v: View, position: Int) {
+                val popUp = PopupMenu(activity, v)
+                popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
+                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
+                    when (it.itemId) {
+                        R.id.add_my_playlist -> {
+                            showNoticeDialog(popularTop100Playlist[position])
+                        }
+                    }
+                    true
+                })
+                popUp.show()
             }
         })
         popular100PlaylistAdapter.submitList(popularTop100Playlist)
         binding.popularTop100PlaylistVideoRecyclerView.adapter = popular100PlaylistAdapter
+    }
+    fun showNoticeDialog(videoData: VideoData) {
+        // Create an instance of the dialog fragment and show it
+        val dialog = DialogFragmentPopupAddPlaylist(videoData)
+        dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
     }
     private fun getAllData(){
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
@@ -240,6 +259,7 @@ class HomeFragment: Fragment() {
             async { getPlaylistData(bestSituationMusicId) }
         }
     }
+
     private suspend fun getPlaylistData(musicUrls: ArrayList<String>) {
         for (index in musicUrls.indices) {
             val retrofit = RetrofitData.initRetrofit()
@@ -319,11 +339,12 @@ class HomeFragment: Fragment() {
     private fun popularTop100MusicDataMapping(responseData: PlayListVideoSearchData){
         for (index in responseData.items.indices){
             val thumbnail = responseData.items[index].snippet?.thumbnails?.high?.url!!
-            val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
+            val date = responseData.items[index].snippet?.publishedAt!!
             val channelTitle = responseData.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic","")!!
             val title = stringToHtmlSign(responseData.items[index].snippet?.title!!)
             val videoId = responseData.items[index].snippet?.resourceId?.videoId!!
-            popularTop100Playlist.add(VideoData(thumbnail, title, channelTitle, videoId, date, thumbnail, false))
+            val channelId = responseData.items[index].snippet?.channelId!!
+            popularTop100Playlist.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
         }
         popular100PlaylistAdapter.submitList(popularTop100Playlist.toMutableList())
         binding.popularTop100PlaylistVideoProgressBar.visibility = View.GONE
@@ -598,5 +619,10 @@ class HomeFragment: Fragment() {
     override fun onDetach() {
         super.onDetach()
         callback.remove()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        fbinding = null
     }
 }
