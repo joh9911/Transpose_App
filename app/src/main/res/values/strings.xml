@@ -25,10 +25,16 @@
     <string name="publish_date_day">%ddays ago</string>
     <string name="publish_date_month">%dmonths ago</string>
     <string name="publish_date_year">%dyears ago</string>
-    <string name="view_count_under_thousand">%d views</string>
-    <string name="view_count_over_thousand">%dk views</string>
-    <string name="view_count_over_hundred_thousand">%dk views</string>
-    <string name="view_count_over_million">%dM views</string>
-    <string name="view_count_over_hundred_million">%dM views</string>
-    <string name="view_count_over_billion">%dB views</string>
+    <string name="view_count_under_thousand">%s views</string>
+    <string name="view_count_over_thousand">%sk views</string>
+    <string name="view_count_over_hundred_thousand">%sk views</string>
+    <string name="view_count_over_million">%sM views</string>
+    <string name="view_count_over_hundred_million">%sM views</string>
+    <string name="view_count_over_billion">%sB views</string>
+    <string name="subscriber_count_under_thousand">subscribers %s</string>
+    <string name="subscriber_count_over_thousand">subscribers %sk</string>
+    <string name="subscriber_count_over_hundred_thousand">subscribers %sk</string>
+    <string name="subscriber_count_over_million">subscribers %sM</string>
+    <string name="subscriber_count_over_hundred_million">subscribers %sM</string>
+    <string name="subscriber_count_over_billion">subscribers %sB</string>
 </resources>
