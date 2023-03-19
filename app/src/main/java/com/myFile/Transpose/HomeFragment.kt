@@ -220,8 +220,7 @@ class HomeFragment: Fragment() {
                     .replace(
                         activity.binding.playerFragment.id,
                         PlayerFragment(
-                            popularTop100Playlist,
-                            position
+                            popularTop100Playlist[position]
                         ),
                         "playerFragment"
                     )

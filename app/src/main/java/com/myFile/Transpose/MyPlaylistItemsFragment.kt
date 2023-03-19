@@ -75,10 +75,7 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
                     .replace(
                         activity.binding.playerFragment.id,
                         PlayerFragment(
-                            myMusicItems,
-
-                            position
-
+                            myMusicItems[position]
                         ),
                         "playerFragment"
                     )

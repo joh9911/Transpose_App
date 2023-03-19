@@ -67,7 +67,7 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 activity.supportFragmentManager.beginTransaction()
-                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData,  position),"playerFragment")
+                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData[position]),"playerFragment")
                     .commit()
             }
 

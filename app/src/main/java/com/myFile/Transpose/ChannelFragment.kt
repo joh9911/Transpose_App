@@ -90,9 +90,9 @@ class ChannelFragment(
             override fun videoClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList,  position),"playerFragment")
-                        .commit()
+//                    activity.supportFragmentManager.beginTransaction()
+//                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList,  position),"playerFragment")
+//                        .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
