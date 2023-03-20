@@ -141,31 +141,29 @@
             android:layout_height="250dp"
             motion:layout_constraintTop_toTopOf="parent"
             motion:layout_constraintStart_toStartOf="parent" />
-        <Constraint
-            android:id="@+id/fragmentTitleLinearLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            motion:visibilityMode="ignore"
-            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
-            motion:layout_constraintStart_toStartOf="parent"
-            motion:layout_constraintEnd_toEndOf="parent"/>
-        <Constraint
-            android:id="@+id/channel_linear_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            motion:visibilityMode="ignore"
-            motion:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout"
-            motion:layout_constraintStart_toStartOf="parent"
-            motion:layout_constraintEnd_toEndOf="parent"/>
-
-
+<!--        <Constraint-->
+<!--            android:id="@+id/fragmentTitleLinearLayout"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            motion:visibilityMode="ignore"-->
+<!--            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"-->
+<!--            motion:layout_constraintStart_toStartOf="parent"-->
+<!--            motion:layout_constraintEnd_toEndOf="parent"/>-->
+<!--        <Constraint-->
+<!--            android:id="@+id/channel_linear_layout"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            motion:visibilityMode="ignore"-->
+<!--            motion:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout"-->
+<!--            motion:layout_constraintStart_toStartOf="parent"-->
+<!--            motion:layout_constraintEnd_toEndOf="parent"/>-->
 
         <Constraint
             android:id="@+id/fragmentRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             motion:visibilityMode="ignore"
-            motion:layout_constraintTop_toBottomOf="@id/channel_linear_layout"
+            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"/>
@@ -174,7 +172,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             motion:visibilityMode="ignore"
-            motion:layout_constraintTop_toBottomOf="@id/channel_linear_layout"
+            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"/>
