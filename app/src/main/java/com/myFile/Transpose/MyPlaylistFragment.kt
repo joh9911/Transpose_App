@@ -37,7 +37,7 @@ class MyPlaylistFragment: Fragment() {
     var myPlaylists = listOf<MyPlaylist>()
     var myMusics = listOf<Musics>()
 
-    private lateinit var searchAdapter: SearchSuggestionKeywordRecyclerViewAdapter
+    private lateinit var searchKeywordRecyclerAdapter: SearchSuggestionKeywordRecyclerViewAdapter
     private lateinit var myPlaylistRecyclerViewAdapter: MyPlaylistRecyclerViewAdapter
     lateinit var searchView: SearchView
     lateinit var searchViewItem: MenuItem
@@ -112,13 +112,13 @@ class MyPlaylistFragment: Fragment() {
         binding.playlistRecyclerView.adapter = myPlaylistRecyclerViewAdapter
     }
     fun initRecyclerView(){
-        binding.searchRecyclerView.layoutManager = LinearLayoutManager(activity)
-        searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
-        searchAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
+        binding.searchSuggestionKeywordRecyclerView.layoutManager = LinearLayoutManager(activity)
+        searchKeywordRecyclerAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
+        searchKeywordRecyclerAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 val searchWord = suggestionKeywords[position]
                 suggestionKeywords.clear()
-                searchAdapter.submitList(suggestionKeywords.toMutableList())
+                searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
                 searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
@@ -129,10 +129,10 @@ class MyPlaylistFragment: Fragment() {
                     ))
                     .addToBackStack(null)
                     .commit()
-                binding.searchRecyclerView.visibility = View.INVISIBLE
+                binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
             }
         })
-        binding.searchRecyclerView.adapter = searchAdapter
+        binding.searchSuggestionKeywordRecyclerView.adapter = searchKeywordRecyclerAdapter
     }
 
     fun initDb(){
@@ -175,10 +175,6 @@ class MyPlaylistFragment: Fragment() {
     fun initToolbar(){
         playlistToolBar = binding.playlistToolBar
         val menu = playlistToolBar.menu
-        menu.findItem(R.id.transpose_icon).setOnMenuItemClickListener(MenuItem.OnMenuItemClickListener {
-            Log.d("사이즈","$myPlaylists")
-            true
-        })
         searchViewItem = menu.findItem(R.id.search_icon)
         searchView = searchViewItem.actionView as SearchView
         searchView.setIconifiedByDefault(true)
@@ -193,7 +189,7 @@ class MyPlaylistFragment: Fragment() {
         searchView.setOnQueryTextFocusChangeListener { p0, p1 -> // 서치뷰 검색창을 클릭할 때 이벤트
             if (p1){
                 Log.d("눌림","ㄴㅇㄹ")
-                binding.searchRecyclerView.visibility = View.VISIBLE
+                binding.searchSuggestionKeywordRecyclerView.visibility = View.VISIBLE
             }
         }
         searchViewItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
@@ -216,6 +212,7 @@ class MyPlaylistFragment: Fragment() {
                     count = childFragmentManager.backStackEntryCount
                 }
                 searchViewCollapseEvent()
+                callback.remove()
                 return count == 0
 //                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
 //                    return if (activity.transposePage.visibility == View.VISIBLE) {
@@ -258,7 +255,7 @@ class MyPlaylistFragment: Fragment() {
                     ))
                     .addToBackStack(null)
                     .commit()
-                binding.searchRecyclerView.visibility = View.INVISIBLE
+                binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
                 return false
             }
             //SwipeRefreshLayout 새로고침
@@ -269,7 +266,7 @@ class MyPlaylistFragment: Fragment() {
                 if (newText == ""){
                     Log.d("빈","칸")
                     suggestionKeywords.clear()
-                    searchAdapter.submitList(suggestionKeywords.toMutableList())
+                    searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
                 }
                 return false
             }
@@ -289,7 +286,7 @@ class MyPlaylistFragment: Fragment() {
                     if (splitCommaList[0] != "]]" && splitCommaList[0] != '"'.toString()){
                         addSubstringToSuggestionKeyword(splitCommaList)
                     }
-                    searchAdapter.submitList(suggestionKeywords.toMutableList())
+                    searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
                 }
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     Log.d("실패!","!1")
@@ -335,9 +332,9 @@ class MyPlaylistFragment: Fragment() {
         Log.d("이게 실행이 됏잖아","왜")
 //        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
-        binding.searchRecyclerView.visibility = View.INVISIBLE
+        binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
         suggestionKeywords.clear()
-        searchAdapter.submitList(suggestionKeywords.toMutableList())
+        searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
 
     }
 

@@ -88,7 +88,7 @@ class HomeFragment: Fragment() {
     private lateinit var bestSituationPlaylistAdapter: HomePlaylistRecyclerViewAdapter
     private lateinit var popular100PlaylistAdapter: HomePopular100RecyclerViewAdapter
 
-    private lateinit var searchAdapter: SearchSuggestionKeywordRecyclerViewAdapter
+    private lateinit var searchSuggestionKeywordAdapter: SearchSuggestionKeywordRecyclerViewAdapter
     lateinit var searchView: SearchView
     lateinit var searchViewItem: MenuItem
 
@@ -108,7 +108,7 @@ class HomeFragment: Fragment() {
         val view = binding.root
         initRecyclerView()
         initToolbar()
-        initSearchRecyclerView()
+        initSearchSuggestionKeywordRecyclerView()
         initExceptionHandler()
         getAllData()
         return view
@@ -220,7 +220,7 @@ class HomeFragment: Fragment() {
                     .replace(
                         activity.binding.playerFragment.id,
                         PlayerFragment(
-                            popularTop100Playlist[position]
+                            popularTop100Playlist[position], this@HomeFragment
                         ),
                         "playerFragment"
                     )
@@ -368,14 +368,14 @@ class HomeFragment: Fragment() {
             }
         }
     }
-    private fun initSearchRecyclerView(){
-        binding.searchRecyclerView.layoutManager = LinearLayoutManager(activity)
-        searchAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
-        searchAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
+    private fun initSearchSuggestionKeywordRecyclerView(){
+        binding.searchSuggestionKeywordRecyclerView.layoutManager = LinearLayoutManager(activity)
+        searchSuggestionKeywordAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
+        searchSuggestionKeywordAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 val searchWord = suggestionKeywords[position]
                 suggestionKeywords.clear()
-                searchAdapter.submitList(suggestionKeywords.toMutableList())
+                searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
                 searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
@@ -386,10 +386,10 @@ class HomeFragment: Fragment() {
 //                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(searchWord))
 //                    .addToBackStack(null)
 //                    .commit()
-                binding.searchRecyclerView.visibility = View.INVISIBLE
+                binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
             }
         })
-        binding.searchRecyclerView.adapter = searchAdapter
+        binding.searchSuggestionKeywordRecyclerView.adapter = searchSuggestionKeywordAdapter
     }
 
     private fun getSuggestionKeyword(newText: String){
@@ -404,7 +404,7 @@ class HomeFragment: Fragment() {
                     if (splitCommaList[0] != "]]" && splitCommaList[0] != '"'.toString()){
                         addSubstringToSuggestionKeyword(splitCommaList)
                     }
-                    searchAdapter.submitList(suggestionKeywords.toMutableList())
+                    searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
                 }
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     Log.d("실패!","!1")
@@ -424,6 +424,7 @@ class HomeFragment: Fragment() {
             }
         }
     }
+
     private fun convertStringUnicodeToKorean(data: String): String {
         val sb = StringBuilder() // 단일 쓰레드이므로 StringBuilder 선언
         var i = 0
@@ -441,24 +442,18 @@ class HomeFragment: Fragment() {
             }
             i++
         }
-
         return sb.toString()
     }
 
-//    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-//        super.onCreateOptionsMenu(menu,inflater)
-//        inflater.inflate(R.menu.home_fragment_tool_bar, menu)
-//
-//    }
 
 
     private fun searchViewCollapseEvent(){
         Log.d("이게 실행이 됏잖아","왜")
 //        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
-        binding.searchRecyclerView.visibility = View.INVISIBLE
+        binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
         suggestionKeywords.clear()
-        searchAdapter.submitList(suggestionKeywords.toMutableList())
+        searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
 
     }
 
@@ -470,7 +465,7 @@ class HomeFragment: Fragment() {
             }
             R.id.search_icon -> {
                 Log.d("서치 버튼이","눌림")
-                binding.searchRecyclerView.visibility = View.VISIBLE
+                binding.searchSuggestionKeywordRecyclerView.visibility = View.VISIBLE
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -485,18 +480,16 @@ class HomeFragment: Fragment() {
         searchView = searchViewItem.actionView as SearchView
         val searchAutoComplete = searchView.findViewById<SearchView.SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
         val searchViewCloseButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_close_btn)
-        val searchViewBackButton = searchView.findViewById<ImageView>(androidx.appcompat.R.id.search_mag_icon)
         searchAutoComplete.setTextColor(resources.getColor(R.color.white))
         searchAutoComplete.setHintTextColor(resources.getColor(R.color.white))
         searchAutoComplete.hint = resources.getString(R.string.searchView_hint)
         searchViewCloseButton.setColorFilter(resources.getColor(R.color.white))
-        searchViewBackButton.setColorFilter(resources.getColor(R.color.white))
-        searchView.setOnQueryTextFocusChangeListener { p0, p1 -> // 서치뷰 검색창을 클릭할 때 이벤트
-            if (p1){
-                Log.d("눌림","ㄴㅇㄹ")
-                binding.searchRecyclerView.visibility = View.VISIBLE
+        searchView.setOnQueryTextFocusChangeListener { p0, isClicked -> // 서치뷰 검색창을 클릭할 때 이벤트
+            if (isClicked){
+                binding.searchSuggestionKeywordRecyclerView.visibility = View.VISIBLE
             }
         }
+
         searchViewItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener{
             override fun onMenuItemActionExpand(p0: MenuItem): Boolean {
                 activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
@@ -515,6 +508,7 @@ class HomeFragment: Fragment() {
                 childFragmentManager.addOnBackStackChangedListener {
                     count = childFragmentManager.backStackEntryCount
                 }
+                callback.remove()
                 searchViewCollapseEvent()
                 return count == 0
 //                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
@@ -547,8 +541,6 @@ class HomeFragment: Fragment() {
         })
         searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
-                Log.d("homeFragment","쿼리를 보냈어요")
-                Log.d("homeFragment","${searchView.query}")
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
                     .replace(binding.searchResultFrameLayout.id,SearchResultFragment(
@@ -558,19 +550,17 @@ class HomeFragment: Fragment() {
                     ))
                     .addToBackStack(null)
                     .commit()
-                binding.searchRecyclerView.visibility = View.INVISIBLE
+                binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
                 return false
             }
             //SwipeRefreshLayout 새로고침
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText != ""){
-                    Log.d("연관검색어 결과를","자겨옴")
                     getSuggestionKeyword(newText!!)
                 }
                 if (newText == ""){
-                    Log.d("빈","칸")
                     suggestionKeywords.clear()
-                    searchAdapter.submitList(suggestionKeywords.toMutableList())
+                    searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
                 }
                 return false
             }
@@ -596,6 +586,7 @@ class HomeFragment: Fragment() {
 
         callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                Log.d("백","버튼")
                 if (childFragmentManager.backStackEntryCount == 0) {
                     if (searchViewItem.isActionViewExpanded)
                         searchViewItem.collapseActionView()
