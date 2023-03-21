@@ -2,6 +2,7 @@ package com.myFile.Transpose
 
 import android.content.Context
 import android.provider.Settings.Global.getString
+import android.util.Log
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -22,6 +23,7 @@ class YoutubeDigitConverter(val context: Context) {
         //현재 시간
         val nowFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(getTime())
         val beforeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(changeDateFormat(beforeDate))
+        Log.d("beforFormat","$beforeFormat")
 
         val diffSec     = (nowFormat.time - beforeFormat.time) / 1000                                           //초 차이
         val diffMin     = (nowFormat.time - beforeFormat.time) / (60*1000)                                      //분 차이
@@ -31,7 +33,8 @@ class YoutubeDigitConverter(val context: Context) {
         val diffYears   = nowFormat.year - beforeFormat.year                                                    //연도 차이
 
         if(diffYears > 0){
-            return String.format(context.getString(R.string.publish_date_year),diffYears)
+            if (diffMonths >= 12)
+                return String.format(context.getString(R.string.publish_date_year),diffYears)
         }
         if(diffMonths > 0){
             return String.format(context.getString(R.string.publish_date_month),diffMonths)
