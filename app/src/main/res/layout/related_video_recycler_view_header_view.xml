@@ -5,13 +5,13 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:id="@+id/header_view">
+
     <LinearLayout
         android:id="@+id/fragmentTitleLinearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingTop="10dp"
-        android:background="@color/white"
         app:layout_constraintTop_toTopOf="@id/header_view"
         >
         <TextView
@@ -24,7 +24,7 @@
             android:textSize="20dp"
             android:textColor="@color/black"
             android:textStyle="bold"
-            android:text="title" />
+             />
 
         <LinearLayout
             android:id="@+id/fragmentVideoDetail"
@@ -41,17 +41,17 @@
                 android:layout_weight="0.5"
                 android:background="@color/before_getting_data_color"
                 android:textColor="@color/description_color"
-                android:text="detail" />
+                 />
             <TextView
                 android:id="@+id/video_time"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:layout_weight="0.5"
-                android:layout_marginStart="5dp"
                 android:background="@color/before_getting_data_color"
+                android:layout_marginStart="5dp"
                 android:textColor="@color/description_color"
-                android:text="time"/>
+                />
             <View
                 android:layout_width="0dp"
                 android:layout_height="0dp"
@@ -64,6 +64,7 @@
         android:id="@+id/channel_linear_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+
         android:orientation="horizontal"
         android:background="@color/white"
         android:layout_marginStart="5dp"
@@ -82,10 +83,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:maxLines="1"
+            android:background="@color/before_getting_data_color"
             android:layout_gravity="center_vertical"
             android:textColor="@color/black"
             android:layout_weight="1"
-            android:text="channel" />
+             />
 
         <TextView
             android:id="@+id/channel_subscription_count"
@@ -93,11 +95,13 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.7"
             android:gravity="right"
+            android:background="@color/before_getting_data_color"
             android:layout_gravity="center_vertical"
             android:layout_marginEnd="20dp"
             android:textColor="@color/description_color"
-            android:text="하하"
+
             />
     </LinearLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

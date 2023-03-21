@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.ProgressBarItemBinding
 import com.myFile.Transpose.databinding.RelatedVideoRecyclerViewHeaderViewBinding
+import com.myFile.Transpose.databinding.RelatedVideoRecyclerViewHeaderViewShimmerBinding
 import com.myFile.Transpose.databinding.SearchResultRecyclerItemBinding
 import com.myFile.Transpose.model.ChannelSearchData
 import com.myFile.Transpose.model.HeaderViewData
@@ -17,6 +18,7 @@ import com.myFile.Transpose.model.VideoDetailData
 class RelatedVideoRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewHolder>(diffUtil) {
     private val VIEW_TYPE_HEADER = 0
     private val VIEW_TYPE_ITEM= 1
+
 
     override fun getItemCount(): Int {
         return currentList.size + 1
@@ -27,7 +29,9 @@ class RelatedVideoRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewH
         headerView.fragmentVideoTitle.text = videoTitle
     }
 
-    fun setHeaderViewData(headerViewData: HeaderViewData){
+
+    fun setHeaderViewData(headerViewData: HeaderViewData,context: Activity){
+        setHeaderViewAfterGettingData(context)
         headerView.fragmentVideoTitle.text = headerViewData.fragmentVideoTitle
         headerView.videoTime.text = headerViewData.videoTime
         headerView.videoViewCount.text = headerViewData.videoViewCount
@@ -37,12 +41,38 @@ class RelatedVideoRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewH
         Glide.with(headerView.channelImageView)
             .load(headerViewData.channelThumbnail)
             .into(headerView.channelImageView)
+
     }
+    fun setHeaderViewColorBeforeGettingData(context: Activity){
+        headerView.videoTime.text = ""
+        headerView.videoViewCount.text = ""
+        headerView.channelTextView.text = ""
+        headerView.channelSubscriptionCount.text = ""
+        headerView.videoTime.setBackgroundColor(context.resources.getColor(R.color.before_getting_data_color))
+        headerView.videoViewCount.setBackgroundColor(context.resources.getColor(R.color.before_getting_data_color))
+        headerView.channelTextView.setBackgroundColor(context.resources.getColor(R.color.before_getting_data_color))
+        headerView.channelSubscriptionCount.setBackgroundColor(context.resources.getColor(R.color.before_getting_data_color))
+
+        Glide.with(headerView.channelImageView)
+            .load(R.color.before_getting_data_color)
+            .into(headerView.channelImageView)
+    }
+
+    fun setHeaderViewAfterGettingData(context: Activity){
+        headerView.videoTime.setBackgroundColor(context.resources.getColor(R.color.white))
+        headerView.videoViewCount.setBackgroundColor(context.resources.getColor(R.color.white))
+        headerView.channelTextView.setBackgroundColor(context.resources.getColor(R.color.white))
+        headerView.channelSubscriptionCount.setBackgroundColor(context.resources.getColor(R.color.white))
+    }
+
 
     inner class HeaderViewHolder(binding: RelatedVideoRecyclerViewHeaderViewBinding):
     RecyclerView.ViewHolder(binding.root){
         init {
             headerView = binding
+            binding.channelLinearLayout.setOnClickListener {
+                itemClickListener.channelClick(it, 0)
+            }
         }
     }
 
@@ -50,12 +80,8 @@ class RelatedVideoRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewH
     inner class MyViewHolder(private val binding: SearchResultRecyclerItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
-
-            binding.thumbnailImageView.setOnClickListener {
-                itemClickListener.videoClick(it, adapterPosition)
-            }
-            binding.videoTitleChannelTitleLinearLayout.setOnClickListener {
-                itemClickListener.videoClick(it, adapterPosition)
+            binding.dataItem.setOnClickListener{
+                itemClickListener.videoClick(it, bindingAdapterPosition - 1)
             }
         }
 
@@ -79,6 +105,7 @@ class RelatedVideoRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewH
                 )
                 MyViewHolder(binding)
             }
+
             else -> {
                 val binding = RelatedVideoRecyclerViewHeaderViewBinding.inflate(
                     LayoutInflater.from(parent.context),
@@ -95,6 +122,7 @@ class RelatedVideoRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewH
             0 -> VIEW_TYPE_HEADER
             else -> VIEW_TYPE_ITEM
         }
+
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {

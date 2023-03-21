@@ -2,6 +2,7 @@ package com.myFile.Transpose
 
 import android.content.Context
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -24,7 +25,7 @@ import java.lang.Math.abs
 import kotlin.collections.ArrayList
 
 
-class PlayerFragment(private val videoData: VideoData): Fragment() {
+class PlayerFragment(private val videoData: VideoData, private val currentFragment: Fragment): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var relatedVideoRecyclerViewAdapter: RelatedVideoRecyclerViewAdapter
@@ -39,6 +40,8 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
 
 
     private val relatedVideoList = ArrayList<VideoData>()
+    private lateinit var currentVideoDetailData: VideoDetailData
+    private lateinit var currentChannelSearchData: ChannelSearchData
 
     var player: ExoPlayer? = null
     lateinit var playerView: PlayerView
@@ -76,69 +79,6 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
         }
     }
 
-    private suspend fun getRelatedVideo(videoId: String) {
-        val retrofit = RetrofitYT.initRetrofit()
-        val response = retrofit.create(RetrofitService::class.java)
-            .getRelatedVideo("id, snippet",videoId,"video","50")
-        if (response.isSuccessful) {
-            if (response.body()?.RelatedVideoDataitems?.size != 0) {
-                withContext(Dispatchers.Main){
-                    relatedVideoMapping(response.body()!!)
-                }
-            }
-        }
-        else{
-            Log.d("안됐음","ㄴㅇㄹㄴㅁㄹ")
-        }
-    }
-    private fun relatedVideoMapping(relatedVideoData: RelatedVideoData){
-        relatedVideoList.clear()
-        for (index in relatedVideoData.RelatedVideoDataitems.indices){
-            val thumbnail = relatedVideoData.RelatedVideoDataitems[index].snippet?.thumbnails?.high?.url!!
-            val date = relatedVideoData.RelatedVideoDataitems[index].snippet?.publishedAt!!
-            val title = stringToHtmlSign(relatedVideoData.RelatedVideoDataitems[index].snippet?.title!!)
-            val videoId = relatedVideoData.RelatedVideoDataitems[index].id?.videoId!!
-            val channelTitle = relatedVideoData.RelatedVideoDataitems[index].snippet?.channelTitle!!
-            val channelId = relatedVideoData.RelatedVideoDataitems[index].snippet?.channelId!!
-            relatedVideoList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date, false))
-        }
-        binding.relatedVideoProgressBar.visibility = View.GONE
-        relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
-//        binding.relatedVideoProgressBar.visibility = View.GONE
-    }
-    private fun initRecyclerView(){
-        binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-        relatedVideoRecyclerViewAdapter = RelatedVideoRecyclerViewAdapter()
-        relatedVideoRecyclerViewAdapter.setItemClickListener(object: RelatedVideoRecyclerViewAdapter.OnItemClickListener{
-            override fun channelClick(v: View, position: Int) {
-                binding.playerMotionLayout.transitionToState(R.id.start)
-//                    activity.supportFragmentManager.beginTransaction()
-//                        .replace(activity.binding.anyFrameLayout.id,ChannelFragment(channelDataList[position]))
-//                        .addToBackStack(null)
-//                        .commit()
-            }
-            override fun videoClick(v: View, position: Int) {
-//                replaceVideo(position)
-//                playCurrentVideo()
-                replaceVideo(position)
-            }
-            override fun optionButtonClick(v: View, position: Int) {
-            }
-        })
-        relatedVideoRecyclerViewAdapter.submitList(relatedVideoList)
-        binding.fragmentRecyclerView.adapter = relatedVideoRecyclerViewAdapter
-    }
-
-    fun replaceVideo(position: Int){
-        binding.fragmentRecyclerView.scrollToPosition(0)
-        activity.videoService!!.playVideo(relatedVideoList[position])
-        relatedVideoRecyclerViewAdapter.setHeaderViewTitle(relatedVideoList[position].title)
-        getDetailData(relatedVideoList[position].videoId)
-
-        binding.relatedVideoProgressBar.visibility = View.VISIBLE
-
-    }
-
     private suspend fun getVideoDetail(videoId: String) {
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java)
@@ -165,6 +105,8 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
     }
 
     private fun detailMapping(videoDetailResponseData: VideoDetailData, channelDetailResponseData: ChannelSearchData){
+        currentChannelSearchData = channelDetailResponseData
+        currentVideoDetailData = videoDetailResponseData
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
         relatedVideoRecyclerViewAdapter.setHeaderViewData(HeaderViewData(videoDetailResponseData.items[0].snippet?.title!!,
             youtubeDigitConverter.viewCountCalculator(videoDetailResponseData.items[0].statistics?.viewCount!!),
@@ -172,25 +114,104 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
             channelDetailResponseData.items[0].snippet?.title!!,
             channelDetailResponseData.items[0].snippet?.thumbnails?.high?.url!!,
             youtubeDigitConverter.subscriberCountConverter(channelDetailResponseData.items[0].statistics?.subscriberCount!!)
-        ))
-
-
-//        binding.bottomTitleTextView.text = playerModel.currentMusicModel()!!.title
-//        binding.fragmentVideoTitle.text = playerModel.currentMusicModel()!!.title
-//        binding.videoViewCount.text = youtubeDigitConverter.viewCountCalculator(videoDetailResponseData.items[0].statistics?.viewCount!!)
-//        binding.videoTime.text = youtubeDigitConverter.intervalBetweenDateText(playerModel.currentMusicModel()?.date!!)
-//        binding.videoViewCount.setBackgroundColor(activity.resources.getColor(R.color.white))
-//        binding.videoTime.setBackgroundColor(activity.resources.getColor(R.color.white))
-//        binding.channelTextView.setBackgroundColor(activity.resources.getColor(R.color.white))
-//        binding.channelSubscriptionCount.setBackgroundColor(activity.resources.getColor(R.color.white))
-
-//        binding.channelTextView.text = channelDetailResponseData.items[0].snippet?.title
-//        binding.channelSubscriptionCount.text = youtubeDigitConverter.subscriberCountConverter(channelDetailResponseData.items[0].statistics?.subscriberCount!!)
-//        Glide.with(binding.channelImageView)
-//            .load(channelDetailResponseData.items[0].snippet?.thumbnails?.high?.url)
-//            .placeholder(R.drawable.black_background)
-//            .into(binding.channelImageView)
+        ),activity)
     }
+
+    private suspend fun getRelatedVideo(videoId: String) {
+        val retrofit = RetrofitYT.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java)
+            .getRelatedVideo("id, snippet",videoId,"video","50")
+        if (response.isSuccessful) {
+            if (response.body()?.RelatedVideoDataitems?.size != 0) {
+                withContext(Dispatchers.Main){
+                    relatedVideoMapping(response.body()!!)
+                }
+            }
+        }
+        else{
+            Log.d("안됐음","ㄴㅇㄹㄴㅁㄹ")
+        }
+    }
+    private fun relatedVideoMapping(relatedVideoData: RelatedVideoData){
+        relatedVideoList.clear()
+
+        val youtubeDigitConverter = YoutubeDigitConverter(activity)
+        for (index in relatedVideoData.RelatedVideoDataitems.indices){
+            val thumbnail = relatedVideoData.RelatedVideoDataitems[index].snippet?.thumbnails?.high?.url!!
+            val rawDate = relatedVideoData.RelatedVideoDataitems[index].snippet?.publishedAt!!
+            val date = youtubeDigitConverter.intervalBetweenDateText(rawDate)
+            val title = stringToHtmlSign(relatedVideoData.RelatedVideoDataitems[index].snippet?.title!!)
+            val videoId = relatedVideoData.RelatedVideoDataitems[index].id?.videoId!!
+            val channelTitle = relatedVideoData.RelatedVideoDataitems[index].snippet?.channelTitle!!
+            val channelId = relatedVideoData.RelatedVideoDataitems[index].snippet?.channelId!!
+            relatedVideoList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date, false))
+        }
+        binding.relatedVideoProgressBar.visibility = View.GONE
+        relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
+    }
+
+    private fun initRecyclerView(){
+        binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
+        relatedVideoRecyclerViewAdapter = RelatedVideoRecyclerViewAdapter()
+        relatedVideoRecyclerViewAdapter.setItemClickListener(object: RelatedVideoRecyclerViewAdapter.OnItemClickListener{
+            override fun channelClick(v: View, position: Int) {
+                binding.playerMotionLayout.transitionToState(R.id.start)
+                if (currentFragment is HomeFragment){
+                    Log.d("눌렀다","homeFragment일 때")
+                    currentFragment.childFragmentManager.beginTransaction()
+                    .add(currentFragment.binding.searchResultFrameLayout.id,
+                        ChannelFragment(channelDataMapper(), currentFragment))
+                        .addToBackStack(null)
+                        .commit()
+                }
+                if (currentFragment is MyPlaylistFragment){
+                    Log.d("눌렀어","myplaylsitFragment일 때")
+                    currentFragment.childFragmentManager.beginTransaction()
+                        .add(currentFragment.binding.resultFrameLayout.id,
+                        ChannelFragment(channelDataMapper(),currentFragment))
+                        .addToBackStack(null)
+                        .commit()
+                }
+            }
+            override fun videoClick(v: View, position: Int) {
+//                replaceVideo(position)
+//                playCurrentVideo()
+                replaceVideo(position)
+            }
+            override fun optionButtonClick(v: View, position: Int) {
+            }
+        })
+        relatedVideoRecyclerViewAdapter.submitList(relatedVideoList)
+        binding.fragmentRecyclerView.adapter = relatedVideoRecyclerViewAdapter
+    }
+
+    fun channelDataMapper(): ChannelData{
+        val channelThumbnail = currentChannelSearchData.items[0].snippet?.thumbnails?.default?.url!!
+        val videoCount = currentChannelSearchData.items[0].statistics?.videoCount!!
+        val subscriberCount = currentChannelSearchData.items[0].statistics?.subscriberCount!!
+        val viewCount = currentChannelSearchData.items[0].statistics?.viewCount!!
+        val channelBanner = currentChannelSearchData.items[0].brandingSettings?.image?.bannerExternalUrl
+        val channelTitle = currentChannelSearchData.items[0].snippet?.title!!
+        val channelDescription = currentChannelSearchData.items[0].snippet?.description!!
+        val channelPlaylistId = currentChannelSearchData.items[0].contentDetails?.relatedPlaylists?.uploads!!
+        return ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId)
+    }
+
+    fun replaceVideo(position: Int){
+        binding.fragmentRecyclerView.scrollToPosition(0)
+        relatedVideoRecyclerViewAdapter.setHeaderViewTitle(relatedVideoList[position].title)
+        relatedVideoRecyclerViewAdapter.setHeaderViewColorBeforeGettingData(activity)
+        activity.videoService!!.playVideo(relatedVideoList[position])
+
+        Glide.with(binding.playerThumbnailView)
+            .load(relatedVideoList[position].thumbnail)
+            .placeholder(R.color.before_getting_data_color)
+            .into(binding.playerThumbnailView)
+        binding.relatedVideoProgressBar.visibility = View.VISIBLE
+        getDetailData(relatedVideoList[position].videoId)
+
+    }
+
 
     private fun initView(){
         val currentPlayingVideoData = videoData
@@ -208,14 +229,11 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
             }
         }
         binding.bottomTitleTextView.text = currentPlayingVideoData.title
-//        binding.fragmentVideoTitle.text = currentPlayingVideoData.title
-//        binding.channelTextView.text = currentPlayingVideoData.channelTitle
 
         Glide.with(binding.playerThumbnailView)
             .load(currentPlayingVideoData.thumbnail)
-            .placeholder(R.drawable.black_background)
+            .placeholder(R.color.before_getting_data_color)
             .into(binding.playerThumbnailView)
-
     }
 
     fun settingBottomPlayButton(){
@@ -269,22 +287,6 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
 //        updatePlayerView()
 //    }
 
-    private fun updatePlayerView(){
-//        binding.bottomTitleTextView.text = ""
-//        binding.fragmentVideoTitle.text = ""
-//        binding.videoViewCount.text = ""
-//        binding.channelSubscriptionCount.text = ""
-//        binding.channelTextView.text = ""
-//        binding.videoTime.text = ""
-//        binding.channelTextView.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
-//        binding.videoViewCount.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
-//        binding.videoTime.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
-//        binding.channelSubscriptionCount.setBackgroundColor(activity.resources.getColor(R.color.before_getting_data_color))
-//        Glide.with(binding.channelImageView)
-//            .load(R.color.before_getting_data_color)
-//            .into(binding.channelImageView)
-
-    }
 
     private fun initListener(){
         playerView = binding.playerView
