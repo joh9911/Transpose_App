@@ -20,9 +20,6 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         findViewById<View>(R.id.mainContainerLayout)
     }
 
-    private val playerMotionLayout by lazy {
-        findViewById<MotionLayout>(R.id.player_motion_layout)
-    }
     private val bottomPlayerPlayButton by lazy{
         findViewById<ImageView>(R.id.bottomPlayerPauseButton)
     }
@@ -33,23 +30,17 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
     private val hitRect = Rect()
 
     init {
-        playerMotionLayout.transitionToState(R.id.end)
-        setTransitionListener(object : TransitionListener {
-            override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {
-            }
-
-            override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
-            }
-
-            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
-                motionTouchStarted = false
-            }
-            override fun onTransitionTrigger(motionLayout: MotionLayout?, triggerId: Int, positive: Boolean, progress: Float) {}
-        })
+        transitionToState(R.id.end)
     }
 
+    fun setMotionTouchedStartedFalse(){
+        motionTouchStarted = false
+    }
+
+
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // ACTION_UP 과 ACTION_CANCEL 은 필요 없어서 when 문으로 motionTouchStarted 값을 false로 주었다.
+
         when (event.actionMasked) {
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 motionTouchStarted = false
@@ -57,7 +48,7 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
             }
         }
         if (!motionTouchStarted) {
-            mainContainerView.getHitRect(hitRect) // 해당 뷰의 클릭 영역 hitRect에 저장
+            mainContainerView.getHitRect(hitRect)
             motionTouchStarted = hitRect.contains(event.x.toInt(), event.y.toInt())
         }
 
@@ -65,7 +56,6 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        Log.d("idsafsdf","Adfsafsaff")
         bottomPlayerCloseButton.getHitRect(hitRect)
         if (hitRect.contains(ev.x.toInt(), ev.y.toInt()))
             return super.dispatchTouchEvent(ev)
@@ -83,9 +73,10 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
                     val endX = ev.x
                     val endY = ev.y
 
-                    if (playerMotionLayout.currentState == R.id.start){
+                    if (currentState == R.id.start){
                         if (isAClick(startX!!, endX, startY!!, endY)){
-                            playerMotionLayout.transitionToEnd()
+                            transitionToState(R.id.end)
+                            motionTouchStarted = false
                             return true
                         }
                     }
@@ -94,6 +85,7 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         }
         return super.dispatchTouchEvent(ev)
     }
+
     private fun isAClick(startX: Float, endX: Float, startY: Float, endY: Float): Boolean {
         val differenceX = Math.abs(startX - endX)
         val differenceY = Math.abs(startY - endY)
@@ -114,9 +106,6 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         GestureDetector(context, gestureListener)
     }
 
-    //이게 true면 커스텀모션 레이아웃이라는 전체 틀에서만 터치 이벤트가 실행됨
-    //따라서 안의 뷰는 터치가 안먹음
-    //이거 로그로 gestureDetector.onTouchEvent(event) 이거 하면 작동안함 왤까?
     override fun onInterceptTouchEvent(event: MotionEvent?): Boolean {
         return gestureDetector.onTouchEvent(event!!)
     }
