@@ -13,39 +13,32 @@ import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.myFile.Transpose.BuildConfig.TOY_PROJECT
 import com.myFile.Transpose.databinding.FragmentChannelBinding
 import com.myFile.Transpose.databinding.MainBinding
+import com.myFile.Transpose.model.ChannelSearchData
 import com.myFile.Transpose.model.PlayListVideoSearchData
 import kotlinx.coroutines.*
 
 class ChannelFragment(
-    val channelData: ChannelData,
-    frameLayout: FrameLayout,
-    searchView: SearchView
+    private val channelData: ChannelData
 ): Fragment() {
-    lateinit var mainBinding: MainBinding
     var fbinding: FragmentChannelBinding? = null
     val binding get() = fbinding!!
-    lateinit var activity: Activity
-    lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
+    lateinit var channelVideoRecyclerViewAdapter: ChannelVideoRecyclerViewAdapter
     val videoDataList = ArrayList<VideoData>()
     val channelDataList = arrayListOf<ChannelData>()
     var pageToken = ""
     private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
 
+    private lateinit var playlistId: String
 
-    val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
-    lateinit var playlistId: String
-
-    val parentFrameLayout = frameLayout
-    val parentSearchView = searchView
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         fbinding = FragmentChannelBinding.inflate(inflater, container, false)
-        mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
         initExceptionHandler()
         initPlaylistId()
@@ -65,25 +58,36 @@ class ChannelFragment(
 
     override fun onResume() {
         super.onResume()
-        parentSearchView.setQuery(channelData.channelTitle,false)
+        Log.d("채널프레그먼트","onResume${parentFragment}")
+
+        if (parentFragment is HomeFragment){
+            val fragment = parentFragment as HomeFragment
+            fragment.searchView.setQuery(channelData.channelTitle,false)
+        }
+        if (parentFragment is MyPlaylistFragment){
+            val fragment = parentFragment as MyPlaylistFragment
+            fragment.searchView.setQuery(channelData.channelTitle,false)
+        }
+
     }
 
     fun initRecyclerView(){
-        binding.videoRecyclerView.layoutManager = LinearLayoutManager(activity)
-        searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
-        searchResultAdapter.setItemClickListener(object: SearchResultFragmentRecyclerViewAdapter.OnItemClickListener{
+        binding.videoRecyclerView.layoutManager = LinearLayoutManager(context)
+        channelVideoRecyclerViewAdapter = ChannelVideoRecyclerViewAdapter(channelData)
+        channelVideoRecyclerViewAdapter.setItemClickListener(object: ChannelVideoRecyclerViewAdapter.OnItemClickListener{
 
             override fun channelClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    parentFragmentManager.beginTransaction()
-                        .replace(parentFrameLayout.id,ChannelFragment(
-                            channelDataList[position],
-                            parentFrameLayout,
-                            parentSearchView
-                        ))
-                        .addToBackStack(null)
-                        .commit()
+                    if (parentFragment is HomeFragment){
+                        val fragment = parentFragment as HomeFragment
+                        fragment.childFragmentManager.beginTransaction()
+                            .replace(fragment.binding.searchResultFrameLayout.id, ChannelFragment(
+                                channelDataList[position]
+                            ))
+                            .addToBackStack(null)
+                            .commit()
+                    }
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
@@ -99,46 +103,46 @@ class ChannelFragment(
             override fun optionButtonClick(v: View, position: Int) {
             }
         })
-        binding.videoRecyclerView.adapter = searchResultAdapter
+        Log.d("submint","보냄")
+
+        binding.videoRecyclerView.adapter = channelVideoRecyclerViewAdapter
+        channelVideoRecyclerViewAdapter.submitList(videoDataList)
     }
 
     fun initPlaylistId(){
         playlistId = channelData.channelPlaylistId
-        Log.d("플레이리스트 아이디","$playlistId")
     }
 
     fun initView(){
-        binding.channelTitle.text = channelData.channelTitle
-        Glide.with(binding.channelBanner)
-            .load(channelData.channelBanner)
-            .into(binding.channelBanner)
-        binding.channelDescription.text = channelData.channelDescription
-        binding.channelInfo.text = "동영상 ${channelData.channelVideoCount}개"
-        binding.scrollView.viewTreeObserver?.addOnScrollChangedListener {
-            val view = binding.scrollView.getChildAt(binding.scrollView.childCount - 1)
 
-            val diff = view.bottom - (binding.scrollView.height + binding.scrollView.scrollY)
-
-            if (diff == 0) {
-                if (pageToken != "")
-                    getData()
-                else{
-                    videoDataList.remove(VideoData(" ", " ", " ", " ", " ",  " ",false))
-                    searchResultAdapter.submitList(videoDataList.toMutableList())
-                }
-            }
-        }
+//        binding.scrollView.viewTreeObserver?.addOnScrollChangedListener {
+//            val view = binding.scrollView.getChildAt(binding.scrollView.childCount - 1)
+//
+//            val diff = view.bottom - (binding.scrollView.height + binding.scrollView.scrollY)
+//
+//            if (diff == 0) {
+//                if (pageToken != ""){
+//                    Log.d("ㅇ;ㄱ{","계속불리고이서")
+//                    getData()
+//                }
+//
+//                else{
+//                    videoDataList.remove(VideoData(" ", " ", " ", " ", " ",  " ",false))
+//                    channelVideoRecyclerViewAdapter.submitList(videoDataList.toMutableList())
+//                }
+//            }
+//        }
 
     }
     private fun getData(){
-        val job = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
             getVideoData()
         }
     }
     private suspend fun getVideoData(){
         val retrofit = RetrofitData.initRetrofit()
         Log.d("요청 할 때의 토큰","$pageToken")
-        val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(API_KEY, "snippet", playlistId, pageToken, "50")
+        val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(TOY_PROJECT, "snippet", playlistId, pageToken, "50")
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
                 withContext(Dispatchers.Main){
@@ -153,26 +157,25 @@ class ChannelFragment(
     }
 
     fun videoMapping(responseData: PlayListVideoSearchData) {
-        if (videoDataList.contains(VideoData(" ", " ", " ", " ", " ", " ", false))){
-            videoDataList.remove(VideoData(" ", " ", " ", " ", " ", " ", false))
-            channelDataList.removeAt(channelDataList.size-1)
-        }
+//        if (videoDataList.contains(VideoData(" ", " ", " ", " ", " ", " ", false))){
+//            videoDataList.remove(VideoData(" ", " ", " ", " ", " ", " ", false))
+//            channelDataList.removeAt(channelDataList.size-1)
+//        }
         for (index in responseData.items.indices){
             val thumbnail = responseData.items[index].snippet?.thumbnails?.high?.url!!
             val date = responseData.items[index].snippet?.publishedAt!!.substring(0, 10)
             val title = stringToHtmlSign(responseData.items[index].snippet?.title!!)
             val videoId = responseData.items[index].snippet?.resourceId?.videoId!!
             val channelId = responseData.items[index].snippet?.channelId!!
-            val channelThumbnail = channelData.channelThumbnail
             val channelTitle = channelData.channelTitle
             videoDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
             channelDataList.add(channelData) // 재생 프레그먼트에 전달하기 위해 걍 인자 개수를 비디오 리스트와 맞춰줌
         }
-        videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+//        videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
         channelDataList.add(channelData)
-        searchResultAdapter.submitList(videoDataList.toMutableList())
+        Log.d("매핑","$videoDataList")
+        channelVideoRecyclerViewAdapter.notifyDataSetChanged()
         binding.progressBar.visibility = View.GONE
-        binding.videoRecyclerView.visibility = View.VISIBLE
     }
 
     private fun stringToHtmlSign(str: String): String {
@@ -185,8 +188,13 @@ class ChannelFragment(
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        activity = context as Activity
+
 //        activity.searchView.setQuery(channelData.channelTitle,false)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d("채널프레그먼트","onDestroy")
     }
 
 }
