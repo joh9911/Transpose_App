@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView: SearchView): Fragment() {
+class SearchResultFragment(search: String): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
@@ -35,8 +35,8 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
     private val videoDataList = ArrayList<VideoData>()
     private val channelDataList = ArrayList<ChannelData>()
     lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
-    val parentFrameLayout = frameLayout
-    val parentSearchView = searchView
+
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -62,7 +62,15 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
 
     override fun onResume() {
         super.onResume()
-        parentSearchView.setQuery(searchWord,false)
+        if (parentFragment is HomeFragment){
+            val fragment =  parentFragment as HomeFragment
+            fragment.searchView.setQuery(searchWord,false)
+        }
+
+        if (parentFragment is MyPlaylistFragment){
+            val fragment = parentFragment as MyPlaylistFragment
+            fragment.searchView.setQuery(searchWord,false)
+        }
     }
 
     fun initRecyclerView(){
@@ -76,20 +84,29 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
             override fun channelClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    parentFragmentManager.beginTransaction()
-                        .replace(parentFrameLayout.id,ChannelFragment(channelDataList[position],parentFrameLayout, parentSearchView))
-                        .addToBackStack(null)
-                        .commit()
+                    if (parentFragment is HomeFragment){
+                        val fragment = parentFragment as HomeFragment
+                        parentFragmentManager.beginTransaction()
+                            .replace(fragment.binding.searchResultFrameLayout.id,ChannelFragment(channelDataList[position]))
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                    if (parentFragment is MyPlaylistFragment){
+                        val fragment = parentFragment as MyPlaylistFragment
+                        parentFragmentManager.beginTransaction()
+                            .replace(fragment.binding.resultFrameLayout.id,ChannelFragment(channelDataList[position]))
+                            .addToBackStack(null)
+                            .commit()
+                    }
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
             override fun videoClick(v: View, position: Int) {
-//                setDataListForPlayerFragment()
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
                         .replace(activity.binding.playerFragment.id,
-                            PlayerFragment(videoDataList[position]),"playerFragment")
+                            PlayerFragment(videoDataList[position]))
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
@@ -97,20 +114,7 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
             override fun optionButtonClick(v: View, position: Int) {
             }
         })
-
     }
-//    fun setDataListForPlayerFragment(){
-//        if (videoDataList.size > 48){
-//            for (index in 0 until 49){
-//                videoDataListForPlayerFragment.add(videoDataList[index])
-//                channelDataListForPlayerFragment.add(channelDataList[index])
-//            }
-//        }
-//        else{
-//            videoDataListForPlayerFragment = videoDataList
-//            channelDataListForPlayerFragment = channelDataList
-//        }
-//    }
 
     private fun getData(pageToken: String?) {
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
@@ -167,17 +171,6 @@ class SearchResultFragment(search: String, frameLayout: FrameLayout, searchView:
 //            }
 //        }
 //    }
-    private fun addChannelData(channelResponseData: ChannelSearchData){
-        val channelThumbnail = channelResponseData.items[0].snippet?.thumbnails?.default?.url!!
-        val videoCount = channelResponseData.items[0].statistics?.videoCount!!
-        val subscriberCount = channelResponseData.items[0].statistics?.subscriberCount!!
-        val viewCount = channelResponseData.items[0].statistics?.viewCount!!
-        val channelBanner = channelResponseData.items[0].brandingSettings?.image?.bannerExternalUrl
-        val channelTitle = channelResponseData.items[0].snippet?.title!!
-        val channelDescription = channelResponseData.items[0].snippet?.description!!
-        val channelPlaylistId = channelResponseData.items[0].contentDetails?.relatedPlaylists?.uploads!!
-        channelDataList.add(ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId))
-    }
 
 //    private suspend fun getChannelData(responseData: VideoSearchData) {
 //        for (index in 0 until responseData.items.size) {

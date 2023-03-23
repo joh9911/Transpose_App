@@ -14,8 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.myFile.Transpose.databinding.FragmentHomeBinding
 import com.myFile.Transpose.databinding.MainBinding
-import com.myFile.Transpose.model.PlayListSearchData
-import com.myFile.Transpose.model.PlayListVideoSearchData
+import com.myFile.Transpose.model.*
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -77,7 +76,7 @@ class HomeFragment: Fragment() {
         "RDCLAK5uy_mS7UhvWzUZdjauupjE5JO6VCn-CCwaRoI","RDCLAK5uy_krjFmKbzWzkGvhqkYvvNnUbdrHy0QN1S8",
         "RDCLAK5uy_kQ09S7a68znbjr7h26ur1RJb2tCXDlruY"
     )
-    val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
+    val API_KEY = BuildConfig.TOY_PROJECT
 
     val channelDataList = arrayListOf<ChannelData>() // 재생 프레그먼트에 넣기 위한 그냥 빈 리스트
 
@@ -95,7 +94,7 @@ class HomeFragment: Fragment() {
     private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
     private lateinit var callback: OnBackPressedCallback
     lateinit var frameLayout: FrameLayout
-
+    lateinit var channeld: ChannelData
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -111,10 +110,11 @@ class HomeFragment: Fragment() {
         initSearchSuggestionKeywordRecyclerView()
         initExceptionHandler()
         getAllData()
+        getDetailData("nh0xMF3wxG0")
         return view
     }
 
-    fun initRecyclerView(){
+    private fun initRecyclerView(){
         initPopularTop100RecyclerView()
         initBestAtmospherePlaylistRecyclerView()
         initBestSituationPlaylistRecyclerView()
@@ -131,7 +131,7 @@ class HomeFragment: Fragment() {
             var mLastClickTime = 0L
             override fun onClick(v: View, position: Int) {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    activity.supportFragmentManager.beginTransaction().replace(binding.searchResultFrameLayout.id,PlaylistItemsFragment(thisYearPlaylistData[position]))
+                    childFragmentManager.beginTransaction().replace(binding.searchResultFrameLayout.id,PlaylistItemsFragment(thisYearPlaylistData[position]))
                         .addToBackStack(null)
                         .commit()
                 }
@@ -148,7 +148,7 @@ class HomeFragment: Fragment() {
         todayHotPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         todayHotPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                activity.supportFragmentManager.beginTransaction()
+                childFragmentManager.beginTransaction()
                     .replace(binding.searchResultFrameLayout.id,PlaylistItemsFragment(todayHotPlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
@@ -164,12 +164,11 @@ class HomeFragment: Fragment() {
         latestMusicPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         latestMusicPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                activity.supportFragmentManager.beginTransaction()
+                childFragmentManager.beginTransaction()
                     .replace(binding.searchResultFrameLayout.id,PlaylistItemsFragment(latestMusicPlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
-
         })
         latestMusicPlaylistAdapter.submitList(latestMusicPlaylistData)
         binding.latestMusicPlaylistRecyclerView.adapter = latestMusicPlaylistAdapter
@@ -181,16 +180,14 @@ class HomeFragment: Fragment() {
         bestAtmospherePlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         bestAtmospherePlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                activity.supportFragmentManager.beginTransaction()
+                childFragmentManager.beginTransaction()
                     .replace(binding.searchResultFrameLayout.id,PlaylistItemsFragment(bestAtmospherePlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
-
         })
         bestAtmospherePlaylistAdapter.submitList(bestAtmospherePlaylistData)
         binding.bestAtmospherePlaylistRecyclerView.adapter = bestAtmospherePlaylistAdapter
-
     }
 
     private fun initBestSituationPlaylistRecyclerView(){
@@ -199,12 +196,11 @@ class HomeFragment: Fragment() {
         bestSituationPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
         bestSituationPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                activity.supportFragmentManager.beginTransaction()
+                childFragmentManager.beginTransaction()
                     .replace(binding.searchResultFrameLayout.id,PlaylistItemsFragment(bestSituationPlaylistData[position]))
                     .addToBackStack(null)
                     .commit()
             }
-
         })
         bestSituationPlaylistAdapter.submitList(bestSituationPlaylistData)
         binding.bestSituationPlaylistRecyclerView.adapter = bestSituationPlaylistAdapter
@@ -216,13 +212,12 @@ class HomeFragment: Fragment() {
         popular100PlaylistAdapter = HomePopular100RecyclerViewAdapter()
         popular100PlaylistAdapter.setItemClickListener(object: HomePopular100RecyclerViewAdapter.OnItemClickListener {
             override fun onClick(v: View, position: Int) {
-                activity.supportFragmentManager.beginTransaction()
+                parentFragmentManager.beginTransaction()
                     .replace(
                         activity.binding.playerFragment.id,
                         PlayerFragment(
-                            popularTop100Playlist[position], this@HomeFragment
-                        ),
-                        "playerFragment"
+                            popularTop100Playlist[position]
+                        )
                     )
                     .commit()
             }
@@ -379,13 +374,9 @@ class HomeFragment: Fragment() {
                 searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
-                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(searchWord, frameLayout, searchView))
+                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(searchWord))
                     .addToBackStack(null)
                     .commit()
-//                activity.supportFragmentManager.beginTransaction()
-//                    .replace(binding.searchResultFrameLayout.id,SearchResultFragment(searchWord))
-//                    .addToBackStack(null)
-//                    .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
             }
         })
@@ -448,7 +439,7 @@ class HomeFragment: Fragment() {
 
 
     private fun searchViewCollapseEvent(){
-        Log.d("이게 실행이 됏잖아","왜")
+        Log.d("이게 실행이 됏잖아","searchViewCollapseEvent")
 //        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
@@ -456,26 +447,64 @@ class HomeFragment: Fragment() {
         searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
 
     }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId){
-            R.id.transpose_icon -> {
-                Log.d("Adfsaf","Adfsadfadfad")
-                true
-            }
-            R.id.search_icon -> {
-                Log.d("서치 버튼이","눌림")
-                binding.searchSuggestionKeywordRecyclerView.visibility = View.VISIBLE
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+    private fun getDetailData(videoId: String) {
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+            async {getVideoDetail(videoId)}
         }
     }
+
+    private suspend fun getVideoDetail(videoId: String) {
+        val retrofit = RetrofitData.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java)
+            .getVideoDetail(BuildConfig.TOY_PROJECT, "snippet, statistics",videoId)
+        if (response.isSuccessful){
+            if (response.body()?.items?.size != 0){
+                getChannelData(response.body()!!)
+            }
+        }
+    }
+
+    private suspend fun getChannelData(videoDetailResponseData: VideoDetailData) {
+        val retrofit = RetrofitData.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java)
+            .getChannelData(BuildConfig.TOY_PROJECT, "snippet, contentDetails, statistics, brandingSettings"
+                ,videoDetailResponseData.items[0].snippet?.channelId)
+        if (response.isSuccessful){
+            if (response.body()?.items?.size != 0){
+                withContext(Dispatchers.Main){
+                    detailMapping(videoDetailResponseData, response.body()!!)
+                }
+            }
+        }
+    }
+
+    private fun detailMapping(videoDetailResponseData: VideoDetailData, channelDetailResponseData: ChannelSearchData) {
+        val currentChannelSearchData = channelDetailResponseData
+        val currentVideoDetailData = videoDetailResponseData
+        val channelThumbnail = currentChannelSearchData.items[0].snippet?.thumbnails?.default?.url!!
+        val videoCount = currentChannelSearchData.items[0].statistics?.videoCount!!
+        val subscriberCount = currentChannelSearchData.items[0].statistics?.subscriberCount!!
+        val viewCount = currentChannelSearchData.items[0].statistics?.viewCount!!
+        val channelBanner = currentChannelSearchData.items[0].brandingSettings?.image?.bannerExternalUrl
+        val channelTitle = currentChannelSearchData.items[0].snippet?.title!!
+        val channelDescription = currentChannelSearchData.items[0].snippet?.description!!
+        val channelPlaylistId = currentChannelSearchData.items[0].contentDetails?.relatedPlaylists?.uploads!!
+        channeld =  ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId)
+    }
+
 
 
     fun initToolbar(){
         homeFragmentToolBar = binding.homeFragmentToolBar
         val menu = homeFragmentToolBar.menu
+        menu.findItem(R.id.option_icon).setOnMenuItemClickListener {
+            childFragmentManager.beginTransaction()
+                .add(activity.homeFragment.binding.searchResultFrameLayout.id,
+                    ChannelFragment(channeld))
+                .addToBackStack(null)
+                .commit()
+            true
+        }
         searchViewItem = menu.findItem(R.id.search_icon)
         searchView = searchViewItem.actionView as SearchView
         val searchAutoComplete = searchView.findViewById<SearchView.SearchAutoComplete>(androidx.appcompat.R.id.search_src_text)
@@ -506,11 +535,12 @@ class HomeFragment: Fragment() {
                 Log.d("뒤로가기","서치뷰")
                 var count = 0
                 childFragmentManager.addOnBackStackChangedListener {
+                    Log.d("서치뷰 내","숫자")
                     count = childFragmentManager.backStackEntryCount
                 }
                 callback.remove()
                 searchViewCollapseEvent()
-                return count == 0
+                return childFragmentManager.backStackEntryCount == 0
 //                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
 //                    return if (activity.transposePage.visibility == View.VISIBLE) {
 //                        Log.d("1","1")
@@ -544,9 +574,7 @@ class HomeFragment: Fragment() {
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
                     .replace(binding.searchResultFrameLayout.id,SearchResultFragment(
-                        query!!,
-                        frameLayout,
-                        searchView
+                        query!!
                     ))
                     .addToBackStack(null)
                     .commit()
@@ -556,6 +584,7 @@ class HomeFragment: Fragment() {
             //SwipeRefreshLayout 새로고침
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText != ""){
+                    Log.d("검색어를","불러옴")
                     getSuggestionKeyword(newText!!)
                 }
                 if (newText == ""){
@@ -572,7 +601,6 @@ class HomeFragment: Fragment() {
         super.onHiddenChanged(hidden)
         if (hidden){
             callback.remove()
-//            Log.d("homeFragment","hidden${searchView.query}")
         }
         else{
             if (childFragmentManager.backStackEntryCount != 0)
@@ -586,12 +614,19 @@ class HomeFragment: Fragment() {
 
         callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                Log.d("백","버튼")
+                Log.d("homeFragment 백","버튼")
+
                 if (childFragmentManager.backStackEntryCount == 0) {
-                    if (searchViewItem.isActionViewExpanded)
+                    if (searchViewItem.isActionViewExpanded){
+                        Log.d("homeFragment 백","조건문")
                         searchViewItem.collapseActionView()
+                    }
+                }else{
+                    if (binding.searchSuggestionKeywordRecyclerView.visibility == View.VISIBLE)
+                        searchViewCollapseEvent()
+                    else
+                        childFragmentManager.popBackStack()
                 }
-                childFragmentManager.popBackStack()
             }
         }
         childFragmentManager.addOnBackStackChangedListener {
@@ -614,5 +649,15 @@ class HomeFragment: Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         fbinding = null
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("homeFRagment","onStop")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d("homeFragment","의 onResume")
     }
 }

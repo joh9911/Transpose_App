@@ -30,6 +30,7 @@ class ChannelFragment(
     val channelDataList = arrayListOf<ChannelData>()
     var pageToken = ""
     private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
+    lateinit var activity: Activity
 
     private lateinit var playlistId: String
 
@@ -176,6 +177,7 @@ class ChannelFragment(
         Log.d("매핑","$videoDataList")
         channelVideoRecyclerViewAdapter.notifyDataSetChanged()
         binding.progressBar.visibility = View.GONE
+        activity.binding.mainMotionLayout.requestLayout()
     }
 
     private fun stringToHtmlSign(str: String): String {
@@ -188,13 +190,14 @@ class ChannelFragment(
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-
+        activity = context as Activity
 //        activity.searchView.setQuery(channelData.channelTitle,false)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.d("채널프레그먼트","onDestroy")
+        fbinding = null
     }
 
 }

@@ -124,8 +124,6 @@ class MyPlaylistFragment: Fragment() {
                 childFragmentManager.beginTransaction()
                     .replace(binding.resultFrameLayout.id,SearchResultFragment(
                         searchWord,
-                        frameLayout,
-                        searchView,
                     ))
                     .addToBackStack(null)
                     .commit()
@@ -249,9 +247,8 @@ class MyPlaylistFragment: Fragment() {
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
                     .replace(binding.resultFrameLayout.id,SearchResultFragment(
-                        query!!,
-                        frameLayout,
-                        searchView
+                        query!!
+
                     ))
                     .addToBackStack(null)
                     .commit()

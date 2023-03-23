@@ -25,11 +25,9 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
     lateinit var activity: Activity
     var myMusics = listOf<Musics>()
     var myMusicItems = arrayListOf<VideoData>()
-    val channelDataList = arrayListOf<ChannelData>() // 재생 프레그먼트에 넣기 위한 그냥 빈 리스트
 
     lateinit var db: AppDatabase
     lateinit var myPlaylistDao: MyPlaylistDao
-
 
     lateinit var myPlaylistItemRecyclerAdapter: MyPlaylistItemRecyclerViewAdapter
 
@@ -76,8 +74,7 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
                         activity.binding.playerFragment.id,
                         PlayerFragment(
                             myMusicItems[position]
-                        ),
-                        "playerFragment"
+                        )
                     )
                     .commit()
             }
