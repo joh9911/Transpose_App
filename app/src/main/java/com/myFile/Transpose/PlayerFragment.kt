@@ -2,13 +2,17 @@ package com.myFile.Transpose
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
+import android.transition.TransitionManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -25,7 +29,7 @@ import java.lang.Math.abs
 import kotlin.collections.ArrayList
 
 
-class PlayerFragment(private val videoData: VideoData, private val currentFragment: Fragment): Fragment() {
+class PlayerFragment(private val videoData: VideoData): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var relatedVideoRecyclerViewAdapter: RelatedVideoRecyclerViewAdapter
@@ -59,7 +63,7 @@ class PlayerFragment(private val videoData: VideoData, private val currentFragme
         initExceptionHandler()
         getDetailData(videoData.videoId)
         initView()
-        initMotionLayout()
+        setMotionLayoutListenerForInitialize()
         initListener()
         return view
     }
@@ -82,7 +86,7 @@ class PlayerFragment(private val videoData: VideoData, private val currentFragme
     private suspend fun getVideoDetail(videoId: String) {
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java)
-            .getVideoDetail(BuildConfig.API_KEY, "snippet, statistics",videoId)
+            .getVideoDetail(BuildConfig.TOY_PROJECT, "snippet, statistics",videoId)
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
                 getChannelData(response.body()!!)
@@ -93,7 +97,7 @@ class PlayerFragment(private val videoData: VideoData, private val currentFragme
     private suspend fun getChannelData(videoDetailResponseData: VideoDetailData) {
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java)
-            .getChannelData(BuildConfig.API_KEY, "snippet, contentDetails, statistics, brandingSettings"
+            .getChannelData(BuildConfig.TOY_PROJECT, "snippet, contentDetails, statistics, brandingSettings"
                 ,videoDetailResponseData.items[0].snippet?.channelId)
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
@@ -155,23 +159,10 @@ class PlayerFragment(private val videoData: VideoData, private val currentFragme
         relatedVideoRecyclerViewAdapter = RelatedVideoRecyclerViewAdapter()
         relatedVideoRecyclerViewAdapter.setItemClickListener(object: RelatedVideoRecyclerViewAdapter.OnItemClickListener{
             override fun channelClick(v: View, position: Int) {
+                Log.d("채널클릭","${activity.supportFragmentManager.fragments}")
+                setMotionLayoutListenerForChannelClick()
                 binding.playerMotionLayout.transitionToState(R.id.start)
-                if (currentFragment is HomeFragment){
-                    Log.d("눌렀다","homeFragment일 때")
-                    currentFragment.childFragmentManager.beginTransaction()
-                    .add(currentFragment.binding.searchResultFrameLayout.id,
-                        ChannelFragment(channelDataMapper(), currentFragment))
-                        .addToBackStack(null)
-                        .commit()
-                }
-                if (currentFragment is MyPlaylistFragment){
-                    Log.d("눌렀어","myplaylsitFragment일 때")
-                    currentFragment.childFragmentManager.beginTransaction()
-                        .add(currentFragment.binding.resultFrameLayout.id,
-                        ChannelFragment(channelDataMapper(),currentFragment))
-                        .addToBackStack(null)
-                        .commit()
-                }
+
             }
             override fun videoClick(v: View, position: Int) {
 //                replaceVideo(position)
@@ -296,41 +287,98 @@ class PlayerFragment(private val videoData: VideoData, private val currentFragme
 //        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
     }
 
-    private fun initMotionLayout() {
-        binding.playerMotionLayout.setTransitionListener(object :
-            MotionLayout.TransitionListener {
-            override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
-            }
-
-            override fun onTransitionChange(
-                motionLayout: MotionLayout?,
-                startId: Int,
-                endId: Int,
-                progress: Float
-            ) {
-
-
-                (activity).also { main ->
-                    main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
-                        abs(progress)
-                }
-            }
-
-            override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
-                // 화면이 축소된 상태에서는 엑소 플레이어의 컨트롤러 없애기
-                if (binding.playerMotionLayout.currentState == R.id.start){
-                    settingBottomPlayButton()
-                    binding.playerView.useController = false
-                }
-                else
-                    binding.playerView.useController = true
-            }
-
-            override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
-            }
-
-        })
+    private fun setMotionLayoutListenerForInitialize() {
+        binding.playerMotionLayout.setTransitionListener(null)
+        binding.playerMotionLayout.setTransitionListener(TransitionListenerForInitialize())
     }
+    private fun setMotionLayoutListenerForChannelClick(){
+        binding.playerMotionLayout.setTransitionListener(null)
+        binding.playerMotionLayout.setTransitionListener(TransitionListenerForChannelClick())
+    }
+
+    inner class TransitionListenerForChannelClick: MotionLayout.TransitionListener{
+        override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {
+        }
+        override fun onTransitionChange(
+            motionLayout: MotionLayout?,
+            startId: Int,
+            endId: Int,
+            progress: Float
+        ) {
+            (activity).also { main ->
+                main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
+                    abs(progress)
+            }
+        }
+        override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+            for (fragment: Fragment in activity.supportFragmentManager.fragments){
+                if (fragment is HomeFragment && fragment.isVisible){
+                    fragment.childFragmentManager.beginTransaction()
+                        .replace(fragment.binding.searchResultFrameLayout.id,
+                            ChannelFragment(channelDataMapper()))
+                        .addToBackStack(null)
+                        .commit()
+                }
+                if (fragment is MyPlaylistFragment && fragment.isVisible){
+                    fragment.childFragmentManager.beginTransaction()
+                        .replace(fragment.binding.resultFrameLayout.id,
+                            ChannelFragment(channelDataMapper()))
+                        .addToBackStack(null)
+                        .commit()
+                }
+            }
+            if (binding.playerMotionLayout.currentState == R.id.start){
+
+                settingBottomPlayButton()
+                binding.playerView.useController = false
+            }
+            else
+                binding.playerView.useController = true
+
+            setMotionLayoutListenerForInitialize()
+        }
+
+        override fun onTransitionTrigger(
+            motionLayout: MotionLayout?,
+            triggerId: Int,
+            positive: Boolean,
+            progress: Float
+        ) {
+        }
+    }
+    inner class TransitionListenerForInitialize:
+        MotionLayout.TransitionListener {
+        override fun onTransitionStarted(p0: MotionLayout?, p1: Int, p2: Int) {
+        }
+        override fun onTransitionChange(
+            motionLayout: MotionLayout?,
+            startId: Int,
+            endId: Int,
+            progress: Float
+        ) {
+
+            (activity).also { main ->
+                main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
+                    abs(progress)
+            }
+        }
+        override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
+
+            Log.d("트랜지션","컴플")
+            // 화면이 축소된 상태에서는 엑소 플레이어의 컨트롤러 없애기
+            if (binding.playerMotionLayout.currentState == R.id.start){
+
+                settingBottomPlayButton()
+                binding.playerView.useController = false
+            }
+            else
+                binding.playerView.useController = true
+        }
+
+        override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
+        }
+    }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -340,22 +388,23 @@ class PlayerFragment(private val videoData: VideoData, private val currentFragme
     }
     override fun onPause() {
         super.onPause()
+        Log.d("프레그먼트플레이어","온퍼즈")
     }
 
     override fun onResume() {
 //        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
-        Log.d("리줌","왜안되지")
+        Log.d("프레그먼트플레이어","온리줌")
         super.onResume()
     }
 
     override fun onStop() {
         super.onStop()
-        Log.d("프레그먼트","온스탑")
+        Log.d("프레그먼트플레이어","온스탑")
     }
 
     override fun onStart() {
         super.onStart()
-        Log.d("프레그먼트","온스타트")
+        Log.d("프레그먼트플레이어","온스타트")
     }
 
     override fun onAttach(context: Context) {

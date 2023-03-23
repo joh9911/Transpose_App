@@ -15,16 +15,28 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
-        <Constraint android:id="@+id/search_recycler_view">
+        <Constraint android:id="@+id/search_suggestion_keyword_recycler_view">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
+
+
         <Constraint android:id="@+id/tool_bar">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
+<!--        <Constraint android:id="@+id/search_result_frame_layout">-->
+<!--            <PropertySet-->
+<!--                app:applyMotionScene="false"-->
+<!--                app:visibilityMode="ignore" />-->
+<!--        </Constraint>-->
+<!--        <Constraint android:id="@+id/video_recycler_view">-->
+<!--            <PropertySet-->
+<!--                app:applyMotionScene="false"-->
+<!--                app:visibilityMode="ignore" />-->
+<!--        </Constraint>-->
         <Constraint android:id="@+id/basic_frame_layout">
             <PropertySet
                 app:applyMotionScene="false"
@@ -45,6 +57,7 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
+
         <Constraint android:id="@+id/transpose_page">
             <PropertySet
                 app:applyMotionScene="false"
@@ -55,7 +68,7 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
-        <Constraint android:id="@+id/search_recycler_view">
+        <Constraint android:id="@+id/search_suggestion_keyword_recycler_view">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
@@ -65,7 +78,16 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
-
+<!--        <Constraint android:id="@+id/search_result_frame_layout">-->
+<!--            <PropertySet-->
+<!--                app:applyMotionScene="false"-->
+<!--                app:visibilityMode="ignore" />-->
+<!--        </Constraint>-->
+<!--        <Constraint android:id="@+id/video_recycler_view">-->
+<!--        <PropertySet-->
+<!--            app:applyMotionScene="false"-->
+<!--            app:visibilityMode="ignore" />-->
+<!--        </Constraint>-->
         <Constraint android:id="@id/bottom_navigation_view"
             motion:layout_constraintEnd_toEndOf="parent"
             android:layout_width="0dp"
@@ -82,9 +104,10 @@
     </ConstraintSet>
 
     <Transition
+        android:id="@+id/main_transition"
         app:constraintSetEnd="@id/end"
         app:constraintSetStart="@+id/start"
-        app:duration="1000"
+        app:duration="200"
         motion:layoutDuringTransition="honorRequest"
         />
 </MotionScene>

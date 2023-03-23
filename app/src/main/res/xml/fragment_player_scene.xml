@@ -4,6 +4,7 @@
     >
 <!--    최대화-->
     <Transition
+        android:id="@+id/fragment_player_transition"
         motion:constraintSetEnd="@+id/end"
         motion:constraintSetStart="@id/start"
         motion:layoutDuringTransition="honorRequest"
@@ -48,6 +49,7 @@
             android:layout_width="0dp"
             android:layout_height="0.1dp"
             android:layout_marginBottom="66dp"
+            motion:visibilityMode="ignore"
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"
             motion:layout_constraintStart_toStartOf="parent"
@@ -59,10 +61,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             motion:visibilityMode="ignore"
-            motion:layout_constraintBottom_toBottomOf="parent"
-            motion:layout_constraintEnd_toEndOf="parent"
-            motion:layout_constraintStart_toStartOf="parent"
-            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"/>
+            android:visibility="invisible"
+            motion:layout_constraintTop_toBottomOf="@id/fragmentRecyclerView"/>
         <Constraint
             android:id="@+id/mainContainerLayout"
             android:layout_width="0dp"
@@ -141,22 +141,6 @@
             android:layout_height="250dp"
             motion:layout_constraintTop_toTopOf="parent"
             motion:layout_constraintStart_toStartOf="parent" />
-<!--        <Constraint-->
-<!--            android:id="@+id/fragmentTitleLinearLayout"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            motion:visibilityMode="ignore"-->
-<!--            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"-->
-<!--            motion:layout_constraintStart_toStartOf="parent"-->
-<!--            motion:layout_constraintEnd_toEndOf="parent"/>-->
-<!--        <Constraint-->
-<!--            android:id="@+id/channel_linear_layout"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            motion:visibilityMode="ignore"-->
-<!--            motion:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout"-->
-<!--            motion:layout_constraintStart_toStartOf="parent"-->
-<!--            motion:layout_constraintEnd_toEndOf="parent"/>-->
 
         <Constraint
             android:id="@+id/fragmentRecyclerView"
@@ -176,6 +160,8 @@
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"/>
+
+
 
         <Constraint
             android:id="@+id/bottomPlayerPauseButton"

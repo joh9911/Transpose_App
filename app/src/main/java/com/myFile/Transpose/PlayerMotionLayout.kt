@@ -33,6 +33,7 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
         transitionToState(R.id.end)
     }
 
+
     fun setMotionTouchedStartedFalse(){
         motionTouchStarted = false
     }
@@ -107,6 +108,7 @@ class PlayerMotionLayout(context: Context, attributeSet: AttributeSet? = null) :
     }
 
     override fun onInterceptTouchEvent(event: MotionEvent?): Boolean {
+        val isInProgress = (progress > 0.0f && progress < 1.0f)
         return gestureDetector.onTouchEvent(event!!)
     }
 }
