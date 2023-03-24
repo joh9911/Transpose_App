@@ -55,7 +55,23 @@
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintVertical_bias="1.0" />
-
+        <Constraint
+            android:id="@+id/coordinator"
+            android:layout_width="0dp"
+            android:layout_height="0.1dp"
+            android:layout_marginBottom="66dp"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
+            motion:layout_constraintVertical_bias="1.0"/>
+        <Constraint
+            android:id="@+id/playlist_linear_layout"
+            android:visibility="invisible"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
+            motion:layout_constraintBottom_toBottomOf="parent"/>
         <Constraint
             android:id="@+id/related_video_progress_bar"
             android:layout_width="wrap_content"
@@ -141,6 +157,15 @@
             android:layout_height="250dp"
             motion:layout_constraintTop_toTopOf="parent"
             motion:layout_constraintStart_toStartOf="parent" />
+        <Constraint
+            android:id="@+id/coordinator"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"/>
 
         <Constraint
             android:id="@+id/fragmentRecyclerView"
@@ -160,8 +185,16 @@
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"/>
-
-
+        <Constraint
+            android:id="@+id/playlist_linear_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            motion:visibilityMode="ignore"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="10dp"
+            />
 
         <Constraint
             android:id="@+id/bottomPlayerPauseButton"

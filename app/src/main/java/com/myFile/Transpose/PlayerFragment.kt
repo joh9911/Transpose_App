@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.doOnLayout
@@ -20,20 +21,20 @@ import com.myFile.Transpose.databinding.FragmentPlayerBinding
 import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
-import com.myFile.Transpose.model.ChannelSearchData
-import com.myFile.Transpose.model.HeaderViewData
-import com.myFile.Transpose.model.RelatedVideoData
-import com.myFile.Transpose.model.VideoDetailData
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.myFile.Transpose.databinding.MyPlaylistItemRecyclerViewItemBinding
+import com.myFile.Transpose.model.*
 import kotlinx.coroutines.*
+import org.checkerframework.common.subtyping.qual.Bottom
 import java.lang.Math.abs
 import kotlin.collections.ArrayList
 
 
-class PlayerFragment(private val videoData: VideoData): Fragment() {
+class PlayerFragment(private val videoData: VideoData, private val playlistModel: PlaylistModel?): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var relatedVideoRecyclerViewAdapter: RelatedVideoRecyclerViewAdapter
-    lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
+    lateinit var myPlaylistItemRecyclerViewAdapter: MyPlaylistItemRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
 //    var playerModel = PlayerModel(playMusicList = videoDataList,
@@ -65,7 +66,58 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
         initView()
         setMotionLayoutListenerForInitialize()
         initListener()
+        initPlaylistView()
         return view
+    }
+    private fun initPlaylistView(){
+        if (playlistModel != null){
+            initBottomSheet()
+            initPlaylistRecyclerView()
+        }
+    }
+    private fun initPlaylistRecyclerView(){
+        val playlistModel = playlistModel!!
+        binding.playlistTitleInLinearLayout.text = String.format(resources.getString(R.string.playlist_text),"${playlistModel.playlistName}")
+        binding.playlistRecyclerView.layoutManager = LinearLayoutManager(activity)
+        myPlaylistItemRecyclerViewAdapter = MyPlaylistItemRecyclerViewAdapter()
+        myPlaylistItemRecyclerViewAdapter.setItemClickListener(object: MyPlaylistItemRecyclerViewAdapter.OnItemClickListener{
+            override fun onClick(v: View, position: Int) {
+                replaceVideo(playlistModel.playlistItems[position])
+            }
+
+            override fun optionButtonClick(v: View, position: Int) {
+            }
+        })
+        myPlaylistItemRecyclerViewAdapter.submitList(playlistModel.playlistItems)
+        binding.playlistRecyclerView.adapter = myPlaylistItemRecyclerViewAdapter
+    }
+
+    private fun initBottomSheet(){
+        val bottomSheetBehavior = BottomSheetBehavior.from(binding.standardBottomSheet)
+        binding.coordinator.visibility = View.INVISIBLE
+        bottomSheetBehavior.peekHeight = 20
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback(){
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when(newState){
+                    BottomSheetBehavior.STATE_EXPANDED -> Log.d("바텀시트","Expanded")
+                    BottomSheetBehavior.STATE_DRAGGING -> Log.d("바텀시트","dragging")
+                    BottomSheetBehavior.STATE_COLLAPSED -> Log.d("바텀시트","collapsed")
+                    BottomSheetBehavior.STATE_HIDDEN -> Log.d("바텀시트","hidden")
+                }
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                binding.coordinator.alpha = slideOffset
+            }
+
+        })
+        val playlistLinearLayout = binding.playlistLinearLayout
+        playlistLinearLayout.visibility = View.VISIBLE
+        playlistLinearLayout.setOnClickListener {
+            binding.coordinator.visibility = View.VISIBLE
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        }
     }
     private fun initExceptionHandler(){
         coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
@@ -167,7 +219,7 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
             override fun videoClick(v: View, position: Int) {
 //                replaceVideo(position)
 //                playCurrentVideo()
-                replaceVideo(position)
+                replaceVideo(relatedVideoList[position])
             }
             override fun optionButtonClick(v: View, position: Int) {
             }
@@ -188,18 +240,18 @@ class PlayerFragment(private val videoData: VideoData): Fragment() {
         return ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId)
     }
 
-    fun replaceVideo(position: Int){
+    fun replaceVideo(videoData: VideoData){
         binding.fragmentRecyclerView.scrollToPosition(0)
-        relatedVideoRecyclerViewAdapter.setHeaderViewTitle(relatedVideoList[position].title)
+        relatedVideoRecyclerViewAdapter.setHeaderViewTitle(videoData.title)
         relatedVideoRecyclerViewAdapter.setHeaderViewColorBeforeGettingData(activity)
-        activity.videoService!!.playVideo(relatedVideoList[position])
+        activity.videoService!!.playVideo(videoData)
 
         Glide.with(binding.playerThumbnailView)
-            .load(relatedVideoList[position].thumbnail)
+            .load(videoData.thumbnail)
             .placeholder(R.color.before_getting_data_color)
             .into(binding.playerThumbnailView)
         binding.relatedVideoProgressBar.visibility = View.VISIBLE
-        getDetailData(relatedVideoList[position].videoId)
+        getDetailData(videoData.videoId)
 
     }
 
