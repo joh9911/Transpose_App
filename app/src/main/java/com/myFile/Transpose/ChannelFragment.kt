@@ -76,35 +76,18 @@ class ChannelFragment(
         binding.videoRecyclerView.layoutManager = LinearLayoutManager(context)
         channelVideoRecyclerViewAdapter = ChannelVideoRecyclerViewAdapter(channelData)
         channelVideoRecyclerViewAdapter.setItemClickListener(object: ChannelVideoRecyclerViewAdapter.OnItemClickListener{
-
-            override fun channelClick(v: View, position: Int) {
-                var mLastClickTime = 0L
-                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    if (parentFragment is HomeFragment){
-                        val fragment = parentFragment as HomeFragment
-                        fragment.childFragmentManager.beginTransaction()
-                            .replace(fragment.binding.searchResultFrameLayout.id, ChannelFragment(
-                                channelDataList[position]
-                            ))
-                            .addToBackStack(null)
-                            .commit()
-                    }
-                }
-                mLastClickTime = SystemClock.elapsedRealtime()
-            }
             override fun videoClick(v: View, position: Int) {
                 var mLastClickTime = 0L
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-//                    activity.supportFragmentManager.beginTransaction()
-//                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList,  position),"playerFragment")
-//                        .commit()
+                    activity.supportFragmentManager.beginTransaction()
+                        .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList[position], null))
+                        .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
             override fun optionButtonClick(v: View, position: Int) {
             }
         })
-        Log.d("submint","보냄")
 
         binding.videoRecyclerView.adapter = channelVideoRecyclerViewAdapter
         channelVideoRecyclerViewAdapter.submitList(videoDataList)

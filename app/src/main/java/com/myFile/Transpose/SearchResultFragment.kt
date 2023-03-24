@@ -106,7 +106,7 @@ class SearchResultFragment(search: String): Fragment() {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
                         .replace(activity.binding.playerFragment.id,
-                            PlayerFragment(videoDataList[position]))
+                            PlayerFragment(videoDataList[position],null))
                         .commit()
                 }
                 mLastClickTime = SystemClock.elapsedRealtime()

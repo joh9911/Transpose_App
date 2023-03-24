@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.FragmentPlaylistBinding
 import com.myFile.Transpose.databinding.MainBinding
 import com.myFile.Transpose.model.PlayListVideoSearchData
+import com.myFile.Transpose.model.PlaylistModel
 import kotlinx.coroutines.*
 
 class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
@@ -65,8 +66,9 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter()
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
+                val playlistModel = PlaylistModel(playListData.title,playlistVideoData)
                 activity.supportFragmentManager.beginTransaction()
-                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData[position]))
+                    .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData[position],playlistModel))
                     .commit()
             }
 

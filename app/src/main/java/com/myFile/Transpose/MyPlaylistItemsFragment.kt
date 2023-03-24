@@ -13,12 +13,13 @@ import androidx.room.Room
 import com.myFile.Transpose.databinding.FragmentMyPlaylistBinding
 import com.myFile.Transpose.databinding.FragmentMyPlaylistItemBinding
 import com.myFile.Transpose.databinding.MainBinding
+import com.myFile.Transpose.model.PlaylistModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
+class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
     lateinit var mainBinding: MainBinding
     var fbinding: FragmentMyPlaylistItemBinding? = null
     val binding get() = fbinding!!
@@ -55,7 +56,7 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
     }
     fun getAllMusic(){
         CoroutineScope(Dispatchers.IO).launch{
-            myMusics = myPlaylistDao.getMusicItemsByPlaylistId(playlistId)
+            myMusics = myPlaylistDao.getMusicItemsByPlaylistId(myPlaylist.uid)
             withContext(Dispatchers.Main){
                 myMusicItems.clear()
                 myMusics.forEach{myMusicItems.add(it.musicData)}
@@ -69,11 +70,12 @@ class MyPlaylistItemsFragment(private val playlistId: Int): Fragment() {
         myPlaylistItemRecyclerAdapter = MyPlaylistItemRecyclerViewAdapter()
         myPlaylistItemRecyclerAdapter.setItemClickListener(object: MyPlaylistItemRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
+                val playlistModel = PlaylistModel(myPlaylist.playlistTitle, myMusicItems)
                 activity.supportFragmentManager.beginTransaction()
                     .replace(
                         activity.binding.playerFragment.id,
                         PlayerFragment(
-                            myMusicItems[position]
+                            myMusicItems[position],playlistModel
                         )
                     )
                     .commit()

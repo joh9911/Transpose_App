@@ -89,7 +89,7 @@ class MyPlaylistFragment: Fragment() {
         myPlaylistRecyclerViewAdapter.setItemClickListener(object: MyPlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id,MyPlaylistItemsFragment(myPlaylists[position].uid))
+                    .replace(binding.resultFrameLayout.id,MyPlaylistItemsFragment(myPlaylists[position]))
                     .addToBackStack(null)
                     .commit()
             }

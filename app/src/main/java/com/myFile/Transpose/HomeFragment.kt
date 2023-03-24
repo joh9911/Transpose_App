@@ -212,11 +212,12 @@ class HomeFragment: Fragment() {
         popular100PlaylistAdapter = HomePopular100RecyclerViewAdapter()
         popular100PlaylistAdapter.setItemClickListener(object: HomePopular100RecyclerViewAdapter.OnItemClickListener {
             override fun onClick(v: View, position: Int) {
+                val playlistModel = PlaylistModel(resources.getString(R.string.popular_Top100_playlist_text),popularTop100Playlist)
                 parentFragmentManager.beginTransaction()
                     .replace(
                         activity.binding.playerFragment.id,
                         PlayerFragment(
-                            popularTop100Playlist[position]
+                            popularTop100Playlist[position], playlistModel
                         )
                     )
                     .commit()
