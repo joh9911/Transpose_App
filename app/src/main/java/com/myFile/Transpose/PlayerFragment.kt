@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
@@ -50,6 +51,8 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
 
     var player: ExoPlayer? = null
     lateinit var playerView: PlayerView
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+    private lateinit var callback: OnBackPressedCallback
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -93,7 +96,9 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
     }
 
     private fun initBottomSheet(){
-        val bottomSheetBehavior = BottomSheetBehavior.from(binding.standardBottomSheet)
+        val playlistModel = playlistModel!!
+        binding.playlistTitleBottomSheet.text = playlistModel.playlistName
+        bottomSheetBehavior = BottomSheetBehavior.from(binding.standardBottomSheet)
         binding.coordinator.visibility = View.INVISIBLE
         bottomSheetBehavior.peekHeight = 20
         bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
@@ -117,6 +122,10 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
         playlistLinearLayout.setOnClickListener {
             binding.coordinator.visibility = View.VISIBLE
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        }
+        val bottomSheetCloseButton = binding.bottomSheetCloseButton
+        bottomSheetCloseButton.setOnClickListener {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
         }
     }
     private fun initExceptionHandler(){
@@ -211,10 +220,8 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
         relatedVideoRecyclerViewAdapter = RelatedVideoRecyclerViewAdapter()
         relatedVideoRecyclerViewAdapter.setItemClickListener(object: RelatedVideoRecyclerViewAdapter.OnItemClickListener{
             override fun channelClick(v: View, position: Int) {
-                Log.d("채널클릭","${activity.supportFragmentManager.fragments}")
                 setMotionLayoutListenerForChannelClick()
                 binding.playerMotionLayout.transitionToState(R.id.start)
-
             }
             override fun videoClick(v: View, position: Int) {
 //                replaceVideo(position)
@@ -380,12 +387,15 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
                 }
             }
             if (binding.playerMotionLayout.currentState == R.id.start){
-
+                callback.remove()
                 settingBottomPlayButton()
                 binding.playerView.useController = false
             }
-            else
+            else{
                 binding.playerView.useController = true
+                activity.onBackPressedDispatcher.addCallback(callback)
+            }
+
 
             setMotionLayoutListenerForInitialize()
         }
@@ -415,16 +425,15 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
             }
         }
         override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
-
-            Log.d("트랜지션","컴플")
-            // 화면이 축소된 상태에서는 엑소 플레이어의 컨트롤러 없애기
             if (binding.playerMotionLayout.currentState == R.id.start){
-
+                callback.remove()
                 settingBottomPlayButton()
                 binding.playerView.useController = false
             }
-            else
+            else{
                 binding.playerView.useController = true
+                activity.onBackPressedDispatcher.addCallback(callback)
+            }
         }
 
         override fun onTransitionTrigger(p0: MotionLayout?, p1: Int, p2: Boolean, p3: Float) {
@@ -437,6 +446,7 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
         Log.d("프레그먼트의","onDestroy")
         activity.videoService!!.stopForegroundService()
         fbinding = null
+        callback.remove()
     }
     override fun onPause() {
         super.onPause()
@@ -462,11 +472,18 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
+        callback = object : OnBackPressedCallback(true){
+            override fun handleOnBackPressed() {
+                Log.d("동영상 플레이어의","백프레스")
+                if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
+                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                else
+                    binding.playerMotionLayout.transitionToStart()
+            }
+        }
+        activity.onBackPressedDispatcher.addCallback(callback)
     }
 
-    override fun onDetach() {
-        super.onDetach()
-    }
     private fun stringToHtmlSign(str: String): String {
         return str.replace("&amp;".toRegex(), "[&]")
             .replace("[<]".toRegex(), "&lt;")
