@@ -15,6 +15,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.MediaSource
@@ -102,7 +103,8 @@ class VideoService: Service() {
                     Player.STATE_ENDED -> {
                         if (exoPlayer.mediaItemCount == 0) // play중이면 mediaItem을 제거하는데, 제거할 때 state_ended가 실행됨
                             return
-                        playerFragment.playNextVideo()
+//                        playerFragment.playNextVideo()
+                        playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
                     Player.STATE_BUFFERING ->{
@@ -174,7 +176,7 @@ class VideoService: Service() {
                 }
                 Actions.PREV -> {
                     val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-                    playerFragment.playPrevVideo()
+//                    playerFragment.playPrevVideo()
                     startForegroundService()
                 }
                 Actions.PLAY -> {
@@ -183,7 +185,7 @@ class VideoService: Service() {
                 }
                 Actions.NEXT -> {
                     val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-                    playerFragment.playNextVideo()
+//                    playerFragment.playNextVideo()
                     startForegroundService()
                 }
                 Actions.PLUS -> {
@@ -355,10 +357,9 @@ class VideoService: Service() {
             .setShowActionsInCompactView(0,2,4)
             .setMediaSession(mediaSession.sessionToken)
 
-
             val metadataBuilder = MediaMetadataCompat.Builder().apply {
                 putString(MediaMetadata.METADATA_KEY_TITLE, currentVideoData.title)
-                putString(MediaMetadata.METADATA_KEY_ARTIST, currentVideoData.channel)
+                putString(MediaMetadata.METADATA_KEY_ARTIST, currentVideoData.channelTitle)
                 putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, currentVideoData.thumbnail)
                 putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, currentVideoData.thumbnail)
                 putLong(MediaMetadata.METADATA_KEY_DURATION,exoPlayer.duration)
