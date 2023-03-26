@@ -58,6 +58,8 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
         CoroutineScope(Dispatchers.IO).launch{
             myMusics = myPlaylistDao.getMusicItemsByPlaylistId(myPlaylist.uid)
             withContext(Dispatchers.Main){
+                if (myMusics.isEmpty())
+                    binding.emptyTextView.visibility = View.VISIBLE
                 myMusicItems.clear()
                 myMusics.forEach{myMusicItems.add(it.musicData)}
                 myPlaylistItemRecyclerAdapter.submitList(myMusicItems.toMutableList())
@@ -70,7 +72,7 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
         myPlaylistItemRecyclerAdapter = MyPlaylistItemRecyclerViewAdapter()
         myPlaylistItemRecyclerAdapter.setItemClickListener(object: MyPlaylistItemRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                val playlistModel = PlaylistModel(myPlaylist.playlistTitle, myMusicItems)
+                val playlistModel = PlaylistModel(myPlaylist.playlistTitle, myMusicItems, position)
                 activity.supportFragmentManager.beginTransaction()
                     .replace(
                         activity.binding.playerFragment.id,
