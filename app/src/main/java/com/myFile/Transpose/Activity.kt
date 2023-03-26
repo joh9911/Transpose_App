@@ -1,30 +1,19 @@
 package com.myFile.Transpose
 
-import android.app.SearchManager
 import android.content.*
 import android.os.Bundle
 import android.os.IBinder
-import android.os.SystemClock
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
-import androidx.appcompat.widget.SearchView.SearchAutoComplete
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Observer
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.*
-import okhttp3.ResponseBody
-import retrofit2.*
-import java.lang.Exception
 
 
 class Activity: AppCompatActivity() {
@@ -39,11 +28,7 @@ class Activity: AppCompatActivity() {
     lateinit var tempoSeekBar: SeekBar
     lateinit var homeFragment: HomeFragment
     lateinit var myPlaylistFragment: MyPlaylistFragment
-
-
     var videoService: VideoService? = null
-
-
 
     private lateinit var connection: NetworkConnection
 
@@ -69,7 +54,6 @@ class Activity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         initView()
         initExceptionHandler()
         connection = NetworkConnection(this)
@@ -77,7 +61,6 @@ class Activity: AppCompatActivity() {
         connection.observe(this, Observer { isConnected ->
             if (isConnected)
             {
-
             } else
             {
                 Log.d("네트워크 연결 안됨","ㅁㄴㅇㄹ")
@@ -211,31 +194,40 @@ class Activity: AppCompatActivity() {
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.home_icon -> {
-                    if (homeFragment.isVisible)
-                        homeFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    if (homeFragment.isVisible){
+                        if (transposePage.visibility == View.VISIBLE)
+                            transposePage.visibility = View.INVISIBLE
+                        else
+                            homeFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    }
                     else{
                         supportFragmentManager.beginTransaction().hide(myPlaylistFragment).commit()
                         supportFragmentManager.beginTransaction().show(homeFragment).commit()
+                        transposePage.visibility = View.INVISIBLE
+
                     }
-                    transposePage.visibility = View.INVISIBLE
                 }
                 R.id.transpose_icon -> {
                     transposePage.visibility = View.VISIBLE
                 }
                 R.id.my_playlist_icon -> {
-                    if (myPlaylistFragment.isVisible)
-                        myPlaylistFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    if (myPlaylistFragment.isVisible){
+                        if (transposePage.visibility == View.VISIBLE)
+                            transposePage.visibility = View.INVISIBLE
+                        else
+                            myPlaylistFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                    }
                     else{
                         supportFragmentManager.beginTransaction().show(myPlaylistFragment).commit()
                         supportFragmentManager.beginTransaction().hide(homeFragment).commit()
+                        transposePage.visibility = View.INVISIBLE
+
                     }
-                    transposePage.visibility = View.INVISIBLE
                 }
             }
             true
         }
     }
-
 
     fun transposePageInvisibleEvent(){
             transposePage.visibility = View.INVISIBLE
@@ -243,24 +235,33 @@ class Activity: AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null){
-            if (transposePage.visibility == View.VISIBLE)
-                transposePageInvisibleEvent()
-            else
+        Log.d("액티비티의","백프레스")
+        for (fragment: Fragment in supportFragmentManager.fragments){
+            if (fragment is PlayerFragment && fragment.binding.playerMotionLayout.currentState == R.id.end)
                 return super.onBackPressed()
         }
-        else{
-            val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-            if (playerFragment.binding.playerMotionLayout.currentState == R.id.end){
-                playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
-            }
-            else{
-                if (transposePage.visibility == View.VISIBLE)
-                    transposePageInvisibleEvent()
-                else
-                    return super.onBackPressed()
-            }
-        }
+        if (transposePage.visibility == View.VISIBLE)
+            transposePageInvisibleEvent()
+        else
+            return super.onBackPressed()
+//        if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null){
+//            if (transposePage.visibility == View.VISIBLE)
+//                transposePageInvisibleEvent()
+//            else
+//                return super.onBackPressed()
+//        }
+//        else{
+//            val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
+//            if (playerFragment.binding.playerMotionLayout.currentState == R.id.end){
+//                playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
+//            }
+//            else{
+//                if (transposePage.visibility == View.VISIBLE)
+//                    transposePageInvisibleEvent()
+//                else
+//                    return super.onBackPressed()
+//            }
+//        }
     }
 
 
