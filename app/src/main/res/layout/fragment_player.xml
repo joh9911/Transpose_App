@@ -183,6 +183,7 @@
                     android:ellipsize="end"
                      />
                 <ImageView
+                    android:id="@+id/bottom_sheet_close_button"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:src="@drawable/ic_baseline_close_24_black"/>
