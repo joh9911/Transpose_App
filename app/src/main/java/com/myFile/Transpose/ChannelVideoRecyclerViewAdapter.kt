@@ -14,7 +14,7 @@ import com.myFile.Transpose.databinding.SearchResultRecyclerItemBinding
 
 class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<VideoData, RecyclerView.ViewHolder>(diffUtil) {
     private val VIEW_TYPE_HEADER = 0
-//    private val VIEW_TYPE_LOADING = 1
+    private val VIEW_TYPE_LOADING = 2
     private val VIEW_TYPE_ITEM = 1
     var channelDataVar = channelData
 
@@ -29,16 +29,15 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
                 .into(binding.channelBanner)
         }
     }
-//    inner class MyProgressViewHolder(binding: ProgressBarItemBinding): RecyclerView.ViewHolder(binding.root){
-//    }
+    inner class MyProgressViewHolder(binding: ProgressBarItemBinding): RecyclerView.ViewHolder(binding.root){
+    }
     inner class MyViewHolder(private val binding: SearchResultRecyclerItemBinding): RecyclerView.ViewHolder(binding.root) {
         init{
-
-            binding.thumbnailImageView.setOnClickListener {
+            binding.dataItem.setOnClickListener {
                 itemClickListener.videoClick(it, bindingAdapterPosition - 1)
             }
-            binding.videoTitleChannelTitleLinearLayout.setOnClickListener {
-                itemClickListener.videoClick(it, bindingAdapterPosition - 1)
+            binding.optionButton.setOnClickListener {
+                itemClickListener.optionButtonClick(it, bindingAdapterPosition - 1)
             }
         }
         fun bind(videoData: VideoData){
@@ -65,7 +64,7 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
                 )
                 MyHeaderViewHolder(binding)
             }
-            else -> {
+            VIEW_TYPE_ITEM -> {
                 val binding = SearchResultRecyclerItemBinding.inflate(
                     LayoutInflater.from(parent.context),
                     parent,
@@ -73,16 +72,21 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
                 )
                 MyViewHolder(binding)
             }
-//            else -> {
-//                val binding = ProgressBarItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-//                MyProgressViewHolder(binding)
-//            }
+            else -> {
+                val binding = ProgressBarItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                MyProgressViewHolder(binding)
+            }
         }
     }
     override fun getItemViewType(position: Int): Int {
         return when (position) {
             0 -> VIEW_TYPE_HEADER
-            else -> VIEW_TYPE_ITEM
+            else -> {
+                if (currentList[position - 1].title == " ")
+                    return VIEW_TYPE_LOADING
+                else
+                    return VIEW_TYPE_ITEM
+            }
         }
     }
 
@@ -90,12 +94,9 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
         if(holder is MyViewHolder){
             holder.bind(currentList[position - 1])
         }
-
-
     }
     // (2) 리스너 인터페이스
     interface OnItemClickListener {
-        fun channelClick(v: View, position: Int)
         fun videoClick(v: View, position: Int)
         fun optionButtonClick(v: View, position: Int)
     }
