@@ -83,6 +83,9 @@ class RelatedVideoRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewH
             binding.dataItem.setOnClickListener{
                 itemClickListener.videoClick(it, bindingAdapterPosition - 1)
             }
+            binding.optionButton.setOnClickListener {
+                itemClickListener.optionButtonClick(it,bindingAdapterPosition - 1)
+            }
         }
 
         fun bind(videoData: VideoData) {
