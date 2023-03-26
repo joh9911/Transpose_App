@@ -103,7 +103,8 @@ class VideoService: Service() {
                     Player.STATE_ENDED -> {
                         if (exoPlayer.mediaItemCount == 0) // play중이면 mediaItem을 제거하는데, 제거할 때 state_ended가 실행됨
                             return
-//                        playerFragment.playNextVideo()
+                        if (playerFragment.playlistModel != null)
+                            playerFragment.playNextPlaylistVideo()
                         playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
@@ -176,7 +177,8 @@ class VideoService: Service() {
                 }
                 Actions.PREV -> {
                     val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-//                    playerFragment.playPrevVideo()
+                    if (playerFragment.playlistModel != null)
+                        playerFragment.playPrevPlaylistVideo()
                     startForegroundService()
                 }
                 Actions.PLAY -> {
@@ -185,7 +187,8 @@ class VideoService: Service() {
                 }
                 Actions.NEXT -> {
                     val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-//                    playerFragment.playNextVideo()
+                    if (playerFragment.playlistModel != null)
+                        playerFragment.playNextPlaylistVideo()
                     startForegroundService()
                 }
                 Actions.PLUS -> {
@@ -272,8 +275,9 @@ class VideoService: Service() {
     }
 
     private fun setUpVideo(convertedUrl: String){
+        if (playerFragment.fbinding == null)
+            return
         playerFragment.playerViewVisibleEvent()
-        Log.d("유알엘","$convertedUrl")
         var videoSource: MediaSource
         if (convertedUrl.contains("m3u8")){
             videoSource = HlsMediaSource
