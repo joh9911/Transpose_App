@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,7 +26,6 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
     lateinit var mainBinding: MainBinding
     var fbinding: FragmentPlaylistBinding? = null
     val binding get() = fbinding!!
-    lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
 
     val playlistVideoData = arrayListOf<VideoData>()
 
@@ -37,19 +37,11 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         fbinding = FragmentPlaylistBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
-        initExceptionHandler()
         initView()
         getData()
         return view
     }
-    private fun initExceptionHandler(){
-        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
-            Log.d("코루틴 에러","$throwable")
-            CoroutineScope(Dispatchers.Main).launch {
-                Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -66,18 +58,37 @@ class PlaylistItemsFragment(playListData: PlayListData): Fragment() {
         playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter()
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                val playlistModel = PlaylistModel(playListData.title,playlistVideoData)
+                val playlistModel = PlaylistModel(playListData.title,playlistVideoData, position)
                 activity.supportFragmentManager.beginTransaction()
                     .replace(activity.binding.playerFragment.id,PlayerFragment(playlistVideoData[position],playlistModel))
                     .commit()
             }
 
+            override fun optionButtonClick(v: View, position: Int) {
+                val popUp = PopupMenu(activity, v)
+                popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
+                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
+                    when (it.itemId) {
+                        R.id.add_my_playlist -> {
+                            showNoticeDialog(playlistVideoData[position])
+                        }
+                    }
+                    true
+                })
+                popUp.show()
+            }
+
         })
         binding.playlistItemRecyclerView.adapter = playlistItemsRecyclerViewAdapter
     }
+    fun showNoticeDialog(videoData: VideoData) {
+        // Create an instance of the dialog fragment and show it
+        val dialog = DialogFragmentPopupAddPlaylist(videoData)
+        dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
+    }
 
     fun getData(){
-        val job = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+        CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
             getPlaylistItemsData(null)
         }
     }

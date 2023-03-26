@@ -15,8 +15,12 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
     inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
         init{
             itemView.setOnClickListener {
-                itemClickListener.onClick(it, position)
+                itemClickListener.onClick(it, bindingAdapterPosition)
             }
+            binding.optionButton.setOnClickListener {
+                itemClickListener.optionButtonClick(it, bindingAdapterPosition)
+            }
+
         }
         private fun selected(){
             binding.rankingTextView.setTextColor(Color.parseColor("#2196F3"))
@@ -30,7 +34,7 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
         }
 
         fun bind(videoData: VideoData, position: Int){
-            binding.channelTextView.text = videoData.channel
+            binding.channelTextView.text = videoData.channelTitle
             binding.titleTextView.text = videoData.title
             binding.rankingTextView.text = (position + 1).toString()
             Glide.with(binding.thumbnailImageView)
@@ -59,6 +63,7 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
     // (2) 리스너 인터페이스
     interface OnItemClickListener {
         fun onClick(v: View, position: Int)
+        fun optionButtonClick(v: View, position: Int)
     }
     // (3) 외부에서 클릭 시 이벤트 설정
     fun setItemClickListener(onItemClickListener: OnItemClickListener) {
