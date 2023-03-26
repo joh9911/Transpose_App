@@ -2,19 +2,14 @@ package com.myFile.Transpose
 
 import android.content.Context
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.provider.MediaStore
-import android.transition.TransitionManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -23,27 +18,21 @@ import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.myFile.Transpose.databinding.MyPlaylistItemRecyclerViewItemBinding
 import com.myFile.Transpose.model.*
 import kotlinx.coroutines.*
-import org.checkerframework.common.subtyping.qual.Bottom
 import java.lang.Math.abs
 import kotlin.collections.ArrayList
 
 
-class PlayerFragment(private val videoData: VideoData, private val playlistModel: PlaylistModel?): Fragment() {
+class PlayerFragment(private val videoData: VideoData, val playlistModel: PlaylistModel?): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var relatedVideoRecyclerViewAdapter: RelatedVideoRecyclerViewAdapter
     lateinit var myPlaylistItemRecyclerViewAdapter: MyPlaylistItemRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
-//    var playerModel = PlayerModel(playMusicList = videoDataList,
-//    currentPosition = position)
 
-    private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
-    var nextPageToken = ""
-
+    private lateinit var nowPlaylistModel: NowPlaylistModel
 
     private val relatedVideoList = ArrayList<VideoData>()
     private lateinit var currentVideoDetailData: VideoDetailData
@@ -52,19 +41,19 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
     var player: ExoPlayer? = null
     lateinit var playerView: PlayerView
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+    private lateinit var callbackPlaylistVersion: OnBackPressedCallback
     private lateinit var callback: OnBackPressedCallback
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         fbinding = FragmentPlayerBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         activity.videoService!!.initPlayerFragment(this)
         val view = binding.root
         initRecyclerView()
-        initExceptionHandler()
         getDetailData(videoData.videoId)
         initView()
         setMotionLayoutListenerForInitialize()
@@ -72,32 +61,43 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
         initPlaylistView()
         return view
     }
+
     private fun initPlaylistView(){
         if (playlistModel != null){
+            nowPlaylistModel = NowPlaylistModel(playlistModel.playlistItems, playlistModel.firstPosition, playlistModel.playlistName)
             initBottomSheet()
             initPlaylistRecyclerView()
         }
     }
+
     private fun initPlaylistRecyclerView(){
-        val playlistModel = playlistModel!!
-        binding.playlistTitleInLinearLayout.text = String.format(resources.getString(R.string.playlist_text),"${playlistModel.playlistName}")
+        binding.playlistTitleInLinearLayout.text = String.format(resources.getString(R.string.playlist_text),"${nowPlaylistModel.getPlaylistTitle()}")
         binding.playlistRecyclerView.layoutManager = LinearLayoutManager(activity)
         myPlaylistItemRecyclerViewAdapter = MyPlaylistItemRecyclerViewAdapter()
         myPlaylistItemRecyclerViewAdapter.setItemClickListener(object: MyPlaylistItemRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                replaceVideo(playlistModel.playlistItems[position])
+                replacePlaylistVideo(position)
             }
-
             override fun optionButtonClick(v: View, position: Int) {
+                val popUp = PopupMenu(activity, v)
+                popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
+                popUp.setOnMenuItemClickListener {
+                    when (it.itemId) {
+                        R.id.add_my_playlist -> {
+                            showNoticeDialog(nowPlaylistModel.getPlayMusicList()[position])
+                        }
+                    }
+                    true
+                }
+                popUp.show()
             }
         })
-        myPlaylistItemRecyclerViewAdapter.submitList(playlistModel.playlistItems)
+        myPlaylistItemRecyclerViewAdapter.submitList(nowPlaylistModel.getPlayMusicList().toMutableList())
         binding.playlistRecyclerView.adapter = myPlaylistItemRecyclerViewAdapter
     }
 
     private fun initBottomSheet(){
-        val playlistModel = playlistModel!!
-        binding.playlistTitleBottomSheet.text = playlistModel.playlistName
+        binding.playlistTitleBottomSheet.text = nowPlaylistModel.getPlaylistTitle()
         bottomSheetBehavior = BottomSheetBehavior.from(binding.standardBottomSheet)
         binding.coordinator.visibility = View.INVISIBLE
         bottomSheetBehavior.peekHeight = 20
@@ -128,17 +128,10 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
         }
     }
-    private fun initExceptionHandler(){
-        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
-            Log.d("코루틴 에러","$throwable")
-            CoroutineScope(Dispatchers.Main).launch {
-                Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+
     private fun getDetailData(videoId: String) {
         relatedVideoList.clear()
-        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+        CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
             async {getVideoDetail(videoId)}
             async {getRelatedVideo(videoId)}
         }
@@ -229,39 +222,23 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
                 replaceVideo(relatedVideoList[position])
             }
             override fun optionButtonClick(v: View, position: Int) {
+                Log.d("옵션버튼","클릭")
+                val popUp = PopupMenu(activity, v)
+                popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
+                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
+                    when (it.itemId) {
+                        R.id.add_my_playlist -> {
+                            showNoticeDialog(relatedVideoList[position])
+                        }
+                    }
+                    true
+                })
+                popUp.show()
             }
         })
         relatedVideoRecyclerViewAdapter.submitList(relatedVideoList)
         binding.fragmentRecyclerView.adapter = relatedVideoRecyclerViewAdapter
     }
-
-    fun channelDataMapper(): ChannelData{
-        val channelThumbnail = currentChannelSearchData.items[0].snippet?.thumbnails?.default?.url!!
-        val videoCount = currentChannelSearchData.items[0].statistics?.videoCount!!
-        val subscriberCount = currentChannelSearchData.items[0].statistics?.subscriberCount!!
-        val viewCount = currentChannelSearchData.items[0].statistics?.viewCount!!
-        val channelBanner = currentChannelSearchData.items[0].brandingSettings?.image?.bannerExternalUrl
-        val channelTitle = currentChannelSearchData.items[0].snippet?.title!!
-        val channelDescription = currentChannelSearchData.items[0].snippet?.description!!
-        val channelPlaylistId = currentChannelSearchData.items[0].contentDetails?.relatedPlaylists?.uploads!!
-        return ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId)
-    }
-
-    fun replaceVideo(videoData: VideoData){
-        binding.fragmentRecyclerView.scrollToPosition(0)
-        relatedVideoRecyclerViewAdapter.setHeaderViewTitle(videoData.title)
-        relatedVideoRecyclerViewAdapter.setHeaderViewColorBeforeGettingData(activity)
-        activity.videoService!!.playVideo(videoData)
-
-        Glide.with(binding.playerThumbnailView)
-            .load(videoData.thumbnail)
-            .placeholder(R.color.before_getting_data_color)
-            .into(binding.playerThumbnailView)
-        binding.relatedVideoProgressBar.visibility = View.VISIBLE
-        getDetailData(videoData.videoId)
-
-    }
-
 
     private fun initView(){
         val currentPlayingVideoData = videoData
@@ -286,6 +263,38 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
             .into(binding.playerThumbnailView)
     }
 
+    fun showNoticeDialog(videoData: VideoData) {
+        // Create an instance of the dialog fragment and show it
+        val dialog = DialogFragmentPopupAddPlaylist(videoData)
+        dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
+    }
+
+    fun channelDataMapper(): ChannelData{
+        val channelThumbnail = currentChannelSearchData.items[0].snippet?.thumbnails?.default?.url!!
+        val videoCount = currentChannelSearchData.items[0].statistics?.videoCount!!
+        val subscriberCount = currentChannelSearchData.items[0].statistics?.subscriberCount!!
+        val viewCount = currentChannelSearchData.items[0].statistics?.viewCount!!
+        val channelBanner = currentChannelSearchData.items[0].brandingSettings?.image?.bannerExternalUrl
+        val channelTitle = currentChannelSearchData.items[0].snippet?.title!!
+        val channelDescription = currentChannelSearchData.items[0].snippet?.description!!
+        val channelPlaylistId = currentChannelSearchData.items[0].contentDetails?.relatedPlaylists?.uploads!!
+        return ChannelData(channelTitle, channelDescription, channelBanner, channelThumbnail, videoCount, viewCount, subscriberCount, channelPlaylistId)
+    }
+
+    fun replacePlaylistVideo(position: Int){ // 플레이리스트에서 아이템을 클릭할 경우
+        nowPlaylistModel.updateCurrentPosition(position)
+        nowPlaylistModel.refreshPlaylist()
+        myPlaylistItemRecyclerViewAdapter.submitList(nowPlaylistModel.getPlayMusicList().toMutableList())
+        updateVideoDetailAndGetRelatedVideoData(nowPlaylistModel.currentMusicModel())
+        activity.videoService!!.playVideo(nowPlaylistModel.currentMusicModel())
+    }
+
+    fun replaceVideo(videoData: VideoData){ // 관련 영상에서 아이템을 클릭할 경우
+        binding.fragmentRecyclerView.scrollToPosition(0)
+        updateVideoDetailAndGetRelatedVideoData(videoData)
+        activity.videoService!!.playVideo(videoData)
+    }
+
     fun settingBottomPlayButton(){
         if (player?.isPlaying!!)
             binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
@@ -304,38 +313,31 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
         binding.bufferingProgressBar.visibility = View.GONE
         binding.playerThumbnailView.visibility = View.GONE
     }
+    private fun updateVideoDetailAndGetRelatedVideoData(videoData: VideoData){
+        relatedVideoRecyclerViewAdapter.setHeaderViewTitle(videoData.title)
+        relatedVideoRecyclerViewAdapter.setHeaderViewColorBeforeGettingData(activity)
+        binding.bottomTitleTextView.text = videoData.title
+        Glide.with(binding.playerThumbnailView)
+            .load(videoData.thumbnail)
+            .placeholder(R.color.before_getting_data_color)
+            .into(binding.playerThumbnailView)
+        binding.relatedVideoProgressBar.visibility = View.VISIBLE
+        getDetailData(videoData.videoId)
+    }
 
-//    fun playPrevVideo(){
-//        activity.videoService!!.playVideo(playerModel.prevMusic()!!)
-//        playerModel.refreshPlaylist()
-////            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-//        relatedVideoRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-//        updatePlayerView()
-//    }
+    fun playPrevPlaylistVideo(){
+        activity.videoService!!.playVideo(nowPlaylistModel.prevMusic()!!)
+        nowPlaylistModel.refreshPlaylist()
+        myPlaylistItemRecyclerViewAdapter.submitList(nowPlaylistModel.getPlayMusicList().toMutableList())
+        updateVideoDetailAndGetRelatedVideoData(nowPlaylistModel.currentMusicModel())
+    }
 
-//    fun playNextVideo(){
-//        activity.videoService!!.playVideo(playerModel.nextMusic()!!)
-//        playerModel.refreshPlaylist()
-//
-////            playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-//
-//        relatedVideoRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-//        updatePlayerView()
-//    }
-
-//    fun playCurrentVideo(){
-//        activity.videoService!!.playVideo(playerModel.currentMusicModel()!!)
-//    }
-
-
-//    fun replaceVideo(position: Int){
-//        binding.fragmentRecyclerView.scrollToPosition(0)
-//        playerModel.updateCurrentPosition(position)
-//        playerModel.refreshPlaylist()
-////        playlistItemsRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-//        relatedVideoRecyclerViewAdapter.submitList(playerModel.getPlayMusicList())
-//        updatePlayerView()
-//    }
+    fun playNextPlaylistVideo(){
+        activity.videoService!!.playVideo(nowPlaylistModel.nextMusic()!!)
+        nowPlaylistModel.refreshPlaylist()
+        myPlaylistItemRecyclerViewAdapter.submitList(nowPlaylistModel.getPlayMusicList().toMutableList())
+        updateVideoDetailAndGetRelatedVideoData(nowPlaylistModel.currentMusicModel())
+    }
 
 
     private fun initListener(){
@@ -343,7 +345,6 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
         player = activity.exoPlayer
         playerView.player = player
         activity.videoService!!.playVideo(videoData)
-//        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
     }
 
     private fun setMotionLayoutListenerForInitialize() {
@@ -368,6 +369,14 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
                 main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
                     abs(progress)
             }
+            if (binding.playerMotionLayout.currentState == R.id.start){
+                if (progress >= 0.2f)
+                    binding.playerMotionLayout.transitionToEnd()
+            }
+            if (binding.playerMotionLayout.currentState == R.id.start){
+                if (progress <= 0.8f)
+                    binding.playerMotionLayout.transitionToStart()
+            }
         }
         override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
             for (fragment: Fragment in activity.supportFragmentManager.fragments){
@@ -387,13 +396,20 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
                 }
             }
             if (binding.playerMotionLayout.currentState == R.id.start){
-                callback.remove()
+                if (playlistModel != null)
+                    callbackPlaylistVersion.remove()
+                else
+                    callback.remove()
+
                 settingBottomPlayButton()
                 binding.playerView.useController = false
             }
             else{
                 binding.playerView.useController = true
-                activity.onBackPressedDispatcher.addCallback(callback)
+                if (playlistModel != null)
+                    activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner,callbackPlaylistVersion)
+                else
+                    activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner,callback)
             }
 
 
@@ -423,16 +439,24 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
                 main.findViewById<MotionLayout>(mainBinding.mainMotionLayout.id).progress =
                     abs(progress)
             }
+
         }
         override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
             if (binding.playerMotionLayout.currentState == R.id.start){
-                callback.remove()
+                if (playlistModel != null)
+                    callbackPlaylistVersion.remove()
+                else
+                    callback.remove()
+
                 settingBottomPlayButton()
                 binding.playerView.useController = false
             }
             else{
                 binding.playerView.useController = true
-                activity.onBackPressedDispatcher.addCallback(callback)
+                if (playlistModel != null)
+                    activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner,callbackPlaylistVersion)
+                else
+                    activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner,callback)
             }
         }
 
@@ -454,7 +478,6 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
     }
 
     override fun onResume() {
-//        binding.fragmentRecyclerView.scrollToPosition(playerModel.getCurrentPosition())
         Log.d("프레그먼트플레이어","온리줌")
         super.onResume()
     }
@@ -469,19 +492,32 @@ class PlayerFragment(private val videoData: VideoData, private val playlistModel
         Log.d("프레그먼트플레이어","온스타트")
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        activity = context as Activity
+    fun initCallback(){
         callback = object : OnBackPressedCallback(true){
+            override fun handleOnBackPressed() {
+                Log.d("동영상 플레이어의","백프레스")
+                binding.playerMotionLayout.transitionToState(R.id.start)
+            }
+        }
+        callbackPlaylistVersion = object : OnBackPressedCallback(true){
             override fun handleOnBackPressed() {
                 Log.d("동영상 플레이어의","백프레스")
                 if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
                 else
-                    binding.playerMotionLayout.transitionToStart()
+                    binding.playerMotionLayout.transitionToState(R.id.start)
             }
         }
-        activity.onBackPressedDispatcher.addCallback(callback)
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        activity = context as Activity
+        initCallback()
+        if (playlistModel != null)
+            activity.onBackPressedDispatcher.addCallback(this,callbackPlaylistVersion)
+        else
+            activity.onBackPressedDispatcher.addCallback(this,callback)
     }
 
     private fun stringToHtmlSign(str: String): String {
