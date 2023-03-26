@@ -2,9 +2,10 @@ package com.myFile.Transpose
 
 import android.util.Log
 
-data class PlayerModel (
+data class NowPlaylistModel (
     private var playMusicList: List<VideoData> = emptyList(),
     private var currentPosition: Int = -1, // -1: 초기화 되지 않은 값
+    private var playlistTitle: String?
 ){
     init {
         refreshPlaylist()
@@ -17,18 +18,16 @@ data class PlayerModel (
         return playMusicList
     }
 
+    fun getPlaylistTitle(): String?{
+        return playlistTitle
+    }
+
     // 가져 갈 때마다 position 위치 보고 반환
     fun refreshPlaylist() {
         playMusicList = playMusicList.mapIndexed { index, musicModel ->
-            if (musicModel == VideoData(" ", " ", " ", " ", " ", " ", false)){
-                Log.d("모델 조건","문")
-                return
-            }
-
             val newItem = musicModel.copy(
                 isPlaying = index == currentPosition
             )
-            Log.d("새로운 아이템","${newItem}")
             newItem
         }
     }
@@ -54,9 +53,7 @@ data class PlayerModel (
         return playMusicList[currentPosition]
     }
 
-    fun currentMusicModel(): VideoData? {
-        if (playMusicList.isEmpty())
-            return null
+    fun currentMusicModel(): VideoData {
         return playMusicList[currentPosition]
     }
 }

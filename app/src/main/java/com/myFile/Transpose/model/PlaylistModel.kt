@@ -4,5 +4,6 @@ import com.myFile.Transpose.VideoData
 
 data class PlaylistModel(
     val playlistName: String?,
-    val playlistItems: List<VideoData>
+    val playlistItems: List<VideoData>,
+    val firstPosition: Int
 )
