@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
@@ -34,8 +35,6 @@ class SearchResultFragment(search: String): Fragment() {
     private val searchWord = search
     private val videoDataList = ArrayList<VideoData>()
     private val channelDataList = ArrayList<ChannelData>()
-    lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,19 +44,9 @@ class SearchResultFragment(search: String): Fragment() {
         fbinding = FragmentSearchResultBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
-        initExceptionHandler()
         initRecyclerView()
-        Log.d("searchResultFragment","실행")
         getData(null)
         return view
-    }
-    private fun initExceptionHandler(){
-        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
-            Log.d("코루틴 에러","$throwable")
-            CoroutineScope(Dispatchers.Main).launch {
-                Toast.makeText(activity,R.string.network_error_message, Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     override fun onResume() {
@@ -112,12 +101,41 @@ class SearchResultFragment(search: String): Fragment() {
                 mLastClickTime = SystemClock.elapsedRealtime()
             }
             override fun optionButtonClick(v: View, position: Int) {
+                val popUp = PopupMenu(activity, v)
+                popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
+                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
+                    when (it.itemId) {
+                        R.id.add_my_playlist -> {
+                            showNoticeDialog(videoDataList[position])
+                        }
+                    }
+                    true
+                })
+                popUp.show()
+            }
+        })
+         binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener(){
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val lastVisibleItemPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager?)!!.findLastCompletelyVisibleItemPosition()
+                val itemTotalCount = recyclerView.adapter!!.itemCount-1
+                // 스크롤이 끝에 도달했는지 확인
+                if (!binding.recyclerView.canScrollVertically(1) && lastVisibleItemPosition == itemTotalCount) {
+                    Log.d("스크롤 끝에","도달!")
+                    getData(nextPageToken)
+                }
             }
         })
     }
+    fun showNoticeDialog(videoData: VideoData) {
+        // Create an instance of the dialog fragment and show it
+        val dialog = DialogFragmentPopupAddPlaylist(videoData)
+        dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
+    }
 
     private fun getData(pageToken: String?) {
-        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+        CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
             async { getSearchVideoData(pageToken) }
         }
     }
@@ -142,8 +160,11 @@ class SearchResultFragment(search: String): Fragment() {
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
         binding.progressBar.visibility = View.INVISIBLE
         binding.recyclerView.visibility = View.VISIBLE
+        if (videoDataList.isNotEmpty()){
+            if (videoDataList[videoDataList.size - 1].title == " ")
+                videoDataList.removeAt(videoDataList.size - 1)
+        }
         for (index in 0 until responseData.items.size){
-
             val thumbnail = responseData.items[index].snippet?.thumbnails?.high?.url!!
             val rawDate = responseData.items[index].snippet?.publishedAt!!
             val date = youtubeDigitConverter.intervalBetweenDateText(rawDate)
@@ -154,7 +175,9 @@ class SearchResultFragment(search: String): Fragment() {
             Log.d("videoId","$videoId")
             videoDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
         }
+        videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
         searchResultAdapter.submitList(videoDataList.toMutableList())
+        Log.d("어댑터의 아이템 개수","${searchResultAdapter.itemCount}")
     }
 
 //    private suspend fun getChannelData(videoDataList: ArrayList<VideoData>) {

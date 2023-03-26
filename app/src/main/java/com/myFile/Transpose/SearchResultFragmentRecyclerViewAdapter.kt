@@ -1,44 +1,52 @@
 package com.myFile.Transpose
 
+import android.content.Context
+import android.os.Build
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.myFile.Transpose.databinding.ProgressBarItemBinding
 import com.myFile.Transpose.databinding.SearchResultRecyclerItemBinding
+import io.opencensus.resource.Resource
+import java.lang.String.format
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.util.*
 
 class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewHolder>(diffUtil) {
     private val VIEW_TYPE_ITEM = 0
     private val VIEW_TYPE_LOADING = 1
 
-    inner class MyProgressViewHolder(private val binding: ProgressBarItemBinding): RecyclerView.ViewHolder(binding.root){
+    inner class MyProgressViewHolder(binding: ProgressBarItemBinding): RecyclerView.ViewHolder(binding.root){
     }
     inner class MyViewHolder(private val binding: SearchResultRecyclerItemBinding): RecyclerView.ViewHolder(binding.root) {
         init{
-            binding.channelImageView.setOnClickListener {
-                itemClickListener.channelClick(it, adapterPosition)
-            }
-            binding.thumbnailImageView.setOnClickListener {
+
+            binding.dataItem.setOnClickListener {
                 itemClickListener.videoClick(it, adapterPosition)
             }
-            binding.videoTitleChannelTitleLinearLayout.setOnClickListener {
-                itemClickListener.videoClick(it, adapterPosition)
+            binding.optionButton.setOnClickListener {
+                itemClickListener.optionButtonClick(it,bindingAdapterPosition)
             }
+
         }
         fun bind(videoData: VideoData){
-            binding.channelTextView.text = videoData.channel
+            binding.channelTextView.text = videoData.channelTitle
             binding.titleTextView.text = videoData.title
+            binding.videoDetailText.text = videoData.date
             Glide.with(binding.thumbnailImageView)
                 .load(videoData.thumbnail)
                 .into(binding.thumbnailImageView)
-            Glide.with(binding.channelImageView)
-                .load(videoData.channelThumbnail)
-                .into(binding.channelImageView)
         }
     }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             VIEW_TYPE_ITEM -> {
