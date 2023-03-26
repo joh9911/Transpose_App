@@ -37,4 +37,6 @@
     <string name="subscriber_count_over_million">subscribers %sM</string>
     <string name="subscriber_count_over_hundred_million">subscribers %sM</string>
     <string name="subscriber_count_over_billion">subscribers %sB</string>
+    <string name="playlist_text">"Playlist: %s"</string>
+    <string name="playlist_item_empty_text">Empty</string>
 </resources>
