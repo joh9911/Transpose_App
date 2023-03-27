@@ -9,7 +9,6 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.Observer
 import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -48,7 +47,6 @@ class Activity: AppCompatActivity() {
 
     }
     private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
-    val API_KEY = com.myFile.Transpose.BuildConfig.API_KEY
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,14 +56,12 @@ class Activity: AppCompatActivity() {
         initExceptionHandler()
         connection = NetworkConnection(this)
         bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
-        connection.observe(this, Observer { isConnected ->
-            if (isConnected)
-            {
-            } else
-            {
-                Log.d("네트워크 연결 안됨","ㅁㄴㅇㄹ")
+        connection.observe(this) { isConnected ->
+            if (isConnected) {
+            } else {
+                Log.d("네트워크 연결 안됨", "ㅁㄴㅇㄹ")
             }
-        })
+        }
         initFragment()
     }
     fun initFragment(){
@@ -197,8 +193,10 @@ class Activity: AppCompatActivity() {
                     if (homeFragment.isVisible){
                         if (transposePage.visibility == View.VISIBLE)
                             transposePage.visibility = View.INVISIBLE
-                        else
+                        else{
                             homeFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+                            homeFragment.binding.mainScrollView.scrollTo(0,0)
+                        }
                     }
                     else{
                         supportFragmentManager.beginTransaction().hide(myPlaylistFragment).commit()
@@ -231,7 +229,11 @@ class Activity: AppCompatActivity() {
 
     fun transposePageInvisibleEvent(){
             transposePage.visibility = View.INVISIBLE
+        if (myPlaylistFragment.isVisible)
+            binding.bottomNavigationView.menu.findItem(R.id.my_playlist_icon).isChecked = true
+        if (homeFragment.isVisible)
             binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
+
     }
 
     override fun onBackPressed() {
