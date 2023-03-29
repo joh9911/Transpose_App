@@ -2,7 +2,6 @@ package com.myFile.Transpose
 
 import android.app.*
 import android.content.*
-import android.content.Context.AUDIO_SERVICE
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.os.Binder
@@ -15,7 +14,6 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.text.TextUtils
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.MediaSource
@@ -31,9 +29,12 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.exceptions.UndeliverableException
+import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
-import java.lang.Exception
+import java.io.IOException
+import java.net.SocketException
 
 class VideoService: Service() {
     lateinit var exoPlayer: ExoPlayer
@@ -43,6 +44,7 @@ class VideoService: Service() {
     lateinit var currentVideoData: VideoData
     lateinit var playerFragment: PlayerFragment
     private lateinit var audioManager: AudioManager
+    private lateinit var compositeDisposable: CompositeDisposable
     private lateinit var afChangeListener: AudioManager.OnAudioFocusChangeListener
     private val mediaReceiver = MediaReceiver()
     private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
@@ -58,7 +60,8 @@ class VideoService: Service() {
         const val NOTIFICATION_ID = 20
     }
 
-    override fun onBind(p0: Intent?): IBinder? {
+
+    override fun onBind(p0: Intent?): IBinder {
         exoPlayer.playWhenReady = true
         return VideoServiceBinder()
     }
@@ -77,6 +80,7 @@ class VideoService: Service() {
 
     override fun onCreate() {
         super.onCreate()
+        initRxJavaExceptionHandler()
         initYoutubeDL()
         updateYoutubeDL()
         setAudioFocus()
@@ -117,6 +121,15 @@ class VideoService: Service() {
             }
         })
 
+    }
+    private fun initRxJavaExceptionHandler() {
+        compositeDisposable = CompositeDisposable()
+        RxJavaPlugins.setErrorHandler { e ->
+            if (e is UndeliverableException) {
+                if (e.cause is InterruptedException)
+                    return@setErrorHandler
+            }
+        }
     }
     inner class MediaReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -245,10 +258,9 @@ class VideoService: Service() {
     }
 
     private fun startStream(url: String){
-        if (isConverting){
-            CompositeDisposable().dispose()
-            isConverting = false
-        }
+
+        compositeDisposable.clear()
+
         val disposable: Disposable = Observable.fromCallable {
             isConverting = true
             val request = YoutubeDLRequest(url)
@@ -259,19 +271,34 @@ class VideoService: Service() {
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ streamInfo ->
-                isConverting = false
+
                 val videoUrl: String = streamInfo.url
+                Log.d("유알엘","$videoUrl")
                 if (TextUtils.isEmpty(videoUrl)) { Toast.makeText(activity, "failed to get stream url", Toast.LENGTH_LONG).show()
                 } else {
                     setUpVideo(videoUrl)
                 }
             }) { e ->
+                if (e is UndeliverableException) {
+                    val cause = e.cause
+                    if (cause is IOException) {
+                        // expected exception
+                        return@subscribe
+                    }
+                    if (cause is InterruptedException) {
+                        // expected exception
+                        return@subscribe
+                    }
+                    // unexpected exception
+                    Log.e(TAG, "Undeliverable exception caught: ${e.cause}")
+                    throw RuntimeException("Undeliverable exception caught!", e.cause)
+                }
                 if (BuildConfig.DEBUG) Log.d(ContentValues.TAG, "failed to get stream info", e)
                 Toast.makeText(activity, "streaming failed. failed to get stream info", Toast.LENGTH_LONG).show()
                 Log.d("오류",e.toString())
                 playerFragment.playerViewInvisibleEvent()
             }
-        CompositeDisposable().add(disposable)
+        compositeDisposable.add(disposable)
     }
 
     private fun setUpVideo(convertedUrl: String){
