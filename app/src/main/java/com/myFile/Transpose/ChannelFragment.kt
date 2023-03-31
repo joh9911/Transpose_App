@@ -2,23 +2,17 @@ package com.myFile.Transpose
 
 import android.content.Context
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.PopupMenu
-import android.widget.Toast
-import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.myFile.Transpose.BuildConfig.TOY_PROJECT
 import com.myFile.Transpose.databinding.FragmentChannelBinding
-import com.myFile.Transpose.databinding.MainBinding
-import com.myFile.Transpose.model.ChannelSearchData
+
 import com.myFile.Transpose.model.PlayListVideoSearchData
 import kotlinx.coroutines.*
 
@@ -29,7 +23,7 @@ class ChannelFragment(
     val binding get() = fbinding!!
     lateinit var channelVideoRecyclerViewAdapter: ChannelVideoRecyclerViewAdapter
     val videoDataList = ArrayList<VideoData>()
-    var pageToken = ""
+    var pageToken: String? = null
     var moreVideos = true
     lateinit var activity: Activity
 
@@ -39,7 +33,7 @@ class ChannelFragment(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         fbinding = FragmentChannelBinding.inflate(inflater, container, false)
         val view = binding.root
         initPlaylistId()
@@ -53,15 +47,14 @@ class ChannelFragment(
     override fun onResume() {
         super.onResume()
         Log.d("채널프레그먼트","onResume${parentFragment}")
-
-        if (parentFragment is HomeFragment){
-            val fragment = parentFragment as HomeFragment
-            fragment.searchView.setQuery(channelData.channelTitle,false)
-        }
-        if (parentFragment is MyPlaylistFragment){
-            val fragment = parentFragment as MyPlaylistFragment
-            fragment.searchView.setQuery(channelData.channelTitle,false)
-        }
+//        if (parentFragment is HomeFragment){
+//            val fragment = parentFragment as HomeFragment
+//            fragment.searchView.setQuery(channelData.channelTitle,false)
+//        }
+//        if (parentFragment is MyPlaylistFragment){
+//            val fragment = parentFragment as MyPlaylistFragment
+//            fragment.searchView.setQuery(channelData.channelTitle,false)
+//        }
 
     }
 
@@ -70,25 +63,21 @@ class ChannelFragment(
         channelVideoRecyclerViewAdapter = ChannelVideoRecyclerViewAdapter(channelData)
         channelVideoRecyclerViewAdapter.setItemClickListener(object: ChannelVideoRecyclerViewAdapter.OnItemClickListener{
             override fun videoClick(v: View, position: Int) {
-                var mLastClickTime = 0L
-                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
                     activity.supportFragmentManager.beginTransaction()
                         .replace(activity.binding.playerFragment.id,PlayerFragment(videoDataList[position], null))
                         .commit()
-                }
-                mLastClickTime = SystemClock.elapsedRealtime()
             }
             override fun optionButtonClick(v: View, position: Int) {
                 val popUp = PopupMenu(activity, v)
                 popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
-                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
+                popUp.setOnMenuItemClickListener {
                     when (it.itemId) {
                         R.id.add_my_playlist -> {
                             showNoticeDialog(videoDataList[position])
                         }
                     }
                     true
-                })
+                }
                 popUp.show()
             }
         })
@@ -128,18 +117,17 @@ class ChannelFragment(
         if (!moreVideos)
             return
         val retrofit = RetrofitData.initRetrofit()
-        Log.d("요청 할 때의 토큰","$pageToken")
-        val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(TOY_PROJECT, "snippet", playlistId, pageToken, "50")
+        val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(BuildConfig.API_KEY2, "snippet", playlistId, pageToken, "50")
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
-                withContext(Dispatchers.Main){
-                    videoMapping(response.body()!!)
-                }
                 if (response.body()?.nextPageToken != null){
                     pageToken = response.body()?.nextPageToken!!
                 } else{
-                    Log.d("페이지 토큰이","없을 때")
+                    pageToken = null
                     moreVideos = false
+                }
+                withContext(Dispatchers.Main){
+                    videoMapping(response.body()!!)
                 }
             }
         }
@@ -161,12 +149,12 @@ class ChannelFragment(
             val channelTitle = channelData.channelTitle
             videoDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
         }
-        if (pageToken != "")
+        Log.d("pageTotken","$pageToken")
+        if (pageToken != null)
             videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
         channelVideoRecyclerViewAdapter.notifyDataSetChanged()
-        binding.progressBar.visibility = View.GONE
+        binding.progressBar.visibility = View.INVISIBLE
         Log.d("어댑터의 아이템 개수","${channelVideoRecyclerViewAdapter.itemCount}")
-
     }
 
     private fun stringToHtmlSign(str: String): String {
