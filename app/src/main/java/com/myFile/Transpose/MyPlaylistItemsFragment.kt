@@ -7,10 +7,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
+import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.LifecycleRegistry
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
-import com.myFile.Transpose.databinding.FragmentMyPlaylistBinding
 import com.myFile.Transpose.databinding.FragmentMyPlaylistItemBinding
 import com.myFile.Transpose.databinding.MainBinding
 import com.myFile.Transpose.model.PlaylistModel
@@ -18,6 +24,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.*
 
 class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
     lateinit var mainBinding: MainBinding
@@ -31,12 +38,13 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
     lateinit var myPlaylistDao: MyPlaylistDao
 
     lateinit var myPlaylistItemRecyclerAdapter: MyPlaylistItemRecyclerViewAdapter
+    private lateinit var fragmentLifecycleCallbacks: FragmentManager.FragmentLifecycleCallbacks
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         fbinding = FragmentMyPlaylistItemBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
@@ -86,29 +94,48 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
             override fun optionButtonClick(v: View, position: Int) {
                 val popUp = PopupMenu(activity, v)
                 popUp.menuInflater.inflate(R.menu.my_playlist_pop_up_menu, popUp.menu)
-                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
+                popUp.setOnMenuItemClickListener {
                     when (it.itemId) {
                         R.id.delete_my_playlist -> {
-                            CoroutineScope(Dispatchers.IO).launch{
+                            CoroutineScope(Dispatchers.IO).launch {
                                 myPlaylistDao.deleteMusic(myMusics[position])
                                 getAllMusic()
                             }
                         }
                     }
                     true
-                })
+                }
                 popUp.show()
             }
         })
         binding.myPlaylistItemRecyclerView.adapter = myPlaylistItemRecyclerAdapter
     }
 
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
+        fragmentLifecycleCallbacks = object : FragmentManager.FragmentLifecycleCallbacks() {
+
+            override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
+                if (f is PlayerFragment) {
+                    binding.emptyItem.visibility = View.VISIBLE
+                }
+            }
+
+            override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) {
+                if (f is PlayerFragment) {
+                    binding.emptyItem.visibility = View.GONE
+                }
+            }
+        }
+        activity.supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentLifecycleCallbacks,false)
+
+
     }
     override fun onDestroy() {
         super.onDestroy()
         fbinding = null
+        activity.supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentLifecycleCallbacks)
     }
 }
