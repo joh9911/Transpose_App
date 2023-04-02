@@ -10,5 +10,8 @@
         android:layout_marginLeft="4dp"
         android:layout_marginRight="4dp"
         android:layout_marginBottom="4dp"
+        android:maxLength="36"
+        android:singleLine="true"
+        android:lines="1"
         android:hint="@string/title_hint" />
 </LinearLayout>

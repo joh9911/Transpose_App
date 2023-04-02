@@ -8,6 +8,8 @@ import android.text.Editable
 import android.util.Log
 import android.view.View
 import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -15,6 +17,7 @@ import androidx.room.Room
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DialogFragmentPopupAddPlaylist(val videoData: VideoData): DialogFragment() {
 
@@ -48,6 +51,7 @@ class DialogFragmentPopupAddPlaylist(val videoData: VideoData): DialogFragment()
                     }
                     val thread = Thread(r)
                     thread.start()
+                    Toast.makeText(activity,"재생목록에 추가했습니다.",Toast.LENGTH_SHORT).show()
                     dialog?.dismiss()
                 }
 
@@ -74,6 +78,11 @@ class DialogFragmentPopupAddPlaylist(val videoData: VideoData): DialogFragment()
         CoroutineScope(Dispatchers.IO).launch{
             myPlaylists = myPlaylistDao.getAll()
             myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
+            withContext(Dispatchers.Main){
+                if (myPlaylists.isEmpty()){
+                    dialog?.findViewById<TextView>(R.id.empty_text_view)?.visibility = View.VISIBLE
+                }
+            }
         }
     }
 
