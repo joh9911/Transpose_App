@@ -4,17 +4,17 @@ import android.app.*
 import android.content.*
 import android.media.AudioManager
 import android.media.MediaMetadata
-import android.os.Binder
-import android.os.Build
-import android.os.IBinder
-import android.os.SystemClock
+import android.os.*
+import android.os.SystemClock.elapsedRealtime
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.text.TextUtils
 import android.util.Log
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.media.session.MediaButtonReceiver
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -34,7 +34,6 @@ import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.*
 import java.io.IOException
-import java.net.SocketException
 
 class VideoService: Service() {
     lateinit var exoPlayer: ExoPlayer
@@ -53,13 +52,14 @@ class VideoService: Service() {
 
     val CHANNEL_ID = "foreground_service_channel" // 임의의 채널 ID
 
+
     companion object {
         const val TAG = "[MusicPlayerService]"
         const val VIDEO_FILE_ID = "VideoFileID"
         const val PLAY_PAUSE_ACTION = "playPauseAction"
         const val NOTIFICATION_ID = 20
-    }
 
+    }
 
     override fun onBind(p0: Intent?): IBinder {
         exoPlayer.playWhenReady = true
@@ -122,6 +122,7 @@ class VideoService: Service() {
         })
 
     }
+
     private fun initRxJavaExceptionHandler() {
         compositeDisposable = CompositeDisposable()
         RxJavaPlugins.setErrorHandler { e ->
@@ -175,6 +176,7 @@ class VideoService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        MediaButtonReceiver.handleIntent(mediaSession,intent)
             when (intent?.action) {
                 Actions.START_FOREGROUND -> {
                     Log.e(TAG, "Start Foreground 인텐트를 받음")
@@ -407,10 +409,76 @@ class VideoService: Service() {
                     1f,
                     SystemClock.elapsedRealtime()
                 )
-                .setActions(PlaybackStateCompat.ACTION_SEEK_TO)
+                .setActions(PlaybackStateCompat.ACTION_SEEK_TO
+                )
+
                 .build()
         )
-        mediaSession.setCallback(MediaSessionCallback())
+
+        mediaSession.setCallback(object: MediaSessionCompat.Callback(){
+            override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
+                Log.d("미디어 버튼","여")
+                val action = mediaButtonEvent?.action
+                if (action == Intent.ACTION_MEDIA_BUTTON) {
+                    val event = mediaButtonEvent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+                    if (event != null && event.action == KeyEvent.ACTION_UP){
+                        when(event.keyCode) {
+                            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                                val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
+                                if (playerFragment.playlistModel != null)
+                                    playerFragment.playNextPlaylistVideo()
+                                startForegroundService()
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                                exoPlayer.pause()
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                                exoPlayer.play()
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                                if (exoPlayer.currentPosition >= 4000){
+                                    exoPlayer.seekToPrevious()
+                                }
+                                else{
+                                    val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
+                                    if (playerFragment.playlistModel != null)
+                                        playerFragment.playPrevPlaylistVideo()
+                                    startForegroundService()
+                                }
+                            }
+                        }
+                    }
+                }
+                return super.onMediaButtonEvent(mediaButtonEvent)
+
+            }
+
+            override fun onSkipToNext() {
+                val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
+                if (playerFragment.playlistModel != null)
+                    playerFragment.playNextPlaylistVideo()
+                startForegroundService()
+                super.onSkipToNext()
+            }
+
+            override fun onSeekTo(pos: Long) {
+                super.onSeekTo(pos)
+                exoPlayer.seekTo(pos)
+                mediaSession.setPlaybackState(
+                    PlaybackStateCompat.Builder()
+                        .setState(
+                            if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING
+                            else PlaybackStateCompat.STATE_PAUSED,
+                            exoPlayer.currentPosition,
+                            1f,
+                            SystemClock.elapsedRealtime()
+                        )
+                        .setActions(PlaybackStateCompat.ACTION_SEEK_TO)
+                        .build()
+                )
+
+            }
+        })
 
         if (exoPlayer.isPlaying){
             notification = NotificationCompat.Builder(this,
@@ -482,40 +550,5 @@ class VideoService: Service() {
         return notification
     }
 
-    inner class MediaSessionCallback(): MediaSessionCompat.Callback(){
-        override fun onPlay() {
-            Log.d("콜백 ","눌렀음")
-        }
-
-        override fun onStop() {
-        }
-
-        override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
-            return super.onMediaButtonEvent(mediaButtonEvent)
-        }
-        override fun onSeekTo(pos: Long) {
-            super.onSeekTo(pos)
-            exoPlayer.seekTo(pos)
-            mediaSession.setPlaybackState(
-                PlaybackStateCompat.Builder()
-                    .setState(
-                        if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING
-                        else PlaybackStateCompat.STATE_PAUSED,
-                        exoPlayer.currentPosition,
-                        1f,
-                        SystemClock.elapsedRealtime()
-                    )
-                    .setActions(PlaybackStateCompat.ACTION_SEEK_TO)
-                    .build()
-            )
-
-        }
-
-        override fun onPause() {
-            super.onPause()
-        }
-
-
-    }
 
 }
