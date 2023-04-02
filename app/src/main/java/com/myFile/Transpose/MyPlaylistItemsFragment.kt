@@ -51,6 +51,7 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
         initDb()
         initRecyclerView()
         getAllMusic()
+        initEmptyItemVisible()
         return view
     }
     fun initDb(){
@@ -71,6 +72,14 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
                 myMusicItems.clear()
                 myMusics.forEach{myMusicItems.add(it.musicData)}
                 myPlaylistItemRecyclerAdapter.submitList(myMusicItems.toMutableList())
+            }
+        }
+    }
+
+    fun initEmptyItemVisible(){
+        for (fragment in activity.supportFragmentManager.fragments){
+            if (fragment is PlayerFragment){
+                binding.emptyItem.visibility = View.VISIBLE
             }
         }
     }
