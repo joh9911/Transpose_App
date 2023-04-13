@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.util.Log
 import android.view.*
-import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.PopupMenu
@@ -35,7 +34,6 @@ class MyPlaylistFragment: Fragment() {
     lateinit var playlistToolBar: androidx.appcompat.widget.Toolbar
     val suggestionKeywords = ArrayList<String>()
     var myPlaylists = listOf<MyPlaylist>()
-    var myMusics = listOf<Musics>()
 
     private lateinit var searchKeywordRecyclerAdapter: SearchSuggestionKeywordRecyclerViewAdapter
     private lateinit var myPlaylistRecyclerViewAdapter: MyPlaylistRecyclerViewAdapter
@@ -51,7 +49,7 @@ class MyPlaylistFragment: Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         fbinding = FragmentMyPlaylistBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
 //        setHasOptionsMenu(true)
@@ -98,14 +96,14 @@ class MyPlaylistFragment: Fragment() {
                 Log.d("버튼번호","$position")
                 val popUp = PopupMenu(activity, v)
                 popUp.menuInflater.inflate(R.menu.my_playlist_pop_up_menu, popUp.menu)
-                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
+                popUp.setOnMenuItemClickListener {
                     when (it.itemId) {
                         R.id.delete_my_playlist -> {
                             deleteAndRefreshMyPlaylist(position)
                         }
                     }
                     true
-                })
+                }
                 popUp.show()
             }
         })
@@ -205,13 +203,17 @@ class MyPlaylistFragment: Fragment() {
             }
             override fun onMenuItemActionCollapse(p0: MenuItem): Boolean {
                 Log.d("playlist","서치뷰닫힘")
-                var count = 0
-                childFragmentManager.addOnBackStackChangedListener {
-                    count = childFragmentManager.backStackEntryCount
+                if (childFragmentManager.backStackEntryCount == 0){
+                    callback.remove()
+                    searchViewCollapseEvent()
+                    return true
                 }
-                searchViewCollapseEvent()
-                callback.remove()
-                return count == 0
+                else{
+                    searchViewCollapseEvent()
+                    searchView.clearFocus()
+                    childFragmentManager.popBackStack()
+                    return false
+                }
 //                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
 //                    return if (activity.transposePage.visibility == View.VISIBLE) {
 //                        Log.d("1","1")
@@ -337,13 +339,13 @@ class MyPlaylistFragment: Fragment() {
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
-        if (hidden){
+        if (hidden) {
 //            Log.d("playlist","hidden ${searchView.query}")
             callback.remove()
-        }
-        else{
-            if (childFragmentManager.backStackEntryCount != 0)
+        } else {
+            if (childFragmentManager.backStackEntryCount != 0) {
                 activity.onBackPressedDispatcher.addCallback(this, callback)
+            }
         }
     }
     override fun onAttach(context: Context) {
