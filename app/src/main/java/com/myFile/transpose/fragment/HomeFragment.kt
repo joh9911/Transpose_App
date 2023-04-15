@@ -1,4 +1,4 @@
-package com.myFile.Transpose
+package com.myFile.transpose.fragment
 
 import android.content.Context
 import android.os.Bundle
@@ -9,19 +9,25 @@ import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.myFile.Transpose.databinding.FragmentHomeBinding
-import com.myFile.Transpose.databinding.MainBinding
-import com.myFile.Transpose.model.*
+import com.myFile.transpose.*
+import com.myFile.transpose.retrofit.*
+import com.myFile.transpose.adapter.HomePlaylistRecyclerViewAdapter
+import com.myFile.transpose.adapter.HomePopular100RecyclerViewAdapter
+import com.myFile.transpose.adapter.SearchSuggestionKeywordRecyclerViewAdapter
+import com.myFile.transpose.dto.PlayListSearchData
+import com.myFile.transpose.dto.PlayListVideoSearchData
+import com.myFile.transpose.databinding.FragmentHomeBinding
+import com.myFile.transpose.databinding.MainBinding
+import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
+import com.myFile.transpose.model.*
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.create
 import kotlin.collections.ArrayList
 
 
@@ -125,7 +131,9 @@ class HomeFragment: Fragment() {
             var mLastClickTime = 0L
             override fun onClick(v: View, position: Int) {
                 if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    childFragmentManager.beginTransaction().add(binding.searchResultFrameLayout.id,PlaylistItemsFragment(thisYearPlaylistData[position]))
+                    childFragmentManager.beginTransaction().add(binding.searchResultFrameLayout.id,
+                        PlaylistItemsFragment(thisYearPlaylistData[position])
+                    )
                         .addToBackStack(null)
                         .commit()
                 }
@@ -143,7 +151,9 @@ class HomeFragment: Fragment() {
         todayHotPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 childFragmentManager.beginTransaction()
-                    .add(binding.searchResultFrameLayout.id,PlaylistItemsFragment(todayHotPlaylistData[position]))
+                    .add(binding.searchResultFrameLayout.id,
+                        PlaylistItemsFragment(todayHotPlaylistData[position])
+                    )
                     .addToBackStack(null)
                     .commit()
             }
@@ -159,7 +169,9 @@ class HomeFragment: Fragment() {
         latestMusicPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 childFragmentManager.beginTransaction()
-                    .add(binding.searchResultFrameLayout.id,PlaylistItemsFragment(latestMusicPlaylistData[position]))
+                    .add(binding.searchResultFrameLayout.id,
+                        PlaylistItemsFragment(latestMusicPlaylistData[position])
+                    )
                     .addToBackStack(null)
                     .commit()
             }
@@ -175,7 +187,9 @@ class HomeFragment: Fragment() {
         bestAtmospherePlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 childFragmentManager.beginTransaction()
-                    .add(binding.searchResultFrameLayout.id,PlaylistItemsFragment(bestAtmospherePlaylistData[position]))
+                    .add(binding.searchResultFrameLayout.id,
+                        PlaylistItemsFragment(bestAtmospherePlaylistData[position])
+                    )
                     .addToBackStack(null)
                     .commit()
             }
@@ -191,7 +205,9 @@ class HomeFragment: Fragment() {
         bestSituationPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 childFragmentManager.beginTransaction()
-                    .add(binding.searchResultFrameLayout.id,PlaylistItemsFragment(bestSituationPlaylistData[position]))
+                    .add(binding.searchResultFrameLayout.id,
+                        PlaylistItemsFragment(bestSituationPlaylistData[position])
+                    )
                     .addToBackStack(null)
                     .commit()
             }
@@ -363,7 +379,7 @@ class HomeFragment: Fragment() {
                 searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
-                    .add(binding.searchResultFrameLayout.id,SearchResultFragment(searchWord))
+                    .add(binding.searchResultFrameLayout.id, SearchResultFragment(searchWord))
                     .addToBackStack(null)
                     .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
@@ -485,9 +501,10 @@ class HomeFragment: Fragment() {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
-                    .add(binding.searchResultFrameLayout.id,SearchResultFragment(
+                    .add(binding.searchResultFrameLayout.id, SearchResultFragment(
                         query!!
-                    ))
+                    )
+                    )
                     .addToBackStack(null)
                     .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
@@ -507,7 +524,6 @@ class HomeFragment: Fragment() {
             }
         })
     }
-
 
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
@@ -533,12 +549,8 @@ class HomeFragment: Fragment() {
                         Log.d("homeFragment 백","조건문")
                         searchViewItem.collapseActionView()
                     }
-                }else{
-//                    if (binding.searchSuggestionKeywordRecyclerView.visibility == View.VISIBLE)
-//                        searchViewCollapseEvent()
-//                    else
+                }else
                         childFragmentManager.popBackStack()
-                }
             }
         }
 

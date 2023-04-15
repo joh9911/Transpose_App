@@ -1,4 +1,4 @@
-package com.myFile.Transpose
+package com.myFile.transpose.fragment
 
 import android.content.Context
 import android.os.Bundle
@@ -14,8 +14,17 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
-import com.myFile.Transpose.databinding.FragmentMyPlaylistBinding
-import com.myFile.Transpose.databinding.MainBinding
+import com.myFile.transpose.*
+import com.myFile.transpose.retrofit.RetrofitService
+import com.myFile.transpose.retrofit.RetrofitSuggestionKeyword
+import com.myFile.transpose.adapter.MyPlaylistRecyclerViewAdapter
+import com.myFile.transpose.adapter.SearchSuggestionKeywordRecyclerViewAdapter
+import com.myFile.transpose.database.AppDatabase
+import com.myFile.transpose.database.MyPlaylist
+import com.myFile.transpose.database.MyPlaylistDao
+import com.myFile.transpose.databinding.FragmentMyPlaylistBinding
+import com.myFile.transpose.databinding.MainBinding
+import com.myFile.transpose.dialog.DialogCreatePlaylist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -87,7 +96,9 @@ class MyPlaylistFragment: Fragment() {
         myPlaylistRecyclerViewAdapter.setItemClickListener(object: MyPlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id,MyPlaylistItemsFragment(myPlaylists[position]))
+                    .replace(binding.resultFrameLayout.id,
+                        MyPlaylistItemsFragment(myPlaylists[position])
+                    )
                     .addToBackStack(null)
                     .commit()
             }
@@ -120,9 +131,10 @@ class MyPlaylistFragment: Fragment() {
                 searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id,SearchResultFragment(
+                    .replace(binding.resultFrameLayout.id, SearchResultFragment(
                         searchWord,
-                    ))
+                    )
+                    )
                     .addToBackStack(null)
                     .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
@@ -150,7 +162,7 @@ class MyPlaylistFragment: Fragment() {
         // Create an instance of the dialog fragment and show it
         val dialog = DialogCreatePlaylist()
 
-        dialog.setListener(object: DialogCreatePlaylist.NoticeDialogListener{
+        dialog.setListener(object: DialogCreatePlaylist.NoticeDialogListener {
             override fun onDialogPositiveClick(dialog: DialogFragment, text: Editable?) {
                 CoroutineScope(Dispatchers.IO).launch{
                     myPlaylistDao.insertAll(MyPlaylist(0,"$text"))
@@ -204,7 +216,6 @@ class MyPlaylistFragment: Fragment() {
             override fun onMenuItemActionCollapse(p0: MenuItem): Boolean {
                 Log.d("playlist","서치뷰닫힘")
                 if (childFragmentManager.backStackEntryCount == 0){
-                    callback.remove()
                     searchViewCollapseEvent()
                     return true
                 }
@@ -248,10 +259,11 @@ class MyPlaylistFragment: Fragment() {
                 Log.d("playlist","${searchView.query}")
                 searchView.clearFocus()
                 childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id,SearchResultFragment(
+                    .replace(binding.resultFrameLayout.id, SearchResultFragment(
                         query!!
 
-                    ))
+                    )
+                    )
                     .addToBackStack(null)
                     .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
@@ -340,14 +352,12 @@ class MyPlaylistFragment: Fragment() {
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (hidden) {
-//            Log.d("playlist","hidden ${searchView.query}")
             callback.remove()
         } else {
-            if (childFragmentManager.backStackEntryCount != 0) {
-                activity.onBackPressedDispatcher.addCallback(this, callback)
-            }
+            activity.onBackPressedDispatcher.addCallback(this, callback)
         }
     }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
@@ -357,6 +367,11 @@ class MyPlaylistFragment: Fragment() {
                 if (childFragmentManager.backStackEntryCount == 0) {
                     if (searchViewItem.isActionViewExpanded)
                         searchViewItem.collapseActionView()
+                    else{
+                        activity.supportFragmentManager.beginTransaction().show(activity.homeFragment).commit()
+                        activity.supportFragmentManager.beginTransaction().hide(activity.myPlaylistFragment).commit()
+                        activity.binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
+                    }
                 }
                 else
                     childFragmentManager.popBackStack()
@@ -366,8 +381,6 @@ class MyPlaylistFragment: Fragment() {
             if (childFragmentManager.backStackEntryCount == 0) {
                 if (searchViewItem.isActionViewExpanded)
                     searchViewItem.collapseActionView()
-
-                callback.remove()
             }
             else
                 activity.onBackPressedDispatcher.addCallback(this, callback)

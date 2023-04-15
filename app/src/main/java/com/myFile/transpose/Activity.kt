@@ -1,4 +1,4 @@
-package com.myFile.Transpose
+package com.myFile.transpose
 
 import android.content.*
 import android.os.Bundle
@@ -7,11 +7,15 @@ import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
-import com.myFile.Transpose.databinding.MainBinding
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.myFile.transpose.databinding.MainBinding
+import com.myFile.transpose.fragment.HomeFragment
+import com.myFile.transpose.fragment.MyPlaylistFragment
+import com.myFile.transpose.fragment.PlayerFragment
 import kotlinx.coroutines.*
 
 
@@ -75,6 +79,36 @@ class Activity: AppCompatActivity() {
             .commit()
         supportFragmentManager.beginTransaction().hide(myPlaylistFragment).commit()
         supportFragmentManager.beginTransaction().show(homeFragment).commit()
+        binding.mainMotionLayout.setTransitionListener(object: MotionLayout.TransitionListener{
+            override fun onTransitionStarted(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int
+            ) {
+            }
+
+            override fun onTransitionChange(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int,
+                progress: Float
+            ) {
+            }
+
+            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                Log.d("액트랜지션" ,"$currentId")
+
+            }
+
+            override fun onTransitionTrigger(
+                motionLayout: MotionLayout?,
+                triggerId: Int,
+                positive: Boolean,
+                progress: Float
+            ) {
+            }
+
+        })
     }
 
     private fun initExceptionHandler(){
@@ -237,15 +271,57 @@ class Activity: AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        Log.d("액티비티의","백프레스")
-        for (fragment: Fragment in supportFragmentManager.fragments){
+        Log.d("액티비티의", "백프레스")
+        var tag = false
+        for (fragment: Fragment in supportFragmentManager.fragments) {
             if (fragment is PlayerFragment && fragment.binding.playerMotionLayout.currentState == R.id.end)
-                return super.onBackPressed()
+                tag = true
         }
-        if (transposePage.visibility == View.VISIBLE)
-            transposePageInvisibleEvent()
-        else
+        if (tag)
             return super.onBackPressed()
+        else {
+            if (transposePage.visibility == View.VISIBLE)
+                transposePageInvisibleEvent()
+            else {
+                Log.d("이게도니거","아니야?")
+                return super.onBackPressed()
+            }
+
+//  if (transposePage.visibility != View.VISIBLE){
+//                    Log.d("asdfsa","Asdfsaff")
+//                    if (myPlaylistFragment.isVisible) {
+//                        if (myPlaylistFragment.childFragmentManager.backStackEntryCount == 0) {
+//                            supportFragmentManager.beginTransaction().show(homeFragment)
+//                                .commit()
+//                            supportFragmentManager.beginTransaction().hide(myPlaylistFragment)
+//                                .commit()
+//                        } else
+//                            return super.onBackPressed()
+//                    } else
+//                        return super.onBackPressed()
+//                }
+//                else{
+//                    transposePageInvisibleEvent()
+//                    Log.d("이것도","하")
+//                }
+
+
+//        if (transposePage.visibility == View.VISIBLE)
+//            transposePageInvisibleEvent()
+//        else{
+//            if (myPlaylistFragment.isVisible){
+//                if (myPlaylistFragment.childFragmentManager.backStackEntryCount == 0){
+//                    supportFragmentManager.beginTransaction().show(homeFragment).commit()
+//                    supportFragmentManager.beginTransaction().hide(myPlaylistFragment).commit()
+//                }
+//                else
+//                    return super.onBackPressed()
+//            }
+//            else
+//                return super.onBackPressed()
+//        }
+
+
 //        if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null){
 //            if (transposePage.visibility == View.VISIBLE)
 //                transposePageInvisibleEvent()
@@ -264,6 +340,7 @@ class Activity: AppCompatActivity() {
 //                    return super.onBackPressed()
 //            }
 //        }
+        }
     }
 
 
