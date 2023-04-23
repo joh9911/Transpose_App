@@ -8,29 +8,28 @@
     android:layout_marginTop="10dp"
     android:layout_marginBottom="10dp"
     android:id="@+id/data_item">
-    <ImageView
-        android:id="@+id/drag_handle_icon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_baseline_drag_handle_24"
-        android:layout_marginStart="10dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+<!--    <ImageView-->
+<!--        android:id="@+id/drag_handle_icon"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:src="@drawable/ic_baseline_drag_handle_24"-->
+<!--        -->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="parent"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"/>-->
 
     <ImageView
         android:id="@+id/thumbnail_image_view"
         android:layout_width="70dp"
         android:layout_height="match_parent"
         android:scaleType="fitXY"
-        android:src="@drawable/ic_launcher_background"
-        app:layout_constraintStart_toEndOf="@id/drag_handle_icon"
-        android:layout_marginStart="10dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="20dp"/>
     <TextView
         android:id="@+id/title_text_view"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="제목"
+
         android:textSize="13dp"
         android:lines="2"
         android:maxLines="2"
@@ -43,7 +42,7 @@
         android:id="@+id/channel_text_view"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="계정"
+
         android:textSize="10dp"
         android:lines="1"
         android:textColor="@color/description_color"
@@ -55,7 +54,6 @@
         android:id="@+id/video_detail_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="세부정보"
         android:textSize="10dp"
         android:lines="1"
         android:layout_marginStart="20dp"

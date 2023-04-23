@@ -16,7 +16,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_view"/>
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_view"
+        />
 
     <LinearLayout
         android:id="@+id/transpose_page"
@@ -223,6 +224,34 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 
+<!--    <androidx.coordinatorlayout.widget.CoordinatorLayout-->
+<!--        android:id="@+id/player_fragment_coordinator_layout"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="0dp"-->
+<!--        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_view"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="parent"-->
+<!--        android:visibility="invisible">-->
+<!--        <LinearLayout-->
+<!--            android:id="@+id/main_bottom_sheet"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:orientation="vertical"-->
+<!--            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">-->
+<!--            <FrameLayout-->
+<!--                android:id="@+id/player_fragment"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                app:layout_constraintBottom_toTopOf="@id/bottom_navigation_view"-->
+<!--                app:layout_constraintEnd_toEndOf="parent"-->
+<!--                app:layout_constraintStart_toStartOf="parent"-->
+<!--                app:layout_constraintTop_toTopOf="parent"-->
+<!--                 />-->
+<!--        </LinearLayout>-->
+
+
+<!--    </androidx.coordinatorlayout.widget.CoordinatorLayout>-->
     <FrameLayout
         android:id="@+id/player_fragment"
         android:layout_width="0dp"
@@ -230,7 +259,9 @@
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        />
+
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation_view"

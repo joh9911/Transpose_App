@@ -4,20 +4,27 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.1165" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/black.xml" value="0.1165" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/bottom_border.xml" value="0.1225" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/bottom_navi_home_selector.xml" value="0.1165" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/bottom_navi_playlist_selector.xml" value="0.1155" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/bottom_navi_transpose_selector.xml" value="0.1155" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/bottom_sheet.xml" value="0.1" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/bottom_sheet_drag_handle.xml" value="0.1" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/bottom_top_border.xml" value="0.1215" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/button_border.xml" value="0.1215" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_arrow_back_24.xml" value="0.1165" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_arrow_outward_24.xml" value="0.1225" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_fast_forward_24.xml" value="0.1195" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_fast_rewind_24.xml" value="0.1195" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_home_24.xml" value="0.1225" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_keyboard_arrow_up_24.xml" value="0.1" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_library_music_24.xml" value="0.1225" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_menu_24.xml" value="0.1225" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_more_vert_24.xml" value="0.1195" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_pause_24.xml" value="0.116" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_play_arrow_24.xml" value="0.123" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_playlist_play_24.xml" value="0.1" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_search_24.xml" value="0.1225" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_baseline_track_changes_24.xml" value="0.1195" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/drawable/ic_launcher_background.xml" value="0.1225" />
@@ -26,29 +33,53 @@
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/activity_drawer.xml" value="0.152" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/activity_main.xml" value="0.1911231884057971" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/activity_toolbar.xml" value="0.11145833333333334" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/channel_video_recycler_view_header_view.xml" value="0.264" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/comment_thread_recycler_view_item.xml" value="0.264" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/dialog_my_playlist.xml" value="0.11197916666666667" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/dialog_popup_menu_add_playlist.xml" value="0.1046875" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_channel.xml" value="0.176" />
-        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_player.xml" value="0.1" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_home.xml" value="0.10416666666666667" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_my_playlist.xml" value="0.10520833333333333" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_my_playlist_item.xml" value="0.2" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_my_playlist_list.xml" value="0.264" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_my_playlist_sort.xml" value="0.1046875" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_player.xml" value="0.264" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_playlist.xml" value="0.136" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_playlist_player.xml" value="0.10729166666666666" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_search.xml" value="0.1" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_search_result.xml" value="0.1046875" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/fragment_transpose.xml" value="0.16799999999999998" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/home_fragment.xml" value="0.10416666666666667" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/home_playlist_items_recycler_view_item.xml" value="0.2" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/home_playlist_recycler_item.xml" value="0.4" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/home_playlist_video_recycler_item.xml" value="0.11197916666666667" />
-        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/home_popular_100_recycler_view_item.xml" value="0.2" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/home_popular_100_recycler_view_item.xml" value="0.264" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/home_recycler_item.xml" value="0.2" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/karaoke_playlist_recycler_item.xml" value="0.2" />
-        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/main.xml" value="0.25" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/main.xml" value="0.16" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/my_playlist_item_recycler_view_item.xml" value="0.4" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/my_playlist_recycler_item.xml" value="0.264" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/notification_layout.xml" value="0.2" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/playlist_bottom_sheet_layout.xml" value="0.2" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/playlist_recycler_item.xml" value="0.25364583333333335" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/progress_bar_item.xml" value="0.2" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/progress_bar_layout.xml" value="0.1078125" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/related_video_recycler_view_header_view.xml" value="0.264" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/related_video_recycler_view_header_view_shimmer.xml" value="0.1" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/search_recycler_item.xml" value="0.264" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/search_recycler_item_shimmer.xml" value="0.16" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/search_result_recycler_item.xml" value="0.2" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/transpose_fragment.xml" value="0.10416666666666667" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/video_notification.xml" value="0.1109375" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/layout/video_spinner.xml" value="0.264" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/bottom_navi_item.xml" value="0.109375" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/home_fragment_tool_bar.xml" value="0.10520833333333333" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/my_playlist_fragment_tool_bar.xml" value="0.10520833333333333" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/my_playlist_pop_up_menu.xml" value="0.11145833333333334" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/tool_bar.xml" value="0.11197916666666667" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/toolbar_home.xml" value="0.16" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/toolbar_item.xml" value="0.16" />
+        <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/menu/video_pop_up_menu.xml" value="0.1046875" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/mipmap-anydpi-v26/app_icon.xml" value="0.123" />
         <entry key="..\:/Users/joh9911/Desktop/joh9911/YoutubeTranspose/app/src/main/res/xml/searchable.xml" value="0.11145833333333334" />
       </map>

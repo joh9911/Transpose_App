@@ -8,14 +8,22 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/my_playlist_item_recycler_view"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:background="@color/white"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="10dp"
-        android:layout_marginBottom="50dp"
+        app:layout_constraintBottom_toTopOf="@id/empty_item"
+        app:layout_constraintTop_toTopOf="parent"
+        />
+    <TextView
+        android:id="@+id/empty_item"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:visibility="gone"
+        android:layout_marginEnd="10dp"
+        android:layout_marginStart="10dp"
+        android:background="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
         />
     <TextView
         android:id="@+id/empty_text_view"

@@ -20,6 +20,16 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
+        <Constraint android:id="@+id/player_fragment_coordinator_layout">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore" />
+        </Constraint>
+        <Constraint android:id="@+id/main_bottom_sheet">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore" />
+        </Constraint>
 
 
         <Constraint android:id="@+id/tool_bar">
@@ -37,7 +47,14 @@
 <!--                app:applyMotionScene="false"-->
 <!--                app:visibilityMode="ignore" />-->
 <!--        </Constraint>-->
-        <Constraint android:id="@+id/basic_frame_layout">
+        <Constraint android:id="@+id/basic_frame_layout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginBottom="56dp"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintTop_toTopOf="parent"
+            motion:layout_constraintBottom_toBottomOf="@id/bottom_navigation_view">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
@@ -52,6 +69,16 @@
     </ConstraintSet>
 
     <ConstraintSet android:id="@+id/end">
+        <Constraint android:id="@+id/player_fragment_coordinator_layout">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore" />
+        </Constraint>
+        <Constraint android:id="@+id/main_bottom_sheet">
+            <PropertySet
+                app:applyMotionScene="false"
+                app:visibilityMode="ignore" />
+        </Constraint>
         <Constraint android:id="@+id/tool_bar">
             <PropertySet
                 app:applyMotionScene="false"
@@ -73,7 +100,13 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
-        <Constraint android:id="@+id/basic_frame_layout">
+        <Constraint android:id="@+id/basic_frame_layout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintTop_toTopOf="parent"
+            motion:layout_constraintBottom_toBottomOf="@id/bottom_navigation_view">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
@@ -107,7 +140,7 @@
         android:id="@+id/main_transition"
         app:constraintSetEnd="@id/end"
         app:constraintSetStart="@+id/start"
-        app:duration="200"
+        app:duration="250"
         motion:layoutDuringTransition="honorRequest"
         />
 </MotionScene>

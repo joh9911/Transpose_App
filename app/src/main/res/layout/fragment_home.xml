@@ -55,7 +55,7 @@
             <ProgressBar
                 android:id="@+id/popular_Top100_playlist_video_progress_bar"
                 android:layout_width="wrap_content"
-                android:layout_height="200dp"
+                android:layout_height="150dp"
                 android:layout_gravity="center"/>
 
             <androidx.recyclerview.widget.RecyclerView
@@ -65,6 +65,31 @@
                 android:nestedScrollingEnabled="false"
                 android:visibility="invisible"
                 />
+
+            <TextView
+                android:id="@+id/today_hot_list_playlist_text_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/today_hot_list_playlist_text"
+                android:textSize="20dp"
+                android:textStyle="bold"
+                android:gravity="left"
+                android:layout_marginTop="30dp"
+                android:layout_marginLeft="15dp"
+                />
+            <ProgressBar
+                android:id="@+id/today_hot_list_playlist_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="240dp"
+                android:layout_gravity="center"/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/today_hot_list_playlist_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:nestedScrollingEnabled="false"
+                android:visibility="invisible"
+                />
+
             <TextView
                 android:id="@+id/this_year_playlist_text_view"
                 android:layout_width="match_parent"
@@ -73,7 +98,7 @@
                 android:textSize="20dp"
                 android:textStyle="bold"
                 android:gravity="left"
-                android:layout_marginTop="30dp"
+                android:layout_marginTop="10dp"
                 android:layout_marginLeft="15dp"
                 />
 
@@ -88,30 +113,6 @@
                 android:layout_height="240dp"
                 android:nestedScrollingEnabled="false"
                 android:orientation="horizontal"
-                android:visibility="invisible"
-                />
-
-            <TextView
-                android:id="@+id/today_hot_list_playlist_text_view"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/today_hot_list_playlist_text"
-                android:textSize="20dp"
-                android:textStyle="bold"
-                android:gravity="left"
-                android:layout_marginTop="10dp"
-                android:layout_marginLeft="15dp"
-                />
-            <ProgressBar
-                android:id="@+id/today_hot_list_playlist_progress_bar"
-                android:layout_width="wrap_content"
-                android:layout_height="240dp"
-                android:layout_gravity="center"/>
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/today_hot_list_playlist_recycler_view"
-                android:layout_width="match_parent"
-                android:layout_height="240dp"
-                android:nestedScrollingEnabled="false"
                 android:visibility="invisible"
                 />
 
