@@ -10,6 +10,7 @@ import android.widget.ImageView
 import android.widget.PopupMenu
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -220,9 +221,11 @@ class MyPlaylistFragment: Fragment() {
                     return true
                 }
                 else{
-                    searchViewCollapseEvent()
+                    if (binding.searchSuggestionKeywordRecyclerView.isVisible)
+                        searchViewCollapseEvent()
+                    else
+                        childFragmentManager.popBackStack()
                     searchView.clearFocus()
-                    childFragmentManager.popBackStack()
                     return false
                 }
 //                if (activity.supportFragmentManager.findFragmentById(R.id.player_fragment) == null) {
@@ -373,8 +376,12 @@ class MyPlaylistFragment: Fragment() {
                         activity.binding.bottomNavigationView.menu.findItem(R.id.home_icon).isChecked = true
                     }
                 }
-                else
-                    childFragmentManager.popBackStack()
+                else{
+                    if (binding.searchSuggestionKeywordRecyclerView.isVisible)
+                        searchViewCollapseEvent()
+                    else
+                        childFragmentManager.popBackStack()
+                }
             }
         }
         childFragmentManager.addOnBackStackChangedListener {

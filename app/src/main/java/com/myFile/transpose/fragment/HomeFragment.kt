@@ -8,6 +8,7 @@ import android.view.*
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -231,6 +232,7 @@ class HomeFragment: Fragment() {
                         )
                     )
                     .commit()
+//                activity.binding.playerFragmentCoordinatorLayout.visibility = View.VISIBLE
             }
             override fun optionButtonClick(v: View, position: Int) {
                 val popUp = PopupMenu(activity, v)
@@ -490,9 +492,11 @@ class HomeFragment: Fragment() {
                     return true
                 }
                 else{
-                    searchViewCollapseEvent()
+                    if (binding.searchSuggestionKeywordRecyclerView.isVisible)
+                        searchViewCollapseEvent()
+                    else
+                        childFragmentManager.popBackStack()
                     searchView.clearFocus()
-                    childFragmentManager.popBackStack()
                     return false
                 }
             }
@@ -549,8 +553,12 @@ class HomeFragment: Fragment() {
                         Log.d("homeFragment 백","조건문")
                         searchViewItem.collapseActionView()
                     }
-                }else
+                }else{
+                    if (binding.searchSuggestionKeywordRecyclerView.isVisible)
+                        searchViewCollapseEvent()
+                    else
                         childFragmentManager.popBackStack()
+                }
             }
         }
 

@@ -4,12 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/white"
     android:id="@+id/header_view">
 
     <LinearLayout
         android:id="@+id/fragmentTitleLinearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
         android:orientation="vertical"
         android:paddingTop="10dp"
         app:layout_constraintTop_toTopOf="@id/header_view"
@@ -64,11 +66,10 @@
         android:id="@+id/channel_linear_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
         android:orientation="horizontal"
-        android:background="@color/white"
         android:layout_marginStart="5dp"
         android:layout_marginEnd="5dp"
+        android:foreground="?attr/selectableItemBackground"
         app:layout_constraintTop_toBottomOf="@id/fragmentTitleLinearLayout">
         <ImageView
             android:id="@+id/channel_image_view"
@@ -101,6 +102,35 @@
             android:textColor="@color/description_color"
 
             />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/pitch_control_linear_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/channel_linear_layout">
+        <ImageView
+            android:id="@+id/minus_button"
+            android:layout_weight="1"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/ic_baseline_exposure_neg_1_24"/>
+        <ImageView
+            android:id="@+id/init_button"
+            android:layout_weight="1"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/ic_baseline_replay_24_black"/>
+        <ImageView
+            android:id="@+id/plus_button"
+            android:layout_weight="1"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="?attr/selectableItemBackground"
+            android:src="@drawable/ic_baseline_exposure_plus_1_24"/>
     </LinearLayout>
 
 

@@ -17,6 +17,7 @@
     <string name="title_hint">title</string>
     <string name="dialog_create_text">create</string>
     <string name="dialog_cancel_text">cancel</string>
+    <string name="channel_video_count">video counts: %d</string>
     <string name="video_pop_up_menu_add_playlist_text">Add to playlist</string>
     <string name="my_playlist_pop_up_menu_delete_playlist_text">Delete playlist</string>
     <string name="publish_date_second">%dseconds ago</string>

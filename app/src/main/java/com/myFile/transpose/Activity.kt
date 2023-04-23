@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
@@ -12,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.fragment.HomeFragment
 import com.myFile.transpose.fragment.MyPlaylistFragment
@@ -34,6 +36,8 @@ class Activity: AppCompatActivity() {
     var videoService: VideoService? = null
 
     private lateinit var connection: NetworkConnection
+
+    private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
 
     private val bindConnection = object: ServiceConnection{
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
@@ -58,6 +62,7 @@ class Activity: AppCompatActivity() {
         setContentView(binding.root)
         initView()
         initExceptionHandler()
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         connection = NetworkConnection(this)
         bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
         connection.observe(this) { isConnected ->
@@ -66,8 +71,10 @@ class Activity: AppCompatActivity() {
                 Log.d("네트워크 연결 안됨", "ㅁㄴㅇㄹ")
             }
         }
+
         initFragment()
     }
+
     fun initFragment(){
         homeFragment = HomeFragment()
         myPlaylistFragment = MyPlaylistFragment()
@@ -96,7 +103,7 @@ class Activity: AppCompatActivity() {
             }
 
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
-                Log.d("액트랜지션" ,"$currentId")
+
 
             }
 
@@ -110,6 +117,23 @@ class Activity: AppCompatActivity() {
 
         })
     }
+//    private fun initBottomSheet(){
+//        bottomSheetBehavior = BottomSheetBehavior.from(binding.mainBottomSheet)
+//        bottomSheetBehavior.addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback(){
+//            override fun onStateChanged(bottomSheet: View, newState: Int) {
+//            }
+//
+//            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+//
+//                for (fragment: Fragment in supportFragmentManager.fragments) {
+//                    if (fragment is PlayerFragment && fragment.binding.playerMotionLayout.currentState == R.id.start)
+//                        Log.d("슬라이드","됨")
+//                }
+//
+//            }
+//
+//        })
+//    }
 
     private fun initExceptionHandler(){
         coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->

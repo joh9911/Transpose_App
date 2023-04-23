@@ -4,7 +4,7 @@
     <!-- Background가 될 Item, 단순한 Rectangle Shape를 예시로 했다 -->
     <item android:id="@android:id/background">
         <shape android:shape="rectangle">
-            <solid android:color="@android:color/white" />
+            <solid android:color="@android:color/transparent" />
         </shape>
     </item>
 </ripple>
