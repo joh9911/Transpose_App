@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Transpose</string>
+    <string name="popular_Top100_playlist_text">인기 Top100</string>
+    <string name="this_year_playlist_text">올해의 음악</string>
+    <string name="today_hot_list_playlist_text">오늘의 핫리스트</string>
+    <string name="latest_music_playlist_text">최신 음악 플레이리스트</string>
+    <string name="best_atmosphere_playlist_text">베스트 분위기 맞춤 플레이리스트</string>
+    <string name="best_situation_playlist_text">베스트 상황 맞춤 플레이리스트</string>
+    <string name="pitch_text">피치</string>
+    <string name="tempo_text">템포</string>
+    <string name="searchView_hint">Youtube 검색</string>
+    <string name="home_icon">홈</string>
+    <string name="convert_icon">변환</string>
+    <string name="library_icon">보관함</string>
+    <string name="network_error_message">네트워크 연결 상태를 확인해주세요</string>
+    <string name="add_playlist_text">새 재생목록</string>
+    <string name="title_hint">제목</string>
+    <string name="dialog_create_text">생성</string>
+    <string name="dialog_cancel_text">취소</string>
+    <string name="my_playlist_pop_up_menu_delete_playlist_text">재생목록 제거</string>
+    <string name="video_pop_up_menu_add_playlist_text">재생목록에 추가</string>
+    <string name="publish_date_day">%d일 전</string>
+    <string name="publish_date_month">%d개월 전</string>
+    <string name="publish_date_year">%d년 전</string>
+    <string name="publish_date_second">%d초 전</string>
+    <string name="publish_date_minute">%d분 전</string>
+    <string name="publish_date_hour">%s시간 전</string>
+    <string name="view_count_under_thousand">조회수 %s회</string>
+    <string name="view_count_over_thousand">조회수 %s천회</string>
+    <string name="view_count_over_hundred_thousand">조회수 %s만회</string>
+    <string name="view_count_over_million">조회수 %s만회</string>
+    <string name="view_count_over_billion">조회수 %s억회</string>
+    <string name="view_count_over_hundred_million">조회수 %s억회</string>
+    <string name="subscriber_count_under_thousand">구독자 %s명</string>
+    <string name="subscriber_count_over_thousand">구독자 %s천명</string>
+    <string name="subscriber_count_over_hundred_thousand">구독자 %s만명</string>
+    <string name="subscriber_count_over_million">구독자 %s만명</string>
+    <string name="subscriber_count_over_hundred_million">구독자 %s억명</string>
+    <string name="subscriber_count_over_billion">구독자 %s억명</string>
+    <string name="playlist_text">재생목록:  %s</string>
+    <string name="playlist_item_empty_text">비어 있음</string>
+    <string name="channel_video_count">비디오 %d개</string>
+</resources>
