@@ -40,4 +40,6 @@
     <string name="subscriber_count_over_billion">subscribers %sB</string>
     <string name="playlist_text">"Playlist: %s"</string>
     <string name="playlist_item_empty_text">Empty</string>
+    <string name="search_error_message">We have used up our daily search quota.\n We recommend you add the video to your playlist to enjoy it. </string>
+    <string name="refresh_text">Refresh</string>
 </resources>

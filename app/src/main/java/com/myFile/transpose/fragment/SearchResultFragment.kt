@@ -42,8 +42,19 @@ class SearchResultFragment(search: String): Fragment() {
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
         initRecyclerView()
+        errorEvent()
         getData(null)
         return view
+    }
+    fun errorEvent(){
+        binding.refreshButton.setOnClickListener {
+            binding.refreshButton.setOnClickListener {
+                Log.d("버튼을","누름")
+                binding.progressBar.visibility = View.VISIBLE
+                getData(null)
+                binding.errorLinearLayout.visibility = View.INVISIBLE
+            }
+        }
     }
 
     override fun onResume() {
@@ -157,6 +168,14 @@ class SearchResultFragment(search: String): Fragment() {
                     nextPageToken = response.body()?.nextPageToken!!
             }
         }
+        else{
+            Log.d("dpftm","Sdf")
+            withContext(Dispatchers.Main){
+                binding.progressBar.visibility = View.INVISIBLE
+                binding.errorLinearLayout.visibility = View.VISIBLE
+            }
+        }
+
     }
     private fun searchResultDataMapping(responseData: VideoSearchData){
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
