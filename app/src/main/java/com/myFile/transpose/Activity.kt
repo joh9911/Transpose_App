@@ -14,6 +14,14 @@ import androidx.fragment.app.FragmentManager
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.ktx.startUpdateFlowForResult
+import com.google.android.play.core.review.ReviewManagerFactory
+import com.google.android.play.core.review.model.ReviewErrorCode
+import com.myFile.transpose.constants.AppUsageTimeTarget.TARGET_DURATION
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.fragment.HomeFragment
 import com.myFile.transpose.fragment.MyPlaylistFragment
@@ -37,7 +45,8 @@ class Activity: AppCompatActivity() {
 
     private lateinit var connection: NetworkConnection
 
-    private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
+    private lateinit var appUsageTimeChecker: AppUsageTimeChecker
+    private lateinit var appUpdateManager: AppUpdateManager
 
     private val bindConnection = object: ServiceConnection{
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
@@ -63,19 +72,111 @@ class Activity: AppCompatActivity() {
         initView()
         initExceptionHandler()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        connection = NetworkConnection(this)
+        checkNetworkConnection()
         bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
+        appUsageTimeSave()
+        initFragment()
+        checkUpdateInfo()
+    }
+
+    /**
+     * 처음 앱을 접속했을 때 시작 일수 저장
+     */
+    private fun appUsageTimeSave(){
+        val appUsageSharedPreferences = AppUsageSharedPreferences(this)
+        appUsageSharedPreferences.saveAppUsageStartTime()
+        appUsageTimeChecker = AppUsageTimeChecker(this)
+    }
+
+    private fun checkNetworkConnection(){
+        connection = NetworkConnection(this)
         connection.observe(this) { isConnected ->
             if (isConnected) {
             } else {
-                Log.d("네트워크 연결 안됨", "ㅁㄴㅇㄹ")
+                Log.d("네트워크 연결 안됨", ".")
             }
         }
-
-        initFragment()
     }
 
-    fun initFragment(){
+    override fun onResume() {
+        super.onResume()
+        /**
+         * 앱 사용일이 7일이 되었을 때, 리뷰요청
+         */
+        val usageDuration = appUsageTimeChecker.getAppUsageDuration()
+        if (usageDuration >= TARGET_DURATION) {
+            val manager = ReviewManagerFactory.create(this)
+            val request = manager.requestReviewFlow()
+            request.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // We got the ReviewInfo object
+                    val reviewInfo = task.result
+                    val flow = manager.launchReviewFlow(this, reviewInfo)
+                    flow.addOnCompleteListener { _ ->
+                        // The flow has finished. The API does not indicate whether the user
+                        // reviewed or not, or even whether the review dialog was shown. Thus, no
+                        // matter the result, we continue our app flow.
+                    }
+                } else {
+                    // There was some problem, log or handle the error code.
+                    Toast.makeText(this, "오류가 발생",Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        /**
+         * 업데이트 중 다시 앱을 접속했을 때 처리
+         */
+        appUpdateManager
+            .appUpdateInfo
+            .addOnSuccessListener { appUpdateInfo ->
+                if (appUpdateInfo.updateAvailability()
+                    == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+                ) {
+                    // If an in-app update is already running, resume the update.
+                    appUpdateManager.startUpdateFlowForResult(
+                        appUpdateInfo,
+                        AppUpdateType.IMMEDIATE,
+                        this,
+                        0
+                    )
+                }
+            }
+    }
+    private fun checkUpdateInfo(){
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        // Returns an intent object that you use to check for an update.
+        val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+        // Checks that the platform will allow the specified type of update.
+        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                // This example applies an immediate update. To apply a flexible update
+                // instead, pass in AppUpdateType.FLEXIBLE
+                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+            ) {
+                // Request the update.
+                appUpdateManager.startUpdateFlowForResult(
+                    // Pass the intent that is returned by 'getAppUpdateInfo()'.
+                    appUpdateInfo,
+                    // Or 'AppUpdateType.FLEXIBLE' for flexible updates.
+                    AppUpdateType.IMMEDIATE,
+                    // The current activity making the update request.
+                    this,
+                    // Include a request code to later monitor this update request.
+                    0)
+            }
+        }
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == 0) {
+            if (resultCode != RESULT_OK) {
+                Log.e("MY_APP", "Update flow failed! Result code: $resultCode")
+                checkUpdateInfo()
+                super.onActivityResult(requestCode, resultCode, data)
+            }
+        }
+    }
+
+    private fun initFragment(){
         homeFragment = HomeFragment()
         myPlaylistFragment = MyPlaylistFragment()
         supportFragmentManager.beginTransaction()
@@ -144,11 +245,12 @@ class Activity: AppCompatActivity() {
         }
     }
 
+
     private fun initView() {
         initTranspose()
         initBottomNavigationView()
     }
-    fun initTranspose(){
+    private fun initTranspose(){
         transposePage = binding.transposePage
         pitchSeekBar = binding.pitchSeekBar
         pitchSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
