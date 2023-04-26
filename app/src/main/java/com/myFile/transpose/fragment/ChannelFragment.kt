@@ -136,6 +136,24 @@ class ChannelFragment(
                     videoMapping(response.body()!!)
                 }
             }
+            else{
+                withContext(Dispatchers.Main){
+                    binding.progressBar.visibility = View.INVISIBLE
+                    binding.errorLinearLayout.visibility = View.VISIBLE
+                    binding.refreshButton.setOnClickListener {
+                        getData()
+                    }
+                }
+            }
+        }
+        else{
+            withContext(Dispatchers.Main){
+                binding.progressBar.visibility = View.INVISIBLE
+                binding.errorLinearLayout.visibility = View.VISIBLE
+                binding.refreshButton.setOnClickListener {
+                    getData()
+                }
+            }
         }
     }
 
@@ -160,6 +178,7 @@ class ChannelFragment(
             videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
         channelVideoRecyclerViewAdapter.notifyDataSetChanged()
         binding.progressBar.visibility = View.INVISIBLE
+        binding.errorLinearLayout.visibility = View.INVISIBLE
         Log.d("어댑터의 아이템 개수","${channelVideoRecyclerViewAdapter.itemCount}")
     }
 
