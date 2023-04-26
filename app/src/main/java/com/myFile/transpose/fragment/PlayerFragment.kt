@@ -1,6 +1,7 @@
 package com.myFile.transpose.fragment
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,8 +9,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.PopupMenu
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.constraintlayout.motion.widget.MotionLayout
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -55,6 +58,8 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private lateinit var callbackPlaylistVersion: OnBackPressedCallback
     private lateinit var callback: OnBackPressedCallback
+
+    private lateinit var playModeSharedPreferences: SharedPreferences
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -112,6 +117,8 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
     }
 
     private fun initBottomSheet(){
+        playModeSharedPreferences = activity.getSharedPreferences("play_mode_preferences", Context.MODE_PRIVATE)
+
         binding.playlistTitleBottomSheet.text = nowPlaylistModel.getPlaylistTitle()
         bottomSheetBehavior = BottomSheetBehavior.from(binding.standardBottomSheet)
         binding.coordinator.visibility = View.INVISIBLE
@@ -144,7 +151,26 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
         bottomSheetCloseButton.setOnClickListener {
             bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
         }
+
+        val playModeIconButton = binding.playModeIcon
+        val playMode = playModeSharedPreferences.getInt("play_mode",0)
+        if (playMode == 0)
+            playModeIconButton.setImageResource(R.drawable.loop_4)
+        else
+            playModeIconButton.setImageResource(R.drawable.loop_1)
+        playModeIconButton.setOnClickListener {
+            if (playModeSharedPreferences.getInt("play_mode",0) == 0){
+                playModeSharedPreferences.edit().putInt("play_mode",1).apply()
+                playModeIconButton.setImageResource(R.drawable.loop_1)
+            }
+            else{
+                playModeSharedPreferences.edit().putInt("play_mode",0).apply()
+                playModeIconButton.setImageResource(R.drawable.loop_4)
+            }
+
+        }
     }
+
 
     private fun getDetailData(videoId: String) {
         relatedVideoList.clear()
@@ -200,6 +226,23 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
                     commentMapping(response.body()!!)
                 }
             }
+            else{
+                withContext(Dispatchers.Main){
+                    commentList.clear()
+                    relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
+                    binding.relatedVideoProgressBar.visibility = View.INVISIBLE
+                    binding.errorTextView.visibility = View.VISIBLE
+                }
+
+            }
+        }
+        else{
+            withContext(Dispatchers.Main){
+                commentList.clear()
+                relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
+                binding.relatedVideoProgressBar.visibility = View.INVISIBLE
+                binding.errorTextView.visibility = View.VISIBLE
+            }
         }
     }
     private fun commentMapping(body: CommentThreadData) {
@@ -214,6 +257,7 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
             val commentText = items[index].snippet?.topLevelComment?.snippet?.textDisplay!!
             commentList.add(CommentData(authorName,authorImage,commentTime,commentText))
         }
+        binding.errorTextView.visibility = View.GONE
         binding.relatedVideoProgressBar.visibility = View.GONE
         relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
     }
@@ -280,16 +324,21 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
             override fun minusButtonClick(v: View) {
                 activity.pitchSeekBar.progress -= 1
                 activity.videoService!!.setPitch(activity.pitchSeekBar.progress)
+                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_minus_text),activity.pitchSeekBar.progress),Toast.LENGTH_SHORT).show()
             }
 
             override fun initButtonClick(v: View) {
                 activity.pitchSeekBar.progress = 0
                 activity.videoService!!.setPitch(0)
+                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_initialize_text),activity.pitchSeekBar.progress),Toast.LENGTH_SHORT).show()
+
             }
 
             override fun plusButtonClick(v: View) {
                 activity.pitchSeekBar.progress += 1
                 activity.videoService!!.setPitch(activity.pitchSeekBar.progress)
+                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_plust_text),activity.pitchSeekBar.progress),Toast.LENGTH_SHORT).show()
+
             }
         })
         relatedVideoRecyclerViewAdapter.submitList(commentList) // 원래는 relatedvideolist였음

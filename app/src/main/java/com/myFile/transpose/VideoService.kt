@@ -83,7 +83,7 @@ class VideoService: Service() {
         super.onCreate()
         initRxJavaExceptionHandler()
         initYoutubeDL()
-        updateYoutubeDL()
+//        updateYoutubeDL()
         setAudioFocus()
         registerReceiver(mediaReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
         val trackSelector = DefaultTrackSelector(this).apply {
@@ -112,8 +112,16 @@ class VideoService: Service() {
                     Player.STATE_ENDED -> {
                         if (exoPlayer.mediaItemCount == 0) // play중이면 mediaItem을 제거하는데, 제거할 때 state_ended가 실행됨
                             return
-                        if (playerFragment.playlistModel != null)
-                            playerFragment.playNextPlaylistVideo()
+                        if (playerFragment.playlistModel != null){
+                            val playModePreferences = activity.getSharedPreferences("play_mode_preferences",Context.MODE_PRIVATE)
+                            if (playModePreferences.getInt("play_mode",0) == 0)
+                                playerFragment.playNextPlaylistVideo()
+                            else{
+                                exoPlayer.seekTo(0)
+                            }
+
+                        }
+
                         playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
@@ -249,11 +257,12 @@ class VideoService: Service() {
             Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
         }
     }
-    private fun updateYoutubeDL(){
-        CoroutineScope(Dispatchers.IO+coroutineExceptionHandler).launch{
-            YoutubeDL.getInstance().updateYoutubeDL(this@VideoService, null)
-        }
-    }
+//    private fun updateYoutubeDL(){
+//        CoroutineScope(Dispatchers.IO+coroutineExceptionHandler).launch{
+//            YoutubeDL.getInstance().updateYoutubeDL(this@VideoService)
+//        }
+//    }
+
 
     fun playVideo(videoData: VideoData){
         if (exoPlayer.currentMediaItem != null)
@@ -280,11 +289,11 @@ class VideoService: Service() {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({ streamInfo ->
 
-                val videoUrl: String = streamInfo.url
+                val videoUrl: String? = streamInfo.url
                 Log.d("유알엘","$videoUrl")
                 if (TextUtils.isEmpty(videoUrl)) { Toast.makeText(activity, "failed to get stream url", Toast.LENGTH_LONG).show()
                 } else {
-                    setUpVideo(videoUrl)
+                    setUpVideo(videoUrl!!)
                 }
             }) { e ->
                 if (e is UndeliverableException) {
