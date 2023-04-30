@@ -117,6 +117,7 @@ class Activity: AppCompatActivity() {
                         // reviewed or not, or even whether the review dialog was shown. Thus, no
                         // matter the result, we continue our app flow.
                     }
+                    AppUsageSharedPreferences(this).initializeAppUsageStartTime()
                 } else {
                     // There was some problem, log or handle the error code.
                     Toast.makeText(this, "오류가 발생",Toast.LENGTH_SHORT).show()
