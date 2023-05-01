@@ -7,12 +7,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -24,7 +22,8 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.myFile.transpose.*
 import com.myFile.transpose.retrofit.*
 import com.myFile.transpose.adapter.MyPlaylistItemRecyclerViewAdapter
-import com.myFile.transpose.adapter.RelatedVideoRecyclerViewAdapter
+import com.myFile.transpose.model.PlayerFragmentMainItem
+import com.myFile.transpose.adapter.PlayerFragmentMainRecyclerViewAdapter
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
 import com.myFile.transpose.dto.ChannelSearchData
 import com.myFile.transpose.dto.CommentThreadData
@@ -33,13 +32,14 @@ import com.myFile.transpose.model.*
 import kotlinx.coroutines.*
 import retrofit2.Retrofit
 import java.lang.Math.abs
+import java.util.*
 import kotlin.collections.ArrayList
 
 
-class PlayerFragment(private val videoData: VideoData, val playlistModel: PlaylistModel?): Fragment() {
+class PlayerFragment(private var videoData: VideoData, val playlistModel: PlaylistModel?): Fragment() {
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
-    lateinit var relatedVideoRecyclerViewAdapter: RelatedVideoRecyclerViewAdapter
+    lateinit var mainRecyclerViewAdapter: PlayerFragmentMainRecyclerViewAdapter
     lateinit var myPlaylistItemRecyclerViewAdapter: MyPlaylistItemRecyclerViewAdapter
     var fbinding: FragmentPlayerBinding? = null
     val binding get() = fbinding!!
@@ -50,6 +50,8 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
 
     private val relatedVideoList = ArrayList<VideoData>()
     private val commentList = ArrayList<CommentData>()
+
+    private val itemList = mutableListOf<PlayerFragmentMainItem>()
     private lateinit var currentVideoDetailData: VideoDetailData
     private lateinit var currentChannelSearchData: ChannelSearchData
 
@@ -73,11 +75,11 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
 
         val view = binding.root
         initRecyclerView()
-        getDetailData(videoData.videoId)
-        initView()
-        setMotionLayoutListenerForInitialize()
-        initListener()
         initPlaylistView()
+        initListener()
+        initView()
+        getDetailData(videoData)
+        setMotionLayoutListenerForInitialize()
         return view
     }
 
@@ -167,17 +169,28 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
                 playModeSharedPreferences.edit().putInt("play_mode",0).apply()
                 playModeIconButton.setImageResource(R.drawable.loop_4)
             }
-
         }
     }
 
+    private fun getDetailData(videoData: VideoData) {
+        if (playlistModel != null){
+            itemList.clear().also {
+                itemList.add(PlayerFragmentMainItem.HeaderTitleData(nowPlaylistModel.currentMusicModel()))
+                itemList.add(PlayerFragmentMainItem.LoadingHeader)
+            }
+        }
+        else{
+            itemList.clear().also {
+                itemList.add(PlayerFragmentMainItem.HeaderTitleData(videoData))
+                itemList.add(PlayerFragmentMainItem.LoadingHeader)
+            }
+        }
 
-    private fun getDetailData(videoId: String) {
-        relatedVideoList.clear()
+        mainRecyclerViewAdapter.submitList(itemList.toMutableList())
         CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
-            async {getVideoDetail(videoId)}
+            getVideoDetail(videoData.videoId)
 //            async {getRelatedVideo(videoId)}
-            async { getCommentThread(videoId) }
+            getCommentThread(videoData.videoId)
         }
     }
 
@@ -209,17 +222,32 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
         currentChannelSearchData = channelDetailResponseData
         currentVideoDetailData = videoDetailResponseData
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
-        relatedVideoRecyclerViewAdapter.setHeaderViewData(HeaderViewData(videoDetailResponseData.items[0].snippet?.title!!,
+        val headerViewData = HeaderViewData(videoDetailResponseData.items[0].snippet?.title!!,
             youtubeDigitConverter.viewCountCalculator(videoDetailResponseData.items[0].statistics?.viewCount!!),
             youtubeDigitConverter.intervalBetweenDateText(videoDetailResponseData.items[0].snippet?.publishedAt!!),
             channelDetailResponseData.items[0].snippet?.title!!,
             channelDetailResponseData.items[0].snippet?.thumbnails?.high?.url!!,
-            youtubeDigitConverter.subscriberCountConverter(channelDetailResponseData.items[0].statistics?.subscriberCount!!)
-        ),activity)
+            youtubeDigitConverter.subscriberCountConverter(channelDetailResponseData.items[0].statistics?.subscriberCount!!))
+        if (playlistModel != null){
+            itemList.clear().also {
+                itemList.add(PlayerFragmentMainItem.HeaderTitleData(nowPlaylistModel.currentMusicModel()))
+                itemList.add(PlayerFragmentMainItem.HeaderRestData(headerViewData))
+            }
+        }
+        else{
+            itemList.clear().also {
+                itemList.add(PlayerFragmentMainItem.HeaderTitleData(videoData))
+                itemList.add(PlayerFragmentMainItem.HeaderRestData(headerViewData))
+            }
+        }
     }
+
     private suspend fun getCommentThread(videoId: String){
+        val random = Random()
+        val keyList = arrayListOf(BuildConfig.RAISE_DEVELOP, BuildConfig.API_KEY12)
+        val num = random.nextInt(keyList.size)
         val response = retrofit.create(RetrofitService::class.java)
-            .getCommentThreads(BuildConfig.RAISE_DEVELOP,"snippet",videoId,"100","relevance",null, "plainText")
+            .getCommentThreads(keyList[num],"snippet",videoId,"100","relevance",null, "plainText")
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
                 withContext(Dispatchers.Main){
@@ -228,9 +256,9 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
             }
             else{
                 withContext(Dispatchers.Main){
-                    commentList.clear()
-                    relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
-                    binding.relatedVideoProgressBar.visibility = View.INVISIBLE
+                    itemList.clear()
+                    itemList.add(PlayerFragmentMainItem.LoadingHeader)
+                    mainRecyclerViewAdapter.notifyDataSetChanged()
                     binding.errorTextView.visibility = View.VISIBLE
                 }
 
@@ -238,15 +266,14 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
         }
         else{
             withContext(Dispatchers.Main){
-                commentList.clear()
-                relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
-                binding.relatedVideoProgressBar.visibility = View.INVISIBLE
+                itemList.clear()
+                itemList.add(PlayerFragmentMainItem.LoadingHeader)
+                mainRecyclerViewAdapter.notifyDataSetChanged()
                 binding.errorTextView.visibility = View.VISIBLE
             }
         }
     }
     private fun commentMapping(body: CommentThreadData) {
-        commentList.clear()
         val items = body.items
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
         for (index in items.indices){
@@ -257,18 +284,18 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
             val commentText = items[index].snippet?.topLevelComment?.snippet?.textDisplay!!
             commentList.add(CommentData(authorName,authorImage,commentTime,commentText))
         }
+        itemList.addAll(commentList.map{ PlayerFragmentMainItem.ContentData(it)})
         binding.errorTextView.visibility = View.GONE
-        binding.relatedVideoProgressBar.visibility = View.GONE
-        relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
+        mainRecyclerViewAdapter.submitList(itemList.toMutableList())
     }
 
     private suspend fun getRelatedVideo(videoId: String) {
         val response = retrofit.create(RetrofitService::class.java)
-            .getRelatedVideo(BuildConfig.API_KEY9,"id, snippet",videoId,"video","50")
+            .getRelatedVideo(BuildConfig.API_KEY11,"id, snippet",videoId,"video","50")
         if (response.isSuccessful) {
             if (response.body()?.RelatedVideoDataitems?.size != 0) {
                 withContext(Dispatchers.Main){
-                    relatedVideoMapping(response.body()!!)
+//                    relatedVideoMapping(response.body()!!)
                 }
             }
         }
@@ -289,17 +316,16 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
             val channelId = relatedVideoData.RelatedVideoDataitems[index].snippet?.channelId!!
             relatedVideoList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date, false))
         }
-        binding.relatedVideoProgressBar.visibility = View.GONE
-        relatedVideoRecyclerViewAdapter.notifyDataSetChanged()
+        mainRecyclerViewAdapter.notifyDataSetChanged()
     }
 
     /**
      * 현재 관련 영상 대신 댓글로 대체를 했음
      */
     private fun initRecyclerView(){
-        binding.fragmentRecyclerView.layoutManager = LinearLayoutManager(activity)
-        relatedVideoRecyclerViewAdapter = RelatedVideoRecyclerViewAdapter()
-        relatedVideoRecyclerViewAdapter.setItemClickListener(object: RelatedVideoRecyclerViewAdapter.OnItemClickListener{
+        binding.mainRecyclerView.layoutManager = LinearLayoutManager(activity)
+        mainRecyclerViewAdapter = PlayerFragmentMainRecyclerViewAdapter()
+        mainRecyclerViewAdapter.setItemClickListener(object: PlayerFragmentMainRecyclerViewAdapter.OnItemClickListener{
             override fun channelClick(v: View, position: Int) {
                 setMotionLayoutListenerForChannelClick()
                 binding.playerMotionLayout.transitionToState(R.id.start)
@@ -341,8 +367,9 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
 
             }
         })
-        relatedVideoRecyclerViewAdapter.submitList(commentList) // 원래는 relatedvideolist였음
-        binding.fragmentRecyclerView.adapter = relatedVideoRecyclerViewAdapter
+        itemList.add(PlayerFragmentMainItem.LoadingHeader)
+        mainRecyclerViewAdapter.submitList(itemList) // 원래는 relatedvideolist였음
+        binding.mainRecyclerView.adapter = mainRecyclerViewAdapter
     }
 
     private fun initView(){
@@ -395,7 +422,7 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
     }
 
     fun replaceVideo(videoData: VideoData){ // 관련 영상에서 아이템을 클릭할 경우
-        binding.fragmentRecyclerView.scrollToPosition(0)
+        binding.mainRecyclerView.scrollToPosition(0)
         updateVideoDetailAndGetRelatedVideoData(videoData)
         activity.videoService!!.playVideo(videoData)
     }
@@ -419,15 +446,12 @@ class PlayerFragment(private val videoData: VideoData, val playlistModel: Playli
         binding.playerThumbnailView.visibility = View.GONE
     }
     private fun updateVideoDetailAndGetRelatedVideoData(videoData: VideoData){
-        relatedVideoRecyclerViewAdapter.setHeaderViewTitle(videoData.title)
-        relatedVideoRecyclerViewAdapter.setHeaderViewColorBeforeGettingData(activity)
         binding.bottomTitleTextView.text = videoData.title
         Glide.with(binding.playerThumbnailView)
             .load(videoData.thumbnail)
             .placeholder(R.color.before_getting_data_color)
             .into(binding.playerThumbnailView)
-        binding.relatedVideoProgressBar.visibility = View.VISIBLE
-        getDetailData(videoData.videoId)
+        getDetailData(videoData)
     }
 
     fun playPrevPlaylistVideo(){
