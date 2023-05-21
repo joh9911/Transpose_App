@@ -134,9 +134,9 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintVertical_bias="0.35"
-                android:max="10"
-                android:min="-10"
-                android:progress="0"/>
+                android:max="20"
+                android:progress="10"
+                android:focusable="true" />
 
             <LinearLayout
                 android:id="@+id/tempo_linear_layout"
@@ -217,9 +217,9 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintVertical_bias="0.65"
-                android:max="10"
-                android:min="-10"
-                android:progress="0"/>
+                android:max="20"
+                android:progress="10"
+                android:focusable="true" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>

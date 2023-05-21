@@ -24,6 +24,7 @@ import com.google.android.play.core.review.model.ReviewErrorCode
 import com.myFile.transpose.constants.AppUsageTimeTarget.TARGET_DURATION
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.fragment.HomeFragment
+import com.myFile.transpose.fragment.HomeTempFragment
 import com.myFile.transpose.fragment.MyPlaylistFragment
 import com.myFile.transpose.fragment.PlayerFragment
 import kotlinx.coroutines.*
@@ -256,23 +257,23 @@ class Activity: AppCompatActivity() {
         pitchSeekBar = binding.pitchSeekBar
         pitchSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
-                binding.pitchValue.text = p1.toString()
+                binding.pitchValue.text = (p1 - 10).toString()
             }
             override fun onStartTrackingTouch(p0: SeekBar?) {
             }
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
                     if(fragment.isVisible && fragment is PlayerFragment) {
-                        videoService!!.setPitch(p0?.progress!!)
+                        videoService!!.setPitch(p0?.progress!! - 10)
                     }
                 }
             }
         })
         binding.pitchInitButton.setOnClickListener {
-            pitchSeekBar.progress = 0
+            pitchSeekBar.progress = 10
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setPitch(pitchSeekBar.progress)
+                    videoService!!.setPitch(pitchSeekBar.progress - 10)
                 }
             }
         }
@@ -280,7 +281,7 @@ class Activity: AppCompatActivity() {
             pitchSeekBar.progress -= 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setPitch(pitchSeekBar.progress)
+                    videoService!!.setPitch(pitchSeekBar.progress - 10)
                 }
             }
         }
@@ -288,31 +289,31 @@ class Activity: AppCompatActivity() {
             pitchSeekBar.progress += 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setPitch(pitchSeekBar.progress)
+                    videoService!!.setPitch(pitchSeekBar.progress - 10)
                 }
             }
         }
         tempoSeekBar = binding.tempoSeekBar
         tempoSeekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
-                binding.tempoValue.text = p1.toString()
+                binding.tempoValue.text = (p1-10).toString()
             }
             override fun onStartTrackingTouch(p0: SeekBar?) {
             }
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
                     if(fragment.isVisible && fragment is PlayerFragment) {
-                        videoService!!.setTempo(p0?.progress!!)
+                        videoService!!.setTempo(p0?.progress!! - 10)
                     }
                 }
 
             }
         })
         binding.tempoInitButton.setOnClickListener {
-            tempoSeekBar.progress = 0
+            tempoSeekBar.progress = 10
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setTempo(tempoSeekBar.progress)
+                    videoService!!.setTempo(tempoSeekBar.progress - 10)
                 }
             }
         }
@@ -320,7 +321,7 @@ class Activity: AppCompatActivity() {
             tempoSeekBar.progress -= 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setTempo(tempoSeekBar.progress)
+                    videoService!!.setTempo(tempoSeekBar.progress - 10)
                 }
             }
         }
@@ -328,7 +329,7 @@ class Activity: AppCompatActivity() {
             tempoSeekBar.progress += 1
             for(fragment in supportFragmentManager.fragments) {
                 if(fragment.isVisible && fragment is PlayerFragment) {
-                    videoService!!.setTempo(tempoSeekBar.progress)
+                    videoService!!.setTempo(tempoSeekBar.progress - 10)
                 }
             }
         }
@@ -356,7 +357,7 @@ class Activity: AppCompatActivity() {
                             transposePage.visibility = View.INVISIBLE
                         else{
                             homeFragment.childFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE)
-                            homeFragment.binding.mainScrollView.scrollTo(0,0)
+//                            homeFragment.binding.mainScrollView.scrollTo(0,0)
                         }
                     }
                     else{
