@@ -40,7 +40,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:gravity="center"
-            android:text="@string/search_error_message"
+            android:text="@string/quota_error_message"
             android:textStyle="bold"
             android:textColor="@color/description_color"
             />

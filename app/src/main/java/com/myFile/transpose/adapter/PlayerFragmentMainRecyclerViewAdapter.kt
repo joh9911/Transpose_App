@@ -37,14 +37,24 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem,
                 itemClickListener.channelClick(it, 0)
             }
             binding.minusButton.setOnClickListener {
-                itemClickListener.minusButtonClick(it)
+                itemClickListener.pitchMinusButtonClick(it)
             }
             binding.initButton.setOnClickListener {
-                itemClickListener.initButtonClick(it)
+                itemClickListener.pitchInitButtonClick(it)
             }
             binding.plusButton.setOnClickListener {
-                itemClickListener.plusButtonClick(it)
+                itemClickListener.pitchPlusButtonClick(it)
             }
+            binding.tempoInitButton.setOnClickListener {
+                itemClickListener.tempoInitButtonClick(it)
+            }
+            binding.tempoMinusButton.setOnClickListener {
+                itemClickListener.tempoMinusButtonClick(it)
+            }
+            binding.tempoPlusButton.setOnClickListener {
+                itemClickListener.tempoPlusButtonClick(it)
+            }
+
         }
         fun bind(headerViewData: HeaderViewData){
             binding.channelTextView.text = headerViewData.channelTitle
@@ -153,9 +163,12 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem,
         fun channelClick(v: View, position: Int)
         fun videoClick(v: View, position: Int)
         fun optionButtonClick(v: View, position: Int)
-        fun minusButtonClick(v: View)
-        fun initButtonClick(v: View)
-        fun plusButtonClick(v: View)
+        fun pitchMinusButtonClick(v: View)
+        fun pitchInitButtonClick(v: View)
+        fun pitchPlusButtonClick(v: View)
+        fun tempoMinusButtonClick(v: View)
+        fun tempoInitButtonClick(v: View)
+        fun tempoPlusButtonClick(v: View)
     }
 
     // (3) 외부에서 클릭 시 이벤트 설정

@@ -63,6 +63,11 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
 
     private lateinit var playModeSharedPreferences: SharedPreferences
 
+    val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+        Log.d("코루틴 에러","$throwable playerFragment")
+
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -187,9 +192,8 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         }
 
         mainRecyclerViewAdapter.submitList(itemList.toMutableList())
-        CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
             getVideoDetail(videoData.videoId)
-//            async {getRelatedVideo(videoId)}
             getCommentThread(videoData.videoId)
         }
     }
@@ -248,6 +252,8 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         val num = random.nextInt(keyList.size)
         val response = retrofit.create(RetrofitService::class.java)
             .getCommentThreads(keyList[num],"snippet",videoId,"100","relevance",null, "plainText")
+        Log.d("댓글 정보","${response.isSuccessful}")
+
         if (response.isSuccessful){
             if (response.body()?.items?.size != 0){
                 withContext(Dispatchers.Main){
@@ -256,9 +262,7 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
             }
             else{
                 withContext(Dispatchers.Main){
-                    itemList.clear()
-                    itemList.add(PlayerFragmentMainItem.LoadingHeader)
-                    mainRecyclerViewAdapter.notifyDataSetChanged()
+                    mainRecyclerViewAdapter.submitList(itemList.toMutableList())
                     binding.errorTextView.visibility = View.VISIBLE
                 }
 
@@ -266,14 +270,13 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         }
         else{
             withContext(Dispatchers.Main){
-                itemList.clear()
-                itemList.add(PlayerFragmentMainItem.LoadingHeader)
-                mainRecyclerViewAdapter.notifyDataSetChanged()
-                binding.errorTextView.visibility = View.VISIBLE
+                mainRecyclerViewAdapter.submitList(itemList.toMutableList())
+//                binding.errorTextView.visibility = View.VISIBLE
             }
         }
     }
     private fun commentMapping(body: CommentThreadData) {
+        commentList.clear()
         val items = body.items
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
         for (index in items.indices){
@@ -347,25 +350,43 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
                 popUp.show()
             }
 
-            override fun minusButtonClick(v: View) {
+            override fun pitchMinusButtonClick(v: View) {
                 activity.pitchSeekBar.progress -= 1
-                activity.videoService!!.setPitch(activity.pitchSeekBar.progress)
-                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_minus_text),activity.pitchSeekBar.progress),Toast.LENGTH_SHORT).show()
+                activity.videoService!!.setPitch(activity.pitchSeekBar.progress - 10)
+                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_minus_text),activity.pitchSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
             }
 
-            override fun initButtonClick(v: View) {
-                activity.pitchSeekBar.progress = 0
+            override fun pitchInitButtonClick(v: View) {
+                activity.pitchSeekBar.progress = 10
                 activity.videoService!!.setPitch(0)
-                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_initialize_text),activity.pitchSeekBar.progress),Toast.LENGTH_SHORT).show()
-
+                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_initialize_text),activity.pitchSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
             }
 
-            override fun plusButtonClick(v: View) {
+            override fun pitchPlusButtonClick(v: View) {
                 activity.pitchSeekBar.progress += 1
-                activity.videoService!!.setPitch(activity.pitchSeekBar.progress)
-                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_plust_text),activity.pitchSeekBar.progress),Toast.LENGTH_SHORT).show()
+                activity.videoService!!.setPitch(activity.pitchSeekBar.progress - 10)
+                Toast.makeText(activity,String.format(activity.getString(R.string.pitch_plus_text),activity.pitchSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
+            }
+
+            override fun tempoMinusButtonClick(v: View) {
+                activity.tempoSeekBar.progress -= 1
+                activity.videoService!!.setTempo(activity.tempoSeekBar.progress - 10)
+                Toast.makeText(activity,String.format(activity.getString(R.string.tempo_minus_text),activity.tempoSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
 
             }
+
+            override fun tempoInitButtonClick(v: View) {
+                activity.tempoSeekBar.progress = 10
+                activity.videoService!!.setTempo(0)
+                Toast.makeText(activity,String.format(activity.getString(R.string.tempo_init_text),activity.tempoSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
+            }
+
+            override fun tempoPlusButtonClick(v: View) {
+                activity.tempoSeekBar.progress += 1
+                activity.videoService!!.setTempo(activity.tempoSeekBar.progress - 10)
+                Toast.makeText(activity,String.format(activity.getString(R.string.tempo_plus_text),activity.tempoSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
+            }
+
         })
         itemList.add(PlayerFragmentMainItem.LoadingHeader)
         mainRecyclerViewAdapter.submitList(itemList) // 원래는 relatedvideolist였음
@@ -601,6 +622,7 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
     override fun onResume() {
         Log.d("프레그먼트플레이어","온리줌")
         super.onResume()
+        binding.mainRecyclerView.scrollToPosition(0)
     }
 
     override fun onStop() {
