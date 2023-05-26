@@ -50,7 +50,6 @@ class MyPlaylistFragment: Fragment() {
     lateinit var searchView: SearchView
     lateinit var searchViewItem: MenuItem
     private lateinit var callback: OnBackPressedCallback
-    lateinit var frameLayout: FrameLayout
     lateinit var db: AppDatabase
     lateinit var myPlaylistDao: MyPlaylistDao
 
@@ -66,8 +65,6 @@ class MyPlaylistFragment: Fragment() {
         val view = binding.root
         initRecyclerView()
         initToolbar()
-        Log.d("실행됨","ㄴㅇㄹㄴㅇㄹ")
-        frameLayout = binding.resultFrameLayout
         initDb()
         addPlaylistButtonEvent()
         initPlaylistRecyclerView()

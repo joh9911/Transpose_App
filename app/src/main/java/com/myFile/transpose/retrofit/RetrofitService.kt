@@ -1,7 +1,9 @@
 package com.myFile.transpose.retrofit
 
+import android.os.Parcelable
 import com.myFile.transpose.dto.*
 import com.myFile.transpose.model.*
+import kotlinx.parcelize.Parcelize
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
@@ -55,6 +57,14 @@ interface RetrofitService {
                      @Query("id") id: String, // id는 각 플레이리스트의 아이디
                      @Query("maxResults") maxResults: String
     ): Response<PlayListSearchData>
+
+    @GET("playlists")
+    suspend fun getPlayListsInChannel(@Query("key") key: String,
+                             @Query("part") part: String,
+                             @Query("channelId") id: String, // id는 각 플레이리스트의 아이디
+                             @Query("maxResults") maxResults: String,
+                            @Query("pageToken") pageToken: String?
+    ): Response<PlayListSearchData>
 //    @Query("key") key: String,
     @GET("channels")
     suspend fun getChannelData(
@@ -83,6 +93,7 @@ interface RetrofitService {
     ): Response<CommentThreadData>
 
 }
+
 data class CommentData(
     val authorName: String,
     val authorImage: String,
@@ -90,7 +101,7 @@ data class CommentData(
     val commentText: String
 )
 
-
+@Parcelize
 data class VideoData(
     val thumbnail: String,
     val title: String,
@@ -99,15 +110,17 @@ data class VideoData(
     val videoId: String,
     val date: String,
     val isPlaying: Boolean
-)
+): Parcelable
 
+@Parcelize
 data class PlayListData(
     val thumbnail: String,
     val title: String,
     val description: String,
     val playlistId: String
-)
+): Parcelable
 
+@Parcelize
 data class ChannelData(
     val channelTitle: String,
     val channelDescription: String,
@@ -117,4 +130,4 @@ data class ChannelData(
     val channelViewCount: String,
     val channelSubscriberCount: String,
     val channelPlaylistId: String
-)
+): Parcelable

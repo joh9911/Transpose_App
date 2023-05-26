@@ -19,6 +19,7 @@ import com.myFile.transpose.database.MyPlaylist
 import com.myFile.transpose.database.MyPlaylistDao
 import com.myFile.transpose.databinding.FragmentMyPlaylistItemBinding
 import com.myFile.transpose.databinding.MainBinding
+import com.myFile.transpose.model.PlayerFragmentBundle
 import com.myFile.transpose.model.PlaylistModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,13 +89,22 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
         myPlaylistItemRecyclerAdapter = MyPlaylistItemRecyclerViewAdapter()
         myPlaylistItemRecyclerAdapter.setItemClickListener(object: MyPlaylistItemRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
+
                 val playlistModel = PlaylistModel(myPlaylist.playlistTitle, myMusicItems, position)
+                val videoData = myMusicItems[position]
+                val playerFragmentBundle = PlayerFragmentBundle(videoData, playlistModel)
+
+                val bundle = Bundle().apply {
+                    putParcelable("playerFragment", playerFragmentBundle)
+                }
+                val playerFragment = PlayerFragment().apply {
+                    arguments = bundle
+                }
+
                 activity.supportFragmentManager.beginTransaction()
                     .replace(
                         activity.binding.playerFragment.id,
-                        PlayerFragment(
-                            myMusicItems[position],playlistModel
-                        )
+                        playerFragment
                     )
                     .commit()
             }

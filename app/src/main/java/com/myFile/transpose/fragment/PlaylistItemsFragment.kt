@@ -16,11 +16,12 @@ import com.myFile.transpose.databinding.FragmentPlaylistBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
 import com.myFile.transpose.dto.PlayListVideoSearchData
+import com.myFile.transpose.model.PlayerFragmentBundle
 import com.myFile.transpose.model.PlaylistModel
 import kotlinx.coroutines.*
 
-class PlaylistItemsFragment(private val playListData: PlayListData): Fragment() {
-
+class PlaylistItemsFragment(): Fragment() {
+    lateinit var playListData: PlayListData
     lateinit var activity: Activity
     lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
     lateinit var mainBinding: MainBinding
@@ -33,16 +34,19 @@ class PlaylistItemsFragment(private val playListData: PlayListData): Fragment() 
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         fbinding = FragmentPlaylistBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        initPlaylistData()
         initView()
         getData()
         return view
     }
 
-
+    private fun initPlaylistData(){
+        playListData = arguments?.getParcelable("playlistItemsFragment")!!
+    }
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
@@ -59,9 +63,18 @@ class PlaylistItemsFragment(private val playListData: PlayListData): Fragment() 
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 val playlistModel = PlaylistModel(playListData.title,playlistVideoData, position)
+                val videoData = playlistVideoData[position]
+                val playerFragmentBundle = PlayerFragmentBundle(videoData, playlistModel)
+
+                val bundle = Bundle().apply {
+                    putParcelable("playerFragment", playerFragmentBundle)
+                }
+                val playerFragment = PlayerFragment().apply {
+                    arguments = bundle
+                }
                 activity.supportFragmentManager.beginTransaction()
                     .replace(activity.binding.playerFragment.id,
-                        PlayerFragment(playlistVideoData[position],playlistModel)
+                        playerFragment
                     )
                     .commit()
             }
