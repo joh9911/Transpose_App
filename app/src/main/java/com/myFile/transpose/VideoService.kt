@@ -81,6 +81,7 @@ class VideoService: Service() {
 
     override fun onCreate() {
         super.onCreate()
+        mediaSession = MediaSessionCompat(this, "PlayerService")
         initRxJavaExceptionHandler()
         initYoutubeDL()
 //        updateYoutubeDL()
@@ -105,7 +106,6 @@ class VideoService: Service() {
                             Log.d("state","Reay")
 //                        if (!exoPlayer.isPlaying)
 //                            audioManager.abandonAudioFocus(afChangeListener)
-
                         playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
@@ -119,9 +119,7 @@ class VideoService: Service() {
                             else{
                                 exoPlayer.seekTo(0)
                             }
-
                         }
-
                         playerFragment.settingBottomPlayButton()
                         startForegroundService()
                     }
@@ -160,7 +158,7 @@ class VideoService: Service() {
                         exoPlayer.playWhenReady = false
                     }
                     AudioManager.AUDIOFOCUS_GAIN -> {
-                        exoPlayer.playWhenReady = true
+//                        exoPlayer.playWhenReady = true
                     }
                 }
             }
@@ -190,7 +188,7 @@ class VideoService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        MediaButtonReceiver.handleIntent(mediaSession,intent)
+//        MediaButtonReceiver.handleIntent(mediaSession,intent)
             when (intent?.action) {
                 Actions.START_FOREGROUND -> {
                     Log.e(TAG, "Start Foreground 인텐트를 받음")
@@ -201,7 +199,7 @@ class VideoService: Service() {
                     stopForegroundService()
                 }
                 Actions.MINUS -> {
-                    setPitch(activity.pitchSeekBar.progress-1)
+                    setPitch(activity.pitchSeekBar.progress-11)
                     activity.pitchSeekBar.progress = activity.pitchSeekBar.progress - 1
                 }
                 Actions.PREV -> {
@@ -221,11 +219,11 @@ class VideoService: Service() {
                     startForegroundService()
                 }
                 Actions.PLUS -> {
-                    setPitch(activity.pitchSeekBar.progress+1)
+                    setPitch(activity.pitchSeekBar.progress - 9)
                     activity.pitchSeekBar.progress = activity.pitchSeekBar.progress + 1
                 }
                 Actions.INIT -> {
-                    activity.pitchSeekBar.progress = 0
+                    activity.pitchSeekBar.progress = 10
                     setPitch(0)
                 }
             }
@@ -322,14 +320,12 @@ class VideoService: Service() {
         if (playerFragment.fbinding == null)
             return
         playerFragment.playerViewVisibleEvent()
-        var videoSource: MediaSource
-        if (convertedUrl.contains("m3u8")){
-            videoSource = HlsMediaSource
+        val videoSource: MediaSource = if (convertedUrl.contains("m3u8")){
+            HlsMediaSource
                 .Factory(DefaultHttpDataSource.Factory())
                 .createMediaSource(MediaItem.fromUri(convertedUrl))
-        }
-        else{
-            videoSource = ProgressiveMediaSource
+        } else{
+            ProgressiveMediaSource
                 .Factory(DefaultHttpDataSource.Factory())
                 .createMediaSource(MediaItem.fromUri(convertedUrl))
         }
@@ -339,23 +335,23 @@ class VideoService: Service() {
         requestAudioFocus()
 
         exoPlayer.playWhenReady = true
-        setTempo(activity.tempoSeekBar.progress)
-        setPitch(activity.pitchSeekBar.progress)
+        setTempo(activity.tempoSeekBar.progress - 10)
+        setPitch(activity.pitchSeekBar.progress - 10)
 
     }
 
     fun setPitch(value: Int){
         val pitchValue = value*0.05.toFloat()
-        val tempoValue = activity.tempoSeekBar.progress*0.05.toFloat()
+        val tempoValue = (activity.tempoSeekBar.progress - 10)*0.05.toFloat()
         val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer?.playbackParameters = param
+        exoPlayer.playbackParameters = param
     }
 
     fun setTempo(value: Int){
         val tempoValue = value*0.05.toFloat()
-        val pitchValue = activity.pitchSeekBar.progress*0.05.toFloat()
+        val pitchValue = (activity.pitchSeekBar.progress - 10)*0.05.toFloat()
         val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer?.playbackParameters = param
+        exoPlayer.playbackParameters = param
     }
 
     fun createNotification(
@@ -364,7 +360,6 @@ class VideoService: Service() {
         val notificationIntent = Intent(this, Activity::class.java)
         notificationIntent.action = Actions.MAIN
         notificationIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
 
         val pendingIntent = PendingIntent
             .getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
@@ -400,7 +395,7 @@ class VideoService: Service() {
         val initPendingIntent = PendingIntent
             .getService(this, 0, initIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        mediaSession = MediaSessionCompat(this, "PlayerService")
+
         val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle()
             .setShowActionsInCompactView(0,2,4)
             .setMediaSession(mediaSession.sessionToken)
