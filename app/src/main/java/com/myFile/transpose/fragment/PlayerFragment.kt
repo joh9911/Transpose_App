@@ -3,6 +3,7 @@ package com.myFile.transpose.fragment
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -36,7 +37,11 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 
-class PlayerFragment(private var videoData: VideoData, val playlistModel: PlaylistModel?): Fragment() {
+class PlayerFragment(): Fragment() {
+
+    lateinit var videoData: VideoData
+    var playlistModel: PlaylistModel? = null
+
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var mainRecyclerViewAdapter: PlayerFragmentMainRecyclerViewAdapter
@@ -79,6 +84,8 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         retrofit = RetrofitData.initRetrofit()
 
         val view = binding.root
+        initBundleData()
+        initCallback()
         initRecyclerView()
         initPlaylistView()
         initListener()
@@ -88,10 +95,16 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         return view
     }
 
+    private fun initBundleData(){
+        val myData = arguments?.getParcelable<PlayerFragmentBundle>("playerFragment")
+        videoData = myData?.videoData!!
+        playlistModel = myData.playlistModel
+    }
+
 
     private fun initPlaylistView(){
         if (playlistModel != null){
-            nowPlaylistModel = NowPlaylistModel(playlistModel.playlistItems, playlistModel.firstPosition, playlistModel.playlistName)
+            nowPlaylistModel = NowPlaylistModel(playlistModel!!.playlistItems, playlistModel!!.firstPosition, playlistModel!!.playlistName)
             initBottomSheet()
             initPlaylistRecyclerView()
         }
@@ -525,17 +538,29 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
             for (fragment: Fragment in activity.supportFragmentManager.fragments){
                 if (fragment is HomeFragment && fragment.isVisible){
+                    val bundle = Bundle().apply {
+                        putParcelable("channelData", channelDataMapper())
+                    }
+                    val channelFragment = ChannelFragment().apply {
+                        arguments = bundle
+                    }
                     fragment.childFragmentManager.beginTransaction()
                         .add(fragment.binding.searchResultFrameLayout.id,
-                            ChannelFragment(channelDataMapper())
+                            channelFragment
                         )
                         .addToBackStack(null)
                         .commit()
                 }
                 if (fragment is MyPlaylistFragment && fragment.isVisible){
+                    val bundle = Bundle().apply {
+                        putParcelable("channelData", channelDataMapper())
+                    }
+                    val channelFragment = ChannelFragment().apply {
+                        arguments = bundle
+                    }
                     fragment.childFragmentManager.beginTransaction()
                         .add(fragment.binding.resultFrameLayout.id,
-                            ChannelFragment(channelDataMapper())
+                            channelFragment
                         )
                         .addToBackStack(null)
                         .commit()
@@ -586,10 +611,17 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         }
         override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
             if (binding.playerMotionLayout.currentState == R.id.start){
-                if (playlistModel != null)
+                Log.d("이게","되야할 텐데")
+                if (playlistModel != null){
                     callbackPlaylistVersion.remove()
-                else
+                    Log.d("여길까","!")
+                }
+
+                else{
                     callback.remove()
+                    Log.d("여길까","?")
+                }
+
 
                 settingBottomPlayButton()
                 binding.playerView.useController = false
@@ -644,23 +676,27 @@ class PlayerFragment(private var videoData: VideoData, val playlistModel: Playli
         }
         callbackPlaylistVersion = object : OnBackPressedCallback(true){
             override fun handleOnBackPressed() {
-                Log.d("동영상 플레이어의","백프레스")
+                Log.d("동영상 플레이어의","백프레스ㅍ르레이르스")
                 if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
                     bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
                 else
                     binding.playerMotionLayout.transitionToState(R.id.start)
             }
         }
+        addCallback()
+    }
+
+    private fun addCallback(){
+        if (playlistModel != null)
+            activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner,callbackPlaylistVersion)
+        else
+            activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner,callback)
     }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
-        initCallback()
-        if (playlistModel != null)
-            activity.onBackPressedDispatcher.addCallback(this,callbackPlaylistVersion)
-        else
-            activity.onBackPressedDispatcher.addCallback(this,callback)
+
     }
 
     private fun stringToHtmlSign(str: String): String {

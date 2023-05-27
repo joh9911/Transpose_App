@@ -17,11 +17,11 @@ import com.myFile.transpose.databinding.FragmentChannelBinding
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
 
 import com.myFile.transpose.dto.PlayListVideoSearchData
+import com.myFile.transpose.model.PlayerFragmentBundle
 import kotlinx.coroutines.*
 
-class ChannelFragment(
-    private val channelData: ChannelData
-): Fragment() {
+class ChannelFragment: Fragment() {
+    lateinit var channelData: ChannelData
     var fbinding: FragmentChannelBinding? = null
     val binding get() = fbinding!!
     lateinit var channelVideoRecyclerViewAdapter: ChannelVideoRecyclerViewAdapter
@@ -39,11 +39,16 @@ class ChannelFragment(
     ): View {
         fbinding = FragmentChannelBinding.inflate(inflater, container, false)
         val view = binding.root
+        getChannelDataFromPlayerFragment()
         initPlaylistId()
         initRecyclerView()
         //initRecyclerView 시 headerView가 있으므로, 스크롤이 바닥에 있다고 인식 됨 -> getData 실행됨 따라서 밑에 getData를 주석처리 했음
 //        getData()
         return view
+    }
+
+    private fun getChannelDataFromPlayerFragment(){
+        channelData = arguments?.getParcelable<ChannelData>("channelData")!!
     }
 
 
@@ -66,11 +71,21 @@ class ChannelFragment(
         channelVideoRecyclerViewAdapter = ChannelVideoRecyclerViewAdapter(channelData)
         channelVideoRecyclerViewAdapter.setItemClickListener(object: ChannelVideoRecyclerViewAdapter.OnItemClickListener{
             override fun videoClick(v: View, position: Int) {
-                    activity.supportFragmentManager.beginTransaction()
-                        .replace(activity.binding.playerFragment.id,
-                            PlayerFragment(videoDataList[position], null)
-                        )
-                        .commit()
+                val playlistModel = null
+                val videoData = videoDataList[position]
+                val playerFragmentBundle = PlayerFragmentBundle(videoData, playlistModel)
+
+                val bundle = Bundle().apply {
+                    putParcelable("playerFragment", playerFragmentBundle)
+                }
+                val playerFragment = PlayerFragment().apply {
+                    arguments = bundle
+                }
+                activity.supportFragmentManager.beginTransaction()
+                    .replace(activity.binding.playerFragment.id,
+                        playerFragment
+                    )
+                    .commit()
             }
             override fun optionButtonClick(v: View, position: Int) {
                 val popUp = PopupMenu(activity, v)
@@ -103,6 +118,7 @@ class ChannelFragment(
             }
         })
     }
+
     fun showNoticeDialog(videoData: VideoData) {
         // Create an instance of the dialog fragment and show it
         val dialog = DialogFragmentPopupAddPlaylist(videoData)
@@ -173,9 +189,9 @@ class ChannelFragment(
             val channelTitle = channelData.channelTitle
             videoDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
         }
-        Log.d("pageTotken","$pageToken")
         if (pageToken != null)
             videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+        Log.d("채널 동영상","$videoDataList")
         channelVideoRecyclerViewAdapter.notifyDataSetChanged()
         binding.progressBar.visibility = View.INVISIBLE
         binding.errorLinearLayout.visibility = View.INVISIBLE

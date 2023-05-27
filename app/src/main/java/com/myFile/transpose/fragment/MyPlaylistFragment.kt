@@ -88,14 +88,23 @@ class MyPlaylistFragment: Fragment() {
             }
         }
     }
-    fun initPlaylistRecyclerView(){
+    private fun initPlaylistRecyclerView(){
         binding.playlistRecyclerView.layoutManager = LinearLayoutManager(activity)
         myPlaylistRecyclerViewAdapter = MyPlaylistRecyclerViewAdapter()
         myPlaylistRecyclerViewAdapter.setItemClickListener(object: MyPlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
+                val playlistUid = myPlaylists[position].uid
+                val playlistTitle = myPlaylists[position].playlistTitle
+                val bundle = Bundle().apply {
+                    putInt("playlistUid", playlistUid)
+                    putString("playlistTitle",playlistTitle)
+                }
+                val myPlaylistItemsFragment = MyPlaylistItemsFragment().apply {
+                    arguments = bundle
+                }
                 childFragmentManager.beginTransaction()
                     .replace(binding.resultFrameLayout.id,
-                        MyPlaylistItemsFragment(myPlaylists[position])
+                        myPlaylistItemsFragment
                     )
                     .addToBackStack(null)
                     .commit()
@@ -128,11 +137,13 @@ class MyPlaylistFragment: Fragment() {
                 searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
                 searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
                 searchView.clearFocus()
+                val searchResultFragment = SearchResultFragment().apply {
+                    arguments = Bundle().apply {
+                        putString("searchWord",searchWord)
+                    }
+                }
                 childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id, SearchResultFragment(
-                        searchWord,
-                    )
-                    )
+                    .replace(binding.resultFrameLayout.id, searchResultFragment)
                     .addToBackStack(null)
                     .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
@@ -258,12 +269,13 @@ class MyPlaylistFragment: Fragment() {
                 Log.d("playlist","쿼리를 보냈어요")
                 Log.d("playlist","${searchView.query}")
                 searchView.clearFocus()
+                val searchResultFragment = SearchResultFragment().apply {
+                    arguments = Bundle().apply {
+                        putString("searchWord",query!!)
+                    }
+                }
                 childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id, SearchResultFragment(
-                        query!!
-
-                    )
-                    )
+                    .replace(binding.resultFrameLayout.id, searchResultFragment)
                     .addToBackStack(null)
                     .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
@@ -271,10 +283,10 @@ class MyPlaylistFragment: Fragment() {
             }
             //SwipeRefreshLayout 새로고침
             override fun onQueryTextChange(newText: String?): Boolean {
-                if (newText != ""){
+                if (newText != null){
                     getSuggestionKeyword(newText!!)
                 }
-                if (newText == ""){
+                else{
                     Log.d("빈","칸")
                     suggestionKeywords.clear()
                     searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())

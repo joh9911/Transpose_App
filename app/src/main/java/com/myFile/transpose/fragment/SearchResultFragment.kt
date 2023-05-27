@@ -1,12 +1,14 @@
 package com.myFile.transpose.fragment
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,12 +18,15 @@ import com.myFile.transpose.adapter.SearchResultFragmentRecyclerViewAdapter
 import com.myFile.transpose.databinding.FragmentSearchResultBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
+import com.myFile.transpose.model.PlayerFragmentBundle
+import com.myFile.transpose.model.PlaylistModel
 import com.myFile.transpose.model.VideoSearchData
 import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
 
-class SearchResultFragment(search: String): Fragment() {
+class SearchResultFragment: Fragment() {
+    private lateinit var searchWord: String
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
@@ -29,7 +34,6 @@ class SearchResultFragment(search: String): Fragment() {
     val binding get() = fbinding!!
 
     var nextPageToken = ""
-    private val searchWord = search
     private val videoDataList = ArrayList<VideoData>()
     private val channelDataList = ArrayList<ChannelData>()
 
@@ -41,18 +45,24 @@ class SearchResultFragment(search: String): Fragment() {
         fbinding = FragmentSearchResultBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        getSearchWord()
         initRecyclerView()
         errorEvent()
         getData(null)
         return view
     }
-    fun errorEvent(){
+    private fun getSearchWord(){
+        searchWord = arguments?.getString("searchWord")!!
+    }
+
+    private fun errorEvent(){
         binding.refreshButton.setOnClickListener {
             binding.refreshButton.setOnClickListener {
-                Log.d("버튼을","누름")
                 binding.progressBar.visibility = View.VISIBLE
-                getData(null)
+                binding.recyclerView.visibility = View.VISIBLE
                 binding.errorLinearLayout.visibility = View.INVISIBLE
+                videoDataList.clear()
+                getData(null)
             }
         }
     }
@@ -81,19 +91,33 @@ class SearchResultFragment(search: String): Fragment() {
 
             override fun channelClick(v: View, position: Int) {
                     if (parentFragment is HomeFragment){
+                        val channelData = channelDataList[position]
+                        val bundle = Bundle().apply {
+                            putParcelable("channelData",channelData)
+                        }
+                        val channelFragment = ChannelFragment().apply {
+                            arguments = bundle
+                        }
                         val fragment = parentFragment as HomeFragment
                         parentFragmentManager.beginTransaction()
                             .replace(fragment.binding.searchResultFrameLayout.id,
-                                ChannelFragment(channelDataList[position])
+                                channelFragment
                             )
                             .addToBackStack(null)
                             .commit()
                     }
                     if (parentFragment is MyPlaylistFragment){
+                        val channelData = channelDataList[position]
+                        val bundle = Bundle().apply {
+                            putParcelable("channelData",channelData)
+                        }
+                        val channelFragment = ChannelFragment().apply {
+                            arguments = bundle
+                        }
                         val fragment = parentFragment as MyPlaylistFragment
                         parentFragmentManager.beginTransaction()
                             .replace(fragment.binding.resultFrameLayout.id,
-                                ChannelFragment(channelDataList[position])
+                                channelFragment
                             )
                             .addToBackStack(null)
                             .commit()
@@ -101,9 +125,19 @@ class SearchResultFragment(search: String): Fragment() {
                 }
             }
             override fun videoClick(v: View, position: Int) {
+                val playlistModel = null
+                val videoData = videoDataList[position]
+                val playerFragmentBundle = PlayerFragmentBundle(videoData, playlistModel)
+
+                val bundle = Bundle().apply {
+                    putParcelable("playerFragment", playerFragmentBundle)
+                }
+                val playerFragment = PlayerFragment().apply {
+                    arguments = bundle
+                }
                     activity.supportFragmentManager.beginTransaction()
                         .replace(activity.binding.playerFragment.id,
-                            PlayerFragment(videoDataList[position],null)
+                            playerFragment
                         )
                         .commit()
 
@@ -150,8 +184,12 @@ class SearchResultFragment(search: String): Fragment() {
 
     private suspend fun getSearchVideoData(pageToken: String?) {
         val random = Random()
-        val keyList = listOf(BuildConfig.API_KEY5, BuildConfig.API_KEY6, BuildConfig.API_KEY7, BuildConfig.API_KEY8, BuildConfig.API_KEY9,
-        BuildConfig.API_KEY10, BuildConfig.TOY_PROJECT)
+        val keyList = listOf(BuildConfig.API_KEY6,  BuildConfig.API_KEY11,
+         BuildConfig.TOY_PROJECT, BuildConfig.API_KEY110901_1, BuildConfig.API_KEY110901_2,BuildConfig.API_KEY11098608_1, BuildConfig.API_KEY11098608_2,
+        BuildConfig.API_KEY110999_1, BuildConfig.API_KEY110999_2, BuildConfig.API_KEY38922_1, BuildConfig.API_KEY38922_2, BuildConfig.API_KEY389251_1, BuildConfig.API_KEY389251_2,
+        BuildConfig.API_KEY860801_1,BuildConfig.API_KEY860801_2, BuildConfig.API_KEY991101_1, BuildConfig.API_KEY991101_2,BuildConfig.API_KEY38924_1,BuildConfig.API_KEY38924_2,BuildConfig.API_KEY38926_1,
+        BuildConfig.API_KEY38926_2,BuildConfig.API_KEY38928_1, BuildConfig.API_KEY38928_2, BuildConfig.API_KEY38929_1, BuildConfig.API_KEY38929_2,BuildConfig.API_KEY38930_1,BuildConfig.API_KEY38930_2,
+        BuildConfig.API_KEY38931_1,BuildConfig.API_KEY38931_2,BuildConfig.API_KEY38933_1,BuildConfig.API_KEY38933_2,BuildConfig.API_KEY38934_1,BuildConfig.API_KEY38934_2)
         val num = random.nextInt(keyList.size)
 
         val retrofit = RetrofitData.initRetrofit()
@@ -159,6 +197,7 @@ class SearchResultFragment(search: String): Fragment() {
             keyList[num],"snippet",searchWord,"50","video",
             pageToken
         )
+        Log.d("검색 기능0","$response")
         if (response.isSuccessful) {
             if (response.body()?.items?.size != 0) {
                 withContext(Dispatchers.Main){
@@ -169,11 +208,25 @@ class SearchResultFragment(search: String): Fragment() {
             }
         }
         else{
-            Log.d("dpftm","Sdf")
-            withContext(Dispatchers.Main){
-                binding.progressBar.visibility = View.INVISIBLE
-                binding.errorLinearLayout.visibility = View.VISIBLE
+            /**
+             * 처음 검색했을 때, 실패가 떴다면 다시 처음부터 검색
+             */
+            if (videoDataList.isEmpty()){
+                withContext(Dispatchers.Main){
+                    binding.progressBar.visibility = View.INVISIBLE
+                    binding.recyclerView.visibility = View.INVISIBLE
+                    binding.errorLinearLayout.visibility = View.VISIBLE
+                }
             }
+
+            else{
+                withContext(Dispatchers.Main){
+                    if (videoDataList[videoDataList.size - 1].title == " ")
+                        videoDataList.removeAt(videoDataList.size - 1)
+                    Toast.makeText(activity, activity.getString(R.string.quota_error_message),Toast.LENGTH_SHORT).show()
+                }
+            }
+
         }
 
     }

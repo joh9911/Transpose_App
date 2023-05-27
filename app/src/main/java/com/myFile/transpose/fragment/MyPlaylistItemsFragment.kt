@@ -25,8 +25,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.properties.Delegates
 
-class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
+class MyPlaylistItemsFragment(): Fragment() {
+
+    var myPlaylistUid = 0
+    lateinit var myPlaylistTitle: String
+
     lateinit var mainBinding: MainBinding
     var fbinding: FragmentMyPlaylistItemBinding? = null
     val binding get() = fbinding!!
@@ -48,12 +53,19 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
         fbinding = FragmentMyPlaylistItemBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        getPlaylistDetailFromMyPlaylistFragment()
         initDb()
         initRecyclerView()
         getAllMusic()
         initEmptyItemVisible()
         return view
     }
+
+    fun getPlaylistDetailFromMyPlaylistFragment(){
+        myPlaylistUid = arguments?.getInt("playlistUid")!!
+        myPlaylistTitle = arguments?.getString("playlistTitle")!!
+    }
+
     fun initDb(){
         db = Room.databaseBuilder(
             activity,
@@ -65,7 +77,7 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
     }
     fun getAllMusic(){
         CoroutineScope(Dispatchers.IO).launch{
-            myMusics = myPlaylistDao.getMusicItemsByPlaylistId(myPlaylist.uid)
+            myMusics = myPlaylistDao.getMusicItemsByPlaylistId(myPlaylistUid)
             withContext(Dispatchers.Main){
                 if (myMusics.isEmpty())
                     binding.emptyTextView.visibility = View.VISIBLE
@@ -84,13 +96,13 @@ class MyPlaylistItemsFragment(private val myPlaylist: MyPlaylist): Fragment() {
         }
     }
 
-    fun initRecyclerView(){
+    private fun initRecyclerView(){
         binding.myPlaylistItemRecyclerView.layoutManager = LinearLayoutManager(activity)
         myPlaylistItemRecyclerAdapter = MyPlaylistItemRecyclerViewAdapter()
         myPlaylistItemRecyclerAdapter.setItemClickListener(object: MyPlaylistItemRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
 
-                val playlistModel = PlaylistModel(myPlaylist.playlistTitle, myMusicItems, position)
+                val playlistModel = PlaylistModel(myPlaylistTitle, myMusicItems, position)
                 val videoData = myMusicItems[position]
                 val playerFragmentBundle = PlayerFragmentBundle(videoData, playlistModel)
 
