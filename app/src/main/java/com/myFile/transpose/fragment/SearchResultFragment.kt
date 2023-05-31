@@ -15,6 +15,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.myFile.transpose.*
 import com.myFile.transpose.retrofit.*
 import com.myFile.transpose.adapter.SearchResultFragmentRecyclerViewAdapter
+import com.myFile.transpose.database.AppDatabase
+import com.myFile.transpose.database.CashedKeyword
+import com.myFile.transpose.database.YoutubeCashedData
+import com.myFile.transpose.database.YoutubeCashedDataDao
 import com.myFile.transpose.databinding.FragmentSearchResultBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
@@ -26,6 +30,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class SearchResultFragment: Fragment() {
+    lateinit var cashedDataDao: YoutubeCashedDataDao
     private lateinit var searchWord: String
     lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
@@ -33,7 +38,7 @@ class SearchResultFragment: Fragment() {
     var fbinding: FragmentSearchResultBinding? = null
     val binding get() = fbinding!!
 
-    var nextPageToken = ""
+    private var nextPageToken: String? = null
     private val videoDataList = ArrayList<VideoData>()
     private val channelDataList = ArrayList<ChannelData>()
 
@@ -45,11 +50,15 @@ class SearchResultFragment: Fragment() {
         fbinding = FragmentSearchResultBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
+        initDb()
         getSearchWord()
         initRecyclerView()
         errorEvent()
-        getData(null)
+        getData(nextPageToken)
         return view
+    }
+    private fun initDb(){
+        cashedDataDao = AppDatabase.getDatabase(activity).youtubeCashedDataDao()
     }
     private fun getSearchWord(){
         searchWord = arguments?.getString("searchWord")!!
@@ -62,7 +71,7 @@ class SearchResultFragment: Fragment() {
                 binding.recyclerView.visibility = View.VISIBLE
                 binding.errorLinearLayout.visibility = View.INVISIBLE
                 videoDataList.clear()
-                getData(null)
+                getData(nextPageToken)
             }
         }
     }
@@ -82,7 +91,7 @@ class SearchResultFragment: Fragment() {
     }
 
     fun initRecyclerView(){
-        activity = context as Activity
+
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.recyclerView.layoutManager = LinearLayoutManager(activity)
         searchResultAdapter = SearchResultFragmentRecyclerViewAdapter()
@@ -156,6 +165,15 @@ class SearchResultFragment: Fragment() {
                 popUp.show()
             }
         })
+        /**
+         * 끝에 도달했을 때, 데이터를 불러와야함.
+         * 이 때 처음 이 서치 프레그먼트가 실행됐을 때 디비에서 불러왔는지, api 요청을 통해 불러왔는지 확인해야함
+         * api 요청을 통해 불러왔다면, 아직 디비에 없다는 소리이므로 그냥 getData
+         * keyword가 디비에 저장되어있다면 디비를 통해 불러왔다는 소리임
+         * 디비 안의 정보를 모두 비우고, 동영상을 저장하는 list도 비워준 후,
+         * 원래 디비 내의 저장되 데이터 개수 / 50 +1 만큼 데이터를 받아와줌
+         *
+         */
          binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener(){
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -165,7 +183,20 @@ class SearchResultFragment: Fragment() {
                 // 스크롤이 끝에 도달했는지 확인
                 if (!binding.recyclerView.canScrollVertically(1) && lastVisibleItemPosition == itemTotalCount) {
                     Log.d("스크롤 끝에","도달!")
-                    getData(nextPageToken)
+                    CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
+                        val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
+                        if (cashedKeyword != null){
+                            val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
+                            cashedDataDao.deleteAllBySearchKeyword(searchWord)
+                            videoDataList.clear()
+                            for (index in 0 until list.size / 50 + 1){
+                                getSearchVideoData(nextPageToken)
+                            }
+                        }
+                        else{
+                            getData(nextPageToken)
+                        }
+                    }
                 }
             }
         })
@@ -176,20 +207,44 @@ class SearchResultFragment: Fragment() {
         dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
     }
 
+    /**
+``      디비에 데이터가 존재하는지 확인하기,
+        디비에 저장된 시간이 20일이 지났는지 확인하기
+        디비에 저장된 데이터의 숫자와 현재 요청한 데이터 숫자와 비교하기
+     */
     private fun getData(pageToken: String?) {
         CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
-            async { getSearchVideoData(pageToken) }
+            val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
+            if (cashedKeyword == null){
+                getSearchVideoData(pageToken)
+            }
+            else{
+                getDataFromDb()
+            }
         }
+    }
+    private suspend fun getDataFromDb(){
+        val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
+        list.forEach{
+            videoDataList.add(it.searchVideoData)
+        }
+        videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+        withContext(Dispatchers.Main){
+            binding.progressBar.visibility = View.INVISIBLE
+            binding.recyclerView.visibility = View.VISIBLE
+            searchResultAdapter.submitList(videoDataList.toMutableList())
+        }
+        Log.d("디비에서 받아온 개수","${list.size}")
     }
 
     private suspend fun getSearchVideoData(pageToken: String?) {
         val random = Random()
         val keyList = listOf(BuildConfig.API_KEY6,  BuildConfig.API_KEY11,
-         BuildConfig.TOY_PROJECT, BuildConfig.API_KEY110901_1, BuildConfig.API_KEY110901_2,BuildConfig.API_KEY11098608_1, BuildConfig.API_KEY11098608_2,
-        BuildConfig.API_KEY110999_1, BuildConfig.API_KEY110999_2, BuildConfig.API_KEY38922_1, BuildConfig.API_KEY38922_2, BuildConfig.API_KEY389251_1, BuildConfig.API_KEY389251_2,
-        BuildConfig.API_KEY860801_1,BuildConfig.API_KEY860801_2, BuildConfig.API_KEY991101_1, BuildConfig.API_KEY991101_2,BuildConfig.API_KEY38924_1,BuildConfig.API_KEY38924_2,BuildConfig.API_KEY38926_1,
-        BuildConfig.API_KEY38926_2,BuildConfig.API_KEY38928_1, BuildConfig.API_KEY38928_2, BuildConfig.API_KEY38929_1, BuildConfig.API_KEY38929_2,BuildConfig.API_KEY38930_1,BuildConfig.API_KEY38930_2,
-        BuildConfig.API_KEY38931_1,BuildConfig.API_KEY38931_2,BuildConfig.API_KEY38933_1,BuildConfig.API_KEY38933_2,BuildConfig.API_KEY38934_1,BuildConfig.API_KEY38934_2)
+         BuildConfig.TOY_PROJECT, BuildConfig.API_KEY110901_3, BuildConfig.API_KEY11098608_3,
+        BuildConfig.API_KEY110999_3, BuildConfig.API_KEY38922_3,BuildConfig.API_KEY389251_3,
+        BuildConfig.API_KEY860801_3,BuildConfig.API_KEY991101_3,BuildConfig.API_KEY38923_1, BuildConfig.API_KEY38924_3,BuildConfig.API_KEY38926_3,
+        BuildConfig.API_KEY38928_3, BuildConfig.API_KEY38929_3,BuildConfig.API_KEY38930_3,
+        BuildConfig.API_KEY38931_3,BuildConfig.API_KEY38933_3,BuildConfig.API_KEY38934_3, BuildConfig.API_KEY38935_1, BuildConfig.API_KEY38936_1, BuildConfig.API_KEY38937_1)
         val num = random.nextInt(keyList.size)
 
         val retrofit = RetrofitData.initRetrofit()
@@ -252,6 +307,25 @@ class SearchResultFragment: Fragment() {
         videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
         searchResultAdapter.submitList(videoDataList.toMutableList())
         Log.d("어댑터의 아이템 개수","${searchResultAdapter.itemCount}")
+    }
+
+    /**
+     * 원래 디비의 저장된 데이터에서 갱신이 되었을 경우,
+     * 디비 내 데이터를 지우고 다시 넣어줌
+     */
+    private fun saveDataToDb(){
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
+            if (list.size != videoDataList.size - 1){
+                val cashedKeyword = CashedKeyword(searchWord, System.currentTimeMillis())
+                cashedDataDao.insertKeyword(cashedKeyword)
+                for (index in 0 until videoDataList.size - 1){
+                    val youtubeCashedData = YoutubeCashedData(0, videoDataList[index], searchWord)
+                    cashedDataDao.insertCashedData(youtubeCashedData)
+                }
+            }
+        }
     }
 
 //    private suspend fun getChannelData(videoDataList: ArrayList<VideoData>) {
@@ -347,11 +421,13 @@ class SearchResultFragment: Fragment() {
     }
     override fun onDestroy() {
         super.onDestroy()
+        saveDataToDb()
         fbinding = null
     }
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
+        activity = context as Activity
         if (parentFragment is HomeFragment){
             val fragment =  parentFragment as HomeFragment
             fragment.childFragmentManager.addOnBackStackChangedListener {
