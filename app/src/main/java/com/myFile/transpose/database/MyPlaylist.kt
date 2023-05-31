@@ -1,7 +1,10 @@
 package com.myFile.transpose.database
 
+import android.os.Parcelable
 import androidx.room.*
 import com.myFile.transpose.retrofit.VideoData
+import kotlinx.parcelize.Parcelize
+
 
 @Entity
 data class MyPlaylist(
@@ -56,9 +59,6 @@ interface MyPlaylistDao{
     fun deleteMusic(musics: Musics)
 }
 
-@Database(entities = [MyPlaylist::class, Musics::class], version = 3)
-@TypeConverters(Converters::class)
-abstract class AppDatabase : RoomDatabase(){
-    abstract fun myPlaylistDao(): MyPlaylistDao
-}
+
+
 

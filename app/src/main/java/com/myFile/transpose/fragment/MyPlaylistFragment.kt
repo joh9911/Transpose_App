@@ -152,22 +152,18 @@ class MyPlaylistFragment: Fragment() {
         binding.searchSuggestionKeywordRecyclerView.adapter = searchKeywordRecyclerAdapter
     }
 
-    fun initDb(){
-        db = Room.databaseBuilder(
-            activity,
-            AppDatabase::class.java, "database-name"
-        )
-            .build()
+    private fun initDb(){
+        db = AppDatabase.getDatabase(activity)
         myPlaylistDao = db.myPlaylistDao()
 
     }
-    fun addPlaylistButtonEvent(){
+    private fun addPlaylistButtonEvent(){
 
         binding.addPlaylistLinearLayout.setOnClickListener {
             showNoticeDialog()
         }
     }
-    fun showNoticeDialog() {
+    private fun showNoticeDialog() {
         // Create an instance of the dialog fragment and show it
         val dialog = DialogCreatePlaylist()
 

@@ -67,11 +67,7 @@ class MyPlaylistItemsFragment(): Fragment() {
     }
 
     fun initDb(){
-        db = Room.databaseBuilder(
-            activity,
-            AppDatabase::class.java, "database-name"
-        )
-            .build()
+        db = AppDatabase.getDatabase(activity)
         myPlaylistDao = db.myPlaylistDao()
 
     }
@@ -88,7 +84,10 @@ class MyPlaylistItemsFragment(): Fragment() {
         }
     }
 
-    fun initEmptyItemVisible(){
+    /**
+     * PlayerFragment에 의해 아이템이 가려지지 않도록 visible 설정
+     */
+    private fun initEmptyItemVisible(){
         for (fragment in activity.supportFragmentManager.fragments){
             if (fragment is PlayerFragment){
                 binding.emptyItem.visibility = View.VISIBLE
