@@ -80,10 +80,10 @@ class PlayerFragment(): Fragment() {
     ): View {
         fbinding = FragmentPlayerBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
-        activity.videoService!!.initPlayerFragment(this)
         retrofit = RetrofitData.initRetrofit()
 
         val view = binding.root
+        activity.videoService?.initPlayerFragment(this)
         initBundleData()
         initCallback()
         initRecyclerView()
@@ -653,8 +653,9 @@ class PlayerFragment(): Fragment() {
 
     override fun onResume() {
         Log.d("프레그먼트플레이어","온리줌")
-        super.onResume()
+        activity.videoService?.initPlayerFragment(this)
         binding.mainRecyclerView.scrollToPosition(0)
+        super.onResume()
     }
 
     override fun onStop() {
