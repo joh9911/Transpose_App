@@ -299,11 +299,13 @@ class MyPlaylistFragment: Fragment() {
             .enqueue(object : Callback<ResponseBody> {
                 override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     suggestionKeywords.clear()
-                    val responseString = convertStringUnicodeToKorean(response.body()?.string()!!)
-                    val splitBracketList = responseString.split('[')
-                    val splitCommaList = splitBracketList[2].split(',')
-                    if (splitCommaList[0] != "]]" && splitCommaList[0] != '"'.toString()){
-                        addSubstringToSuggestionKeyword(splitCommaList)
+                    if (response.body() != null){
+                        val responseString = convertStringUnicodeToKorean(response.body()?.string()!!)
+                        val splitBracketList = responseString.split('[')
+                        val splitCommaList = splitBracketList[2].split(',')
+                        if (splitCommaList[0] != "]]" && splitCommaList[0] != '"'.toString()){
+                            addSubstringToSuggestionKeyword(splitCommaList)
+                        }
                     }
                     searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
                 }
