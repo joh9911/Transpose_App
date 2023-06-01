@@ -320,7 +320,7 @@ class MyPlaylistFragment: Fragment() {
      **/
     private fun addSubstringToSuggestionKeyword(splitList: List<String>){
         for (index in splitList.indices){
-            if (splitList[index].isNotEmpty()){
+            if (splitList[index].length >= 3){
                 if (splitList[index][splitList[index].length-1] == ']')
                     suggestionKeywords.add(splitList[index].substring(1, splitList[index].length-2))
                 else

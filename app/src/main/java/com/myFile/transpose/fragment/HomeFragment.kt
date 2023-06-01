@@ -524,8 +524,9 @@ class HomeFragment: Fragment() {
     문자열 정보가 이상하게 들어와 알맞게 나눠주고 리스트에 추가
      **/
     private fun addSubstringToSuggestionKeyword(splitList: List<String>){
+        Log.d("addSub","$splitList")
         for (index in splitList.indices){
-            if (splitList[index].isNotEmpty()){
+            if (splitList[index].length >= 3){
                 if (splitList[index][splitList[index].length-1] == ']')
                     suggestionKeywords.add(splitList[index].substring(1, splitList[index].length-2))
                 else
@@ -533,6 +534,7 @@ class HomeFragment: Fragment() {
             }
         }
     }
+
 
     private fun convertStringUnicodeToKorean(data: String): String {
         val sb = StringBuilder() // 단일 쓰레드이므로 StringBuilder 선언
