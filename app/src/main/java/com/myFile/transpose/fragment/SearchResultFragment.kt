@@ -40,6 +40,7 @@ class SearchResultFragment: Fragment() {
 
     private var nextPageToken: String? = null
     private val videoDataList = ArrayList<VideoData>()
+    private val videoTempDataList = ArrayList<VideoData>()
     private val channelDataList = ArrayList<ChannelData>()
 
     override fun onCreateView(
@@ -185,13 +186,18 @@ class SearchResultFragment: Fragment() {
                     Log.d("스크롤 끝에","도달!")
                     CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
                         val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
+                        Log.d("캐시월드","$cashedKeyword")
                         if (cashedKeyword != null){
                             val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
-                            cashedDataDao.deleteAllBySearchKeyword(searchWord)
-                            videoDataList.clear()
+                            cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)
+                            videoTempDataList.clear()
                             for (index in 0 until list.size / 50 + 1){
-                                getSearchVideoData(nextPageToken)
+                                Log.d("반복문이 실행됐어요","$index")
+                                getSearchVideoData(nextPageToken, 1)
                             }
+                            videoDataList.clear()
+                            videoDataList.addAll(videoTempDataList)
+                            searchResultAdapter.submitList(videoDataList.toMutableList())
                         }
                         else{
                             getData(nextPageToken)
@@ -216,7 +222,7 @@ class SearchResultFragment: Fragment() {
         CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
             val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
             if (cashedKeyword == null){
-                getSearchVideoData(pageToken)
+                getSearchVideoData(pageToken, 0)
             }
             else{
                 getDataFromDb()
@@ -237,7 +243,7 @@ class SearchResultFragment: Fragment() {
         Log.d("디비에서 받아온 개수","${list.size}")
     }
 
-    private suspend fun getSearchVideoData(pageToken: String?) {
+    private suspend fun getSearchVideoData(pageToken: String?, tempTag: Int) {
         val random = Random()
         val keyList = listOf(BuildConfig.API_KEY6,  BuildConfig.API_KEY11,
          BuildConfig.TOY_PROJECT, BuildConfig.API_KEY110901_3, BuildConfig.API_KEY11098608_3,
@@ -256,7 +262,7 @@ class SearchResultFragment: Fragment() {
         if (response.isSuccessful) {
             if (response.body()?.items?.size != 0) {
                 withContext(Dispatchers.Main){
-                    searchResultDataMapping(response.body()!!)
+                    searchResultDataMapping(response.body()!!, tempTag)
                 }
                 if (response.body()?.nextPageToken != null)
                     nextPageToken = response.body()?.nextPageToken!!
@@ -285,7 +291,7 @@ class SearchResultFragment: Fragment() {
         }
 
     }
-    private fun searchResultDataMapping(responseData: VideoSearchData){
+    private fun searchResultDataMapping(responseData: VideoSearchData, tempTag: Int){
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
         binding.progressBar.visibility = View.INVISIBLE
         binding.recyclerView.visibility = View.VISIBLE
@@ -301,8 +307,9 @@ class SearchResultFragment: Fragment() {
             val videoId = responseData.items[index].id?.videoId!!
             val channelId = responseData.items[index].snippet?.channelId!!
             val channelTitle = responseData.items[index].snippet?.channelTitle!!
-            Log.d("videoId","$videoId")
             videoDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
+            if (tempTag == 1)
+                videoTempDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
         }
         videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
         searchResultAdapter.submitList(videoDataList.toMutableList())
@@ -316,8 +323,13 @@ class SearchResultFragment: Fragment() {
     private fun saveDataToDb(){
 
         CoroutineScope(Dispatchers.IO).launch {
+            val keyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
             val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
-            if (list.size != videoDataList.size - 1){
+            Log.d("keyword","$keyword")
+            Log.d("list","${list.size}")
+            Log.d("videolist","${videoDataList.size}")
+            if (list.size < videoDataList.size - 1){
+                cashedDataDao.deleteAllBySearchKeyword(searchWord)
                 val cashedKeyword = CashedKeyword(searchWord, System.currentTimeMillis())
                 cashedDataDao.insertKeyword(cashedKeyword)
                 for (index in 0 until videoDataList.size - 1){
