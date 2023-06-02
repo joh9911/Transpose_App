@@ -21,6 +21,7 @@ import com.myFile.transpose.database.YoutubeCashedData
 import com.myFile.transpose.database.YoutubeCashedDataDao
 import com.myFile.transpose.databinding.FragmentSearchResultBinding
 import com.myFile.transpose.databinding.MainBinding
+import com.myFile.transpose.dialog.DialogForNotification
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
 import com.myFile.transpose.model.PlayerFragmentBundle
 import com.myFile.transpose.model.PlaylistModel
@@ -58,6 +59,8 @@ class SearchResultFragment: Fragment() {
         getData(nextPageToken)
         return view
     }
+
+
     private fun initDb(){
         cashedDataDao = AppDatabase.getDatabase(activity).youtubeCashedDataDao()
     }
@@ -193,7 +196,7 @@ class SearchResultFragment: Fragment() {
                             videoTempDataList.clear()
                             for (index in 0 until list.size / 50 + 1){
                                 Log.d("반복문이 실행됐어요","$index")
-                                getSearchVideoData(nextPageToken, 1)
+                                getSearchVideoDataWithNoKey(nextPageToken, 1)
                             }
                             videoDataList.clear()
                             videoDataList.addAll(videoTempDataList)
@@ -220,9 +223,10 @@ class SearchResultFragment: Fragment() {
      */
     private fun getData(pageToken: String?) {
         CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
+
             val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
             if (cashedKeyword == null){
-                getSearchVideoData(pageToken, 0)
+                getSearchVideoDataWithNoKey(nextPageToken,0)
             }
             else{
                 getDataFromDb()
@@ -241,6 +245,46 @@ class SearchResultFragment: Fragment() {
             searchResultAdapter.submitList(videoDataList.toMutableList())
         }
         Log.d("디비에서 받아온 개수","${list.size}")
+    }
+
+    private suspend fun getSearchVideoDataWithNoKey(pageToken: String?, tempTag: Int){
+        val retrofit = RetrofitYT.initRetrofit()
+        val response = retrofit.create(RetrofitService::class.java).getVideoSearchResult(
+            null,"snippet",searchWord,"50","video",
+            pageToken
+        )
+        Log.d("yt 검색","$response")
+        Log.d("yt검색 결과","${response.body()}")
+        if (response.isSuccessful) {
+            if (response.body()?.items?.size != 0) {
+                withContext(Dispatchers.Main){
+                    searchResultDataMapping(response.body()!!, tempTag)
+                }
+                if (response.body()?.nextPageToken != null)
+                    nextPageToken = response.body()?.nextPageToken!!
+            }
+        }
+        else{
+            /**
+             * 처음 검색했을 때, 실패가 떴다면 다시 처음부터 검색
+             */
+            if (videoDataList.isEmpty()){
+                withContext(Dispatchers.Main){
+                    binding.progressBar.visibility = View.INVISIBLE
+                    binding.recyclerView.visibility = View.INVISIBLE
+                    binding.errorLinearLayout.visibility = View.VISIBLE
+                }
+            }
+
+            else{
+                withContext(Dispatchers.Main){
+                    if (videoDataList[videoDataList.size - 1].title == " ")
+                        videoDataList.removeAt(videoDataList.size - 1)
+                    Toast.makeText(activity, activity.getString(R.string.quota_error_message),Toast.LENGTH_SHORT).show()
+                }
+            }
+
+        }
     }
 
     private suspend fun getSearchVideoData(pageToken: String?, tempTag: Int) {
