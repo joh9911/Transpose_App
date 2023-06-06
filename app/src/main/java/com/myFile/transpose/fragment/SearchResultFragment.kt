@@ -196,7 +196,7 @@ class SearchResultFragment: Fragment() {
                             videoTempDataList.clear()
                             for (index in 0 until list.size / 50 + 1){
                                 Log.d("반복문이 실행됐어요","$index")
-                                getSearchVideoDataWithNoKey(nextPageToken, 1)
+                                getSearchVideoData(nextPageToken, 1)
                             }
                             videoDataList.clear()
                             videoDataList.addAll(videoTempDataList)
@@ -226,7 +226,7 @@ class SearchResultFragment: Fragment() {
 
             val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
             if (cashedKeyword == null){
-                getSearchVideoDataWithNoKey(nextPageToken,0)
+                getSearchVideoData(nextPageToken,0)
             }
             else{
                 getDataFromDb()
@@ -373,13 +373,10 @@ class SearchResultFragment: Fragment() {
             Log.d("list","${list.size}")
             Log.d("videolist","${videoDataList.size}")
             if (list.size < videoDataList.size - 1){
-                cashedDataDao.deleteAllBySearchKeyword(searchWord)
                 val cashedKeyword = CashedKeyword(searchWord, System.currentTimeMillis())
-                cashedDataDao.insertKeyword(cashedKeyword)
-                for (index in 0 until videoDataList.size - 1){
-                    val youtubeCashedData = YoutubeCashedData(0, videoDataList[index], searchWord)
-                    cashedDataDao.insertCashedData(youtubeCashedData)
-                }
+                videoDataList.removeLast()
+                val youtubeDataList = videoDataList.map{YoutubeCashedData(0, it, searchWord)}
+                cashedDataDao.insertData(searchWord,cashedKeyword, youtubeDataList)
             }
         }
     }
@@ -478,6 +475,9 @@ class SearchResultFragment: Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         saveDataToDb()
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
         fbinding = null
     }
 
