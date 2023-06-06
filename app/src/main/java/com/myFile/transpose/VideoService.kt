@@ -279,7 +279,7 @@ class VideoService: Service() {
     }
 
     private fun startStream(url: String){
-
+        startForegroundService()
         compositeDisposable.clear()
 
         val disposable: Disposable = Observable.fromCallable {
