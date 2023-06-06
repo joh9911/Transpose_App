@@ -5,6 +5,7 @@ import android.content.*
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.os.*
+import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -62,10 +63,6 @@ class VideoService: Service() {
 
     }
 
-    override fun onBind(p0: Intent?): IBinder {
-        exoPlayer.playWhenReady = true
-        return VideoServiceBinder()
-    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -179,6 +176,11 @@ class VideoService: Service() {
             }
         }
     }
+    override fun onBind(p0: Intent?): IBinder {
+        Log.d("온바인드","가 적절히 호출됨")
+        exoPlayer.playWhenReady = true
+        return VideoServiceBinder()
+    }
 
     inner class VideoServiceBinder: Binder(){
         fun getService(): VideoService {
@@ -231,6 +233,10 @@ class VideoService: Service() {
     }
 
     fun startForegroundService() {
+        val serviceIntent = Intent(this, VideoService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        }
         startForeground(NOTIFICATION_ID, createNotification())
     }
 
