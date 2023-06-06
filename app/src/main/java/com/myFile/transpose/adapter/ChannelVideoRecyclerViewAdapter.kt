@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.myFile.transpose.R
 import com.myFile.transpose.retrofit.ChannelData
 import com.myFile.transpose.retrofit.VideoData
 import com.myFile.transpose.databinding.ChannelVideoRecyclerViewHeaderViewBinding
@@ -16,16 +17,17 @@ import com.myFile.transpose.databinding.SearchResultRecyclerItemBinding
 class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<VideoData, RecyclerView.ViewHolder>(
     diffUtil
 ) {
+
     private val VIEW_TYPE_HEADER = 0
     private val VIEW_TYPE_LOADING = 2
     private val VIEW_TYPE_ITEM = 1
     var channelDataVar = channelData
 
-
     inner class MyHeaderViewHolder(binding: ChannelVideoRecyclerViewHeaderViewBinding): RecyclerView.ViewHolder(binding.root){
         init {
             binding.channelTitle.text = channelDataVar.channelTitle
-            binding.channelInfo.text = "동영상 ${channelDataVar.channelVideoCount}개"
+            binding.channelInfo.text =
+                String.format(binding.channelInfo.context.getString(R.string.channel_video_count), channelDataVar.channelVideoCount.toInt())
             binding.channelDescription.text = channelDataVar.channelDescription
             Glide.with(binding.channelBanner)
                 .load(channelDataVar.channelBanner)
@@ -81,6 +83,7 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
             }
         }
     }
+
     override fun getItemViewType(position: Int): Int {
         return when (position) {
             0 -> VIEW_TYPE_HEADER
@@ -92,6 +95,7 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
             }
         }
     }
+
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if(holder is MyViewHolder){

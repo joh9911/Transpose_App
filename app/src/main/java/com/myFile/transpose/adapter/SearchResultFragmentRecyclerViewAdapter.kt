@@ -23,7 +23,7 @@ class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerVi
         init{
 
             binding.dataItem.setOnClickListener {
-                itemClickListener.videoClick(it, adapterPosition)
+                itemClickListener.videoClick(it, bindingAdapterPosition)
             }
             binding.optionButton.setOnClickListener {
                 itemClickListener.optionButtonClick(it,bindingAdapterPosition)

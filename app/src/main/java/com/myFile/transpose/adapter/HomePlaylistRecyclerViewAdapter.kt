@@ -18,7 +18,7 @@ class HomePlaylistRecyclerViewAdapter: ListAdapter<PlayListData, HomePlaylistRec
         RecyclerView.ViewHolder(binding.root) {
         init {
             itemView.setOnClickListener {
-                itemClickListener.onClick(it, position)
+                itemClickListener.onClick(it, bindingAdapterPosition)
             }
         }
         fun bind(playlistData: PlayListData) {

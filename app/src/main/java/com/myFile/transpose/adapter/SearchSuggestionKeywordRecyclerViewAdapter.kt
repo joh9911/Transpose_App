@@ -16,7 +16,7 @@ class SearchSuggestionKeywordRecyclerViewAdapter: ListAdapter<String, SearchSugg
         RecyclerView.ViewHolder(binding.root) {
         init {
             itemView.setOnClickListener {
-                itemClickListener.onClick(it, adapterPosition)
+                itemClickListener.onClick(it, bindingAdapterPosition)
             }
         }
         fun bind(searchKeywordData: String) {
