@@ -83,7 +83,7 @@ class PlayerFragment(): Fragment() {
         retrofit = RetrofitData.initRetrofit()
 
         val view = binding.root
-        activity.videoService?.initPlayerFragment(this)
+
         initBundleData()
         initCallback()
         initRecyclerView()
@@ -507,9 +507,14 @@ class PlayerFragment(): Fragment() {
      */
     private fun initListener(){
         playerView = binding.playerView
-        player = activity.exoPlayer
-        playerView.player = player
-        activity.videoService!!.playVideo(videoData)
+        activity.isServiceBound.observe(viewLifecycleOwner) { isBound ->
+            if (isBound) {
+                activity.videoService?.initPlayerFragment(this)
+                player = activity.exoPlayer
+                playerView.player = player
+                activity.videoService!!.playVideo(videoData)
+            }
+        }
     }
 
     private fun setMotionLayoutListenerForInitialize() {
@@ -646,6 +651,12 @@ class PlayerFragment(): Fragment() {
         fbinding = null
         callback.remove()
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        fbinding = null
+    }
+
     override fun onPause() {
         super.onPause()
         Log.d("프레그먼트플레이어","온퍼즈")
