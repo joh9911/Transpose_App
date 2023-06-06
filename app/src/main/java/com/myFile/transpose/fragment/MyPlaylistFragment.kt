@@ -401,9 +401,18 @@ class MyPlaylistFragment: Fragment() {
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        fbinding = null
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+
+    }
+
+    override fun onDetach() {
+        super.onDetach()
         callback.remove()
-        fbinding = null
     }
 }

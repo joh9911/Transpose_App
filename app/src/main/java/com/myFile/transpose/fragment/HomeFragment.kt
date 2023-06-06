@@ -32,6 +32,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.util.*
 import kotlin.collections.ArrayList
 
 
@@ -374,9 +375,12 @@ class HomeFragment: Fragment() {
 
     private suspend fun getPlaylistData(musicUrls: ArrayList<String>) {
         for (index in musicUrls.indices) {
+            val random = Random()
+            val keyArr = arrayListOf(BuildConfig.API_KEYjohtjdals9911, BuildConfig.API_KEY)
+            val num = random.nextInt(keyArr.size)
             val retrofit = RetrofitData.initRetrofit()
             val response = retrofit.create(RetrofitService::class.java)
-                .getPlayLists(BuildConfig.API_KEY, "snippet", musicUrls[index], "50")
+                .getPlayLists(keyArr[num], "snippet", musicUrls[index], "50")
             if (response.isSuccessful){
                 if (response.body()?.items?.size != 0) {
                     withContext(Dispatchers.Main){
@@ -429,6 +433,7 @@ class HomeFragment: Fragment() {
     private suspend fun getPopularTop100MusicData(
         nextPageToken: String?
     ) {
+
         val retrofit = RetrofitData.initRetrofit()
         val response =  retrofit.create(RetrofitService::class.java).getPlayListVideoItems(
             BuildConfig.API_KEY2,
@@ -696,6 +701,10 @@ class HomeFragment: Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
         fbinding = null
     }
 

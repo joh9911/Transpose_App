@@ -164,7 +164,11 @@ class MyPlaylistItemsFragment(): Fragment() {
     }
     override fun onDestroy() {
         super.onDestroy()
-        fbinding = null
         activity.supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentLifecycleCallbacks)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        fbinding = null
     }
 }

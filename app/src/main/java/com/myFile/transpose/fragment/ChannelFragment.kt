@@ -215,6 +215,9 @@ class ChannelFragment: Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d("채널프레그먼트","onDestroy")
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
         fbinding = null
     }
 
