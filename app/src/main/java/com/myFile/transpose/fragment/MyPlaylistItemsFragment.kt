@@ -144,6 +144,11 @@ class MyPlaylistItemsFragment(): Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
+
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         fragmentLifecycleCallbacks = object : FragmentManager.FragmentLifecycleCallbacks() {
 
             override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
@@ -159,8 +164,6 @@ class MyPlaylistItemsFragment(): Fragment() {
             }
         }
         activity.supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentLifecycleCallbacks,false)
-
-
     }
     override fun onDestroy() {
         super.onDestroy()
