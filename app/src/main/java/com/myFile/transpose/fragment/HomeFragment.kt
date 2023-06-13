@@ -362,12 +362,12 @@ class HomeFragment: Fragment() {
     private suspend fun onError(throwable: Throwable){
         withContext(Dispatchers.Main){
             Log.d("코루틴 에러","$throwable")
-            binding.mainScrollView.visibility = View.GONE
-            binding.errorLinearLayout.visibility = View.VISIBLE
+            fbinding?.mainScrollView?.visibility = View.GONE
+            fbinding?.errorLinearLayout?.visibility = View.VISIBLE
             when (throwable){
-                is UnknownHostException -> binding.errorMessage.text = activity.getText(R.string.network_error_text)
-                is SocketTimeoutException -> binding.errorMessage.text = activity.getText(R.string.load_fail_message)
-                else -> binding.errorMessage.text = activity.getText(R.string.quota_error_message)
+                is UnknownHostException -> fbinding?.errorMessage?.text = activity.getText(R.string.network_error_text)
+                is SocketTimeoutException -> fbinding?.errorMessage?.text = activity.getText(R.string.load_fail_message)
+                else -> fbinding?.errorMessage?.text = activity.getText(R.string.quota_error_message)
             }
         }
     }
