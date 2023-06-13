@@ -198,9 +198,6 @@ class SearchResultFragment: Fragment() {
                                 Log.d("반복문이 실행됐어요","$index")
                                 getSearchVideoData(nextPageToken, 1)
                             }
-                            videoDataList.clear()
-                            videoDataList.addAll(videoTempDataList)
-                            searchResultAdapter.submitList(videoDataList.toMutableList())
                         }
                         else{
                             getData(nextPageToken)
@@ -296,7 +293,7 @@ class SearchResultFragment: Fragment() {
         BuildConfig.API_KEY38928_3, BuildConfig.API_KEY38929_3,BuildConfig.API_KEY38930_3,
         BuildConfig.API_KEY38931_3,BuildConfig.API_KEY38933_3,BuildConfig.API_KEY38934_3, BuildConfig.API_KEY38935_1, BuildConfig.API_KEY38936_1, BuildConfig.API_KEY38937_1)
         val num = random.nextInt(keyList.size)
-
+        Log.d("이 apikey가 쓰였음","$num")
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java).getVideoSearchResult(
             keyList[num],"snippet",searchWord,"50","video",
@@ -331,7 +328,6 @@ class SearchResultFragment: Fragment() {
                     Toast.makeText(activity, activity.getString(R.string.quota_error_message),Toast.LENGTH_SHORT).show()
                 }
             }
-
         }
 
     }
@@ -355,8 +351,17 @@ class SearchResultFragment: Fragment() {
             if (tempTag == 1)
                 videoTempDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
         }
-        videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
-        searchResultAdapter.submitList(videoDataList.toMutableList())
+        if (tempTag == 1){
+            videoDataList.clear()
+            videoDataList.addAll(videoTempDataList)
+            videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+            searchResultAdapter.submitList(videoDataList.toMutableList())
+        }
+        else{
+            videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+            searchResultAdapter.submitList(videoDataList.toMutableList())
+        }
+
         Log.d("어댑터의 아이템 개수","${searchResultAdapter.itemCount}")
     }
 
