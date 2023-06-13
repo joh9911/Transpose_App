@@ -2,6 +2,7 @@ package com.myFile.transpose.fragment
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,15 +62,14 @@ class MyPlaylistItemsFragment(): Fragment() {
         return view
     }
 
-    fun getPlaylistDetailFromMyPlaylistFragment(){
+    private fun getPlaylistDetailFromMyPlaylistFragment(){
         myPlaylistUid = arguments?.getInt("playlistUid")!!
         myPlaylistTitle = arguments?.getString("playlistTitle")!!
     }
 
-    fun initDb(){
+    private fun initDb(){
         db = AppDatabase.getDatabase(activity)
         myPlaylistDao = db.myPlaylistDao()
-
     }
     fun getAllMusic(){
         CoroutineScope(Dispatchers.IO).launch{
@@ -144,7 +144,6 @@ class MyPlaylistItemsFragment(): Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
-
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -167,11 +166,12 @@ class MyPlaylistItemsFragment(): Fragment() {
     }
     override fun onDestroy() {
         super.onDestroy()
-        activity.supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentLifecycleCallbacks)
+
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        activity.supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentLifecycleCallbacks)
         fbinding = null
     }
 }
