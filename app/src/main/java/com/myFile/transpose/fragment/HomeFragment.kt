@@ -25,6 +25,7 @@ import com.myFile.transpose.databinding.FragmentHomeBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
 import com.myFile.transpose.model.*
+import com.myFile.transpose.repository.MusicCategoryRepository
 import kotlinx.coroutines.*
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -53,43 +54,6 @@ class HomeFragment: Fragment() {
     val bestAtmospherePlaylistData = ArrayList<PlayListData>()
     val bestSituationPlaylistData = ArrayList<PlayListData>()
 
-    private val thisYearMusicId = arrayListOf("RDCLAK5uy_kFoxHZo_PEVrqVnwKkeucGn4ldSyKHD8A",
-        "RDCLAK5uy_lZZ5gBJBR1AYziS_onNkE2m18Peg042fI","RDCLAK5uy_nwmWfUayX21xwr1VB72jjBqDPDxGm9zc0",
-        "RDCLAK5uy_mOWD5gzPMEI5Ip97H4ivxpcxE7uglskHo","RDCLAK5uy_kaV_BsACArm2vCjj74y871plTk9F8RIDA",
-        "RDCLAK5uy_kvnBKwOS6J1tBqsNmdISJEhJ2a-RhNliI","RDCLAK5uy_keUi-XamVp1RPNUoJ-BPIQy3_DusjC5Mg",
-        "RDCLAK5uy_kV8LcjsV6_R-y5ncz_SOyoo1BfCRs79wM","RDCLAK5uy_l5AiprVpfhWBQvu-76GJFd1_T2HZoYZWs",
-        "RDCLAK5uy_ln2vAJIQILond713LQLKfxSruLhFB1lIM","RDCLAK5uy_kcIyRk6eceGdn0Zjijw0ARVbHCubof1zM",
-        "RDCLAK5uy_k4vBNV3dzeyoMlSagQydjsZ-uyo1x1fIU")
-
-    private val todayHotMusicId = arrayListOf("RDCLAK5uy_l7wbVbkC-dG5fyEQQsBfjm_z3dLAhYyvo",
-        "RDCLAK5uy_m9ty3WvAucm7-5KsKdro9_HnocE8LSS9o","RDCLAK5uy_kRRqnSpfrRZ9OJyTB2IE5WsAqYluG0uYo",
-        "RDCLAK5uy_lYPvoz4gPFnKMw_BFojpMk7xRSIqVBkEE","RDCLAK5uy_l6DCR35xfT9bfeUqP7-uw6kWApcfYeDPY",
-        "RDCLAK5uy_k6pZ82Gha0sopanWffXo4iMBVaGR7jQaE","RDCLAK5uy_mMRkzfvFXzNQbSl3K-hE_FJ7g8TqMtSlo",
-        "RDCLAK5uy_mjCKq8hnUQJqul0W6YW6x2Ep4P67jQ5Po","RDCLAK5uy_l0nFcbRh2kbs27gleqzu364A9rN-D8Ib8",
-        "RDCLAK5uy_ky-kXJCA_i0Gf0k6iNxsRHBhAgugAN8-g","RDCLAK5uy_lBfTSdVdgXeN399Mxt2L3C6hLarC1aaN0")
-
-    private val latestMusicId = arrayListOf("RDCLAK5uy_lS4dqGRHszluFAbLsV-sHJCqULtBm2Gfw",
-        "RDCLAK5uy_mVBAam6Saaqa_DeJRxGkawqqxwPTBrGXM","RDCLAK5uy_nkjcHIQK0Hgf7ihU25uJc0CEokeGkSNxA",
-        "RDCLAK5uy_mWqhoadUUp9crhEkmZZkdExj7YpBuFBEQ","RDCLAK5uy_n0f4tLAkNM233wO0yiTEI7467ovnaGbR8",
-        "RDCLAK5uy_lN9xj1RQGmBltmvrzTVHMg-vyVt594KYU","RDCLAK5uy_kITLp-IuXw_winp1mnN9PSNatPBiAK52A",
-        "RDCLAK5uy_mn7OLm9QvyB230t7RtLWt0BvUmFVlQ-Hc","RDCLAK5uy_lz175mC_wAtZHK0hbDqLrxb5J28QbUznQ",
-        "RDCLAK5uy_nppUVicPb1PRbUZmVEMhqgvyFz33Il4pE"
-    )
-
-    private val bestAtmosphereMusicId = arrayListOf("RDCLAK5uy_mA88hxo-cmI0-WaaRH8Bb2k0x2NptOPqM",
-        "RDCLAK5uy_meEBX-iIBwtXBhkeWzwX6njohWnpMijP8","RDCLAK5uy_kT-sIJz2O-hpkxwjosN2hMt9Y5xevcPYI",
-        "RDCLAK5uy_lNJA7PB9DAQEdtTnfuKaC2XEOAE1OoX50","RDCLAK5uy_lv6V83HLaJMQDx8YFtfSAaZ6GGvSqI6PE",
-        "RDCLAK5uy_mL0lDqxdKwRtBbzva3yVjVy-BZ9L7KX5I","RDCLAK5uy_nXDnxSmhez06eAnjfT2pWjSpp-p2VBv54",
-        "RDCLAK5uy_ksGphJr7YduIL-vDvJBUJQ2_JCYnCkaYI","RDCLAK5uy_kDBL_tFOUos7q3SOifZrMHXKwuebdzf7I"
-    )
-
-    private val bestSituationMusicId = arrayListOf("RDCLAK5uy_msV9Vc8q_guumIXgLkzYs58uBZHVVBPtE",
-        "RDCLAK5uy_lFgjDM5dWvoq0_wkEqx4_M43Nk6wXviaM","RDCLAK5uy_nEcCeflWNpzQNRExtAKjKkkX96wjom9Nc",
-        "RDCLAK5uy_kskrFUGb5Tnz3-x4wyK9Q5j8RgfwQvq4k","RDCLAK5uy_kjKtb_RC7LRbxiEmSIzZqJRVcYm8U9KMc",
-        "RDCLAK5uy_mS7UhvWzUZdjauupjE5JO6VCn-CCwaRoI","RDCLAK5uy_krjFmKbzWzkGvhqkYvvNnUbdrHy0QN1S8",
-        "RDCLAK5uy_kQ09S7a68znbjr7h26ur1RJb2tCXDlruY"
-    )
-    private val popularTop100MusicId = "PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m"
 
     private lateinit var thisYearPlaylistAdapter: HomePlaylistRecyclerViewAdapter
     private lateinit var latestMusicPlaylistAdapter: HomePlaylistRecyclerViewAdapter
@@ -111,7 +75,6 @@ class HomeFragment: Fragment() {
         }
     }
 
-    var token: String? = null
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -134,40 +97,40 @@ class HomeFragment: Fragment() {
         initBestAtmospherePlaylistRecyclerView()
         initBestSituationPlaylistRecyclerView()
         initLatestMusicPlaylistRecyclerView()
-        initThisYearPlaylistRecyclerView()
+//        initThisYearPlaylistRecyclerView()
         initTodayHotListPlaylistRecyclerView()
         binding.refreshButton.setOnClickListener {
             getAllData()
         }
     }
 
-    private fun initThisYearPlaylistRecyclerView(){
-        binding.thisYearPlaylistRecyclerView.layoutManager = LinearLayoutManager(activity,
-            RecyclerView.HORIZONTAL,false)
-        thisYearPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
-        thisYearPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
-            var mLastClickTime = 0L
-            override fun onClick(v: View, position: Int) {
-                val playlistData = thisYearPlaylistData[position]
-                val bundle = Bundle().apply {
-                    putParcelable("playlistItemsFragment", playlistData)
-                }
-                val playlistItemsFragment = PlaylistItemsFragment().apply {
-                    arguments = bundle
-                }
-                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
-                    childFragmentManager.beginTransaction().add(binding.searchResultFrameLayout.id,
-                        playlistItemsFragment
-                    )
-                        .addToBackStack(null)
-                        .commit()
-                }
-                mLastClickTime = SystemClock.elapsedRealtime()
-            }
-        })
-        thisYearPlaylistAdapter.submitList(thisYearPlaylistData)
-        binding.thisYearPlaylistRecyclerView.adapter = thisYearPlaylistAdapter
-    }
+//    private fun initThisYearPlaylistRecyclerView(){
+//        binding.thisYearPlaylistRecyclerView.layoutManager = LinearLayoutManager(activity,
+//            RecyclerView.HORIZONTAL,false)
+//        thisYearPlaylistAdapter = HomePlaylistRecyclerViewAdapter()
+//        thisYearPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
+//            var mLastClickTime = 0L
+//            override fun onClick(v: View, position: Int) {
+//                val playlistData = thisYearPlaylistData[position]
+//                val bundle = Bundle().apply {
+//                    putParcelable("playlistItemsFragment", playlistData)
+//                }
+//                val playlistItemsFragment = PlaylistItemsFragment().apply {
+//                    arguments = bundle
+//                }
+//                if (SystemClock.elapsedRealtime() - mLastClickTime > 1000) {
+//                    childFragmentManager.beginTransaction().add(binding.searchResultFrameLayout.id,
+//                        playlistItemsFragment
+//                    )
+//                        .addToBackStack(null)
+//                        .commit()
+//                }
+//                mLastClickTime = SystemClock.elapsedRealtime()
+//            }
+//        })
+//        thisYearPlaylistAdapter.submitList(thisYearPlaylistData)
+//        binding.thisYearPlaylistRecyclerView.adapter = thisYearPlaylistAdapter
+//    }
 
     private fun initTodayHotListPlaylistRecyclerView(){
         binding.todayHotListPlaylistRecyclerView.layoutManager = LinearLayoutManager(activity,
@@ -176,11 +139,11 @@ class HomeFragment: Fragment() {
         todayHotPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 val playlistData = todayHotPlaylistData[position]
-                val bundle = Bundle().apply {
-                    putParcelable("playlistItemsFragment", playlistData)
-                }
+
                 val playlistItemsFragment = PlaylistItemsFragment().apply {
-                    arguments = bundle
+                    arguments = Bundle().apply {
+                        putParcelable("playlistItemsFragment", playlistData)
+                    }
                 }
                 childFragmentManager.beginTransaction()
                     .add(binding.searchResultFrameLayout.id,
@@ -201,11 +164,11 @@ class HomeFragment: Fragment() {
         latestMusicPlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 val playlistData = latestMusicPlaylistData[position]
-                val bundle = Bundle().apply {
-                    putParcelable("playlistItemsFragment", playlistData)
-                }
+
                 val playlistItemsFragment = PlaylistItemsFragment().apply {
-                    arguments = bundle
+                    arguments = Bundle().apply {
+                        putParcelable("playlistItemsFragment", playlistData)
+                    }
                 }
                 childFragmentManager.beginTransaction()
                     .add(binding.searchResultFrameLayout.id,
@@ -226,11 +189,11 @@ class HomeFragment: Fragment() {
         bestAtmospherePlaylistAdapter.setItemClickListener(object: HomePlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 val playlistData = bestAtmospherePlaylistData[position]
-                val bundle = Bundle().apply {
-                    putParcelable("playlistItemsFragment", playlistData)
-                }
+
                 val playlistItemsFragment = PlaylistItemsFragment().apply {
-                    arguments = bundle
+                    arguments = Bundle().apply {
+                        putParcelable("playlistItemsFragment", playlistData)
+                    }
                 }
                 childFragmentManager.beginTransaction()
                     .add(binding.searchResultFrameLayout.id,
@@ -252,12 +215,10 @@ class HomeFragment: Fragment() {
             override fun onClick(v: View, position: Int) {
                 val playlistData = bestSituationPlaylistData[position]
 
-                val bundle = Bundle().apply {
-                    putParcelable("playlistItemsFragment", playlistData)
-                }
-
                 val playlistItemsFragment = PlaylistItemsFragment().apply {
-                    arguments = bundle
+                    arguments = Bundle().apply {
+                        putParcelable("playlistItemsFragment", playlistData)
+                    }
                 }
 
                 childFragmentManager.beginTransaction()
@@ -282,13 +243,11 @@ class HomeFragment: Fragment() {
                 val videoData = popularTop100Playlist[position]
                 val playerFragmentBundle = PlayerFragmentBundle(videoData, playlistModel)
 
-                val bundle = Bundle().apply {
-                    putParcelable("playerFragment", playerFragmentBundle)
-                }
                 val playerFragment = PlayerFragment().apply {
-                    arguments = bundle
+                    arguments = Bundle().apply {
+                        putParcelable("playerFragment", playerFragmentBundle)
+                    }
                 }
-
                 parentFragmentManager.beginTransaction()
                     .replace(
                         activity.binding.playerFragment.id,
@@ -349,13 +308,13 @@ class HomeFragment: Fragment() {
     private fun getAllData(){
         binding.mainScrollView.visibility = View.VISIBLE
         binding.errorLinearLayout.visibility = View.INVISIBLE
+        val musicCategoryRepository = MusicCategoryRepository()
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            async { getPopularTop100MusicData(null) }
-            async { getPlaylistData(thisYearMusicId) }
-            async { getPlaylistData(todayHotMusicId) }
-            async { getPlaylistData(latestMusicId) }
-            async { getPlaylistData(bestAtmosphereMusicId) }
-            async { getPlaylistData(bestSituationMusicId) }
+            async { getPopularTop100MusicData(null, musicCategoryRepository.getPopularTop100MusicId()) }
+            async { getPlaylistData(musicCategoryRepository.getTodayHotMusicIdArray()) }
+            async { getPlaylistData(musicCategoryRepository.getLatestMusicIdArray()) }
+            async { getPlaylistData(musicCategoryRepository.getBestAtmosphereMusicIdArray()) }
+            async { getPlaylistData(musicCategoryRepository.getBestSituationMusicIdArray()) }
         }
     }
 
@@ -373,55 +332,50 @@ class HomeFragment: Fragment() {
     }
 
 
-    private suspend fun getPlaylistData(musicUrls: ArrayList<String>) {
-        for (index in musicUrls.indices) {
+    private suspend fun getPlaylistData(musicUrls: Array<String>) {
+        for (musicId in musicUrls) {
             val random = Random()
             val keyArr = arrayListOf(BuildConfig.API_KEYjohtjdals9911, BuildConfig.API_KEY)
             val num = random.nextInt(keyArr.size)
             val retrofit = RetrofitData.initRetrofit()
             val response = retrofit.create(RetrofitService::class.java)
-                .getPlayLists(keyArr[num], "snippet", musicUrls[index], "50")
+                .getPlayLists(keyArr[num], "snippet", musicId, "50")
             if (response.isSuccessful){
                 if (response.body()?.items?.size != 0) {
                     withContext(Dispatchers.Main){
-                        playlistDataMapping(musicUrls, response.body()!!)
+                        playlistDataMapping(musicId, response.body()!!)
                     }
                 }
             }
         }
     }
 
-    private fun playlistDataMapping(musicUrls: ArrayList<String>, responseData: PlayListSearchData){
+    private fun playlistDataMapping(musicId: String, responseData: PlayListSearchData){
         val thumbnail = responseData.items[0].snippet?.thumbnails?.medium?.url!!
         val title = responseData.items[0].snippet?.title!!
         val description = responseData.items[0].snippet?.description!!
         val playlistId = responseData.items[0].id!!
-        when(musicUrls) {
-            thisYearMusicId -> {
-                thisYearPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
-                thisYearPlaylistAdapter.submitList(thisYearPlaylistData.toMutableList())
-                binding.thisYearPlaylistVideoProgressBar.visibility = View.GONE
-                binding.thisYearPlaylistRecyclerView.visibility = View.VISIBLE
-            }
-            todayHotMusicId -> {
+        val musicCategoryRepository = MusicCategoryRepository()
+        when(musicCategoryRepository.getMusicCategorySequence(musicId)){
+            0 -> {
                 todayHotPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
                 todayHotPlaylistAdapter.submitList(todayHotPlaylistData.toMutableList())
                 binding.todayHotListPlaylistProgressBar.visibility = View.GONE
                 binding.todayHotListPlaylistRecyclerView.visibility = View.VISIBLE
             }
-            latestMusicId -> {
+            1 -> {
                 latestMusicPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
                 latestMusicPlaylistAdapter.submitList(latestMusicPlaylistData.toMutableList())
                 binding.latestMusicPlaylistProgressBar.visibility = View.GONE
                 binding.latestMusicPlaylistRecyclerView.visibility = View.VISIBLE
             }
-            bestAtmosphereMusicId -> {
+            2 -> {
                 bestAtmospherePlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
                 bestAtmospherePlaylistAdapter.submitList(bestAtmospherePlaylistData.toMutableList())
                 binding.bestAtmospherePlaylistProgressBar.visibility = View.GONE
                 binding.bestAtmospherePlaylistRecyclerView.visibility = View.VISIBLE
             }
-            bestSituationMusicId -> {
+            3 -> {
                 bestSituationPlaylistData.add(PlayListData(thumbnail, title, description, playlistId))
                 bestSituationPlaylistAdapter.submitList(bestSituationPlaylistData.toMutableList())
                 binding.bestSituationPlaylistProgressBar.visibility = View.GONE
@@ -430,10 +384,7 @@ class HomeFragment: Fragment() {
         }
     }
 
-    private suspend fun getPopularTop100MusicData(
-        nextPageToken: String?
-    ) {
-
+    private suspend fun getPopularTop100MusicData(nextPageToken: String?, popularTop100MusicId: String) {
         val retrofit = RetrofitData.initRetrofit()
         val response =  retrofit.create(RetrofitService::class.java).getPlayListVideoItems(
             BuildConfig.API_KEY2,
@@ -448,7 +399,7 @@ class HomeFragment: Fragment() {
                     popularTop100MusicDataMapping(response.body()!!)
                 }
                 if (response.body()?.nextPageToken != null)
-                    getPopularTop100MusicData(response.body()?.nextPageToken)
+                    getPopularTop100MusicData(response.body()?.nextPageToken, popularTop100MusicId)
             }
         }
     }
@@ -521,7 +472,8 @@ class HomeFragment: Fragment() {
                     searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
                 }
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                    Log.d("실패!","!1")
+                    suggestionKeywords.clear()
+                    searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
                 }
             })
     }
@@ -529,7 +481,6 @@ class HomeFragment: Fragment() {
     문자열 정보가 이상하게 들어와 알맞게 나눠주고 리스트에 추가
      **/
     private fun addSubstringToSuggestionKeyword(splitList: List<String>){
-        Log.d("addSub","$splitList")
         for (index in splitList.indices){
             if (splitList[index].length >= 3){
                 if (splitList[index][splitList[index].length-1] == ']')
@@ -562,16 +513,13 @@ class HomeFragment: Fragment() {
     }
 
     private fun searchViewCollapseEvent(){
-        Log.d("이게 실행이 됏잖아","searchViewCollapseEvent")
-//        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
         suggestionKeywords.clear()
         searchSuggestionKeywordAdapter.submitList(suggestionKeywords.toMutableList())
-
     }
 
-    fun initToolbar(){
+    private fun initToolbar(){
         homeFragmentToolBar = binding.homeFragmentToolBar
         val menu = homeFragmentToolBar.menu
         searchViewItem = menu.findItem(R.id.search_icon)
@@ -635,7 +583,6 @@ class HomeFragment: Fragment() {
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
                 return false
             }
-            //SwipeRefreshLayout 새로고침
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText != null){
                     getSuggestionKeyword(newText)
@@ -666,11 +613,8 @@ class HomeFragment: Fragment() {
 
         callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                Log.d("homeFragment 백","버튼")
-
                 if (childFragmentManager.backStackEntryCount == 0) {
                     if (searchViewItem.isActionViewExpanded){
-                        Log.d("homeFragment 백","조건문")
                         searchViewItem.collapseActionView()
                     }
                 }else{
@@ -710,11 +654,9 @@ class HomeFragment: Fragment() {
 
     override fun onStop() {
         super.onStop()
-        Log.d("homeFRagment","onStop")
     }
 
     override fun onResume() {
         super.onResume()
-        Log.d("homeFragment","의 onResume")
     }
 }
