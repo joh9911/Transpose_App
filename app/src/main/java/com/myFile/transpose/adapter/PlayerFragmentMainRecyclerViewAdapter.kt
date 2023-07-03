@@ -9,11 +9,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.myFile.transpose.databinding.*
 import com.myFile.transpose.model.HeaderViewData
-import com.myFile.transpose.model.PlayerFragmentMainItem
+import com.myFile.transpose.adapter.model.PlayerFragmentMainItem
 import com.myFile.transpose.retrofit.CommentData
 import com.myFile.transpose.retrofit.VideoData
 
 class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem, RecyclerView.ViewHolder>(diffUtil) {
+
     companion object{
         private const val VIEW_TYPE_TITLE_HEADER = 0
         private const val VIEW_TYPE_REST_HEADER = 1

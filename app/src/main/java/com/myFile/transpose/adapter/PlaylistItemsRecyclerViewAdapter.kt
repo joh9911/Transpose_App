@@ -18,10 +18,12 @@ class PlaylistItemsRecyclerViewAdapter: ListAdapter<VideoData, PlaylistItemsRecy
     inner class MyViewHolder(private val binding: HomePlaylistItemsRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
         init{
             itemView.setOnClickListener {
-                itemClickListener.onClick(it, bindingAdapterPosition)
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION)
+                    itemClickListener.onClick(it, bindingAdapterPosition)
             }
             binding.optionButton.setOnClickListener {
-                itemClickListener.optionButtonClick(it, bindingAdapterPosition)
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION)
+                    itemClickListener.optionButtonClick(it, bindingAdapterPosition)
             }
 
         }

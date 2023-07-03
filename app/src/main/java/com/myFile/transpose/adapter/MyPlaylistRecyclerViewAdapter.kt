@@ -17,10 +17,12 @@ class MyPlaylistRecyclerViewAdapter: ListAdapter<MyPlaylist, MyPlaylistRecyclerV
     inner class MyViewHolder(private val binding: MyPlaylistRecyclerItemBinding): RecyclerView.ViewHolder(binding.root){
         init {
             itemView.setOnClickListener {
-                itemClickListener.onClick(it, bindingAdapterPosition)
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION)
+                    itemClickListener.onClick(it, bindingAdapterPosition)
             }
             itemView.findViewById<ImageButton>(R.id.option_button).setOnClickListener {
-                itemClickListener.optionButtonClick(it, bindingAdapterPosition)
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION)
+                    itemClickListener.optionButtonClick(it, bindingAdapterPosition)
             }
         }
         fun bind(myPlaylist: MyPlaylist, position: Int){
