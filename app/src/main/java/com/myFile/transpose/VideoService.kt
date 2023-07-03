@@ -2,6 +2,8 @@ package com.myFile.transpose
 
 import android.app.*
 import android.content.*
+import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.os.*
@@ -15,6 +17,9 @@ import android.view.KeyEvent
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.media.session.MediaButtonReceiver
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -23,7 +28,7 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.BuildConfig
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.myFile.transpose.constants.Actions
-import com.myFile.transpose.fragment.PlayerFragment
+import com.myFile.transpose.fragment.PlayerServiceListener
 import com.myFile.transpose.retrofit.VideoData
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
@@ -42,16 +47,15 @@ class VideoService: Service() {
     lateinit var exoPlayer: ExoPlayer
     lateinit var notification: Notification
     lateinit var mediaSession: MediaSessionCompat
-    lateinit var activity: Activity
-    lateinit var currentVideoData: VideoData
-    lateinit var playerFragment: PlayerFragment
+    lateinit var playbackStateBuilder: PlaybackStateCompat.Builder
+    lateinit var metaDataBuilder: MediaMetadataCompat.Builder
+
+    private var currentVideoData: VideoData? = null
+    private var currentVideoThumbnailBitmap: Bitmap? = null
     private lateinit var audioManager: AudioManager
     private lateinit var compositeDisposable: CompositeDisposable
     private lateinit var afChangeListener: AudioManager.OnAudioFocusChangeListener
     private val mediaReceiver = MediaReceiver()
-    private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
-        Log.d("코루틴 에러","$throwable")}
-    var isConverting = false // url 변환이 진행중인지를 확인하기 위한 변수
 
     val CHANNEL_ID = "foreground_service_channel" // 임의의 채널 ID
 
@@ -64,6 +68,36 @@ class VideoService: Service() {
     }
 
 
+    private var playerServiceListener: PlayerServiceListener? = null
+
+    private var serviceListenerToActivity: ServiceListenerToActivity? = null
+
+    fun setServiceListenerToActivity(listener: ServiceListenerToActivity?){
+        serviceListenerToActivity = listener
+    }
+
+    fun getServiceListenerToActivity(): ServiceListenerToActivity? {
+        return serviceListenerToActivity
+    }
+
+    fun disconnectServiceListenerToActivity(){
+        serviceListenerToActivity = null
+    }
+
+    fun setPlayerServiceListener(listener: PlayerServiceListener?) {
+        playerServiceListener = listener
+    }
+
+    fun getPlayerServiceListener(): PlayerServiceListener? {
+        return playerServiceListener
+    }
+
+
+    fun disconnectPlayerServiceListener(){
+        playerServiceListener = null
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
         stopForegroundService()
@@ -72,16 +106,17 @@ class VideoService: Service() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
+        Log.d("unbind","stopForegroundService")
         stopForegroundService()
         return super.onUnbind(intent)
     }
 
     override fun onCreate() {
         super.onCreate()
-        mediaSession = MediaSessionCompat(this, "PlayerService")
+
         initRxJavaExceptionHandler()
         initYoutubeDL()
-//        updateYoutubeDL()
+        updateYoutubeDL()
         setAudioFocus()
         registerReceiver(mediaReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
         val trackSelector = DefaultTrackSelector(this).apply {
@@ -93,32 +128,33 @@ class VideoService: Service() {
             .setSeekBackIncrementMs(10000)
             .build()
         exoPlayer.addListener(object: Player.Listener{
-            override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) {
+                    requestAudioFocus()
+                    playerServiceListener?.onIsPlaying(1)
+                    startNotification(1)
+                }
+                else {
+                    if (exoPlayer.currentPosition >= exoPlayer.contentDuration)
+                        return
+                    playerServiceListener?.onIsPlaying(2)
+                    if (getPlayerServiceListener() != null)
+                        startNotification(2)
+                }
+                super.onIsPlayingChanged(isPlaying)
+            }
+            override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState){
                     Player.STATE_READY -> {
-                        if (exoPlayer.isPlaying){
-                            Log.d("조건문","ㄴㅇㄹ")
-                            requestAudioFocus()
-                        }
-                            Log.d("state","Reay")
-//                        if (!exoPlayer.isPlaying)
-//                            audioManager.abandonAudioFocus(afChangeListener)
-                        playerFragment.settingBottomPlayButton()
-                        startForegroundService()
+                        startNotification(1)
                     }
                     Player.STATE_ENDED -> {
                         if (exoPlayer.mediaItemCount == 0) // play중이면 mediaItem을 제거하는데, 제거할 때 state_ended가 실행됨
                             return
-                        if (playerFragment.playlistModel != null){
-                            val playModePreferences = activity.getSharedPreferences("play_mode_preferences",Context.MODE_PRIVATE)
-                            if (playModePreferences.getInt("play_mode",0) == 0)
-                                playerFragment.playNextPlaylistVideo()
-                            else{
-                                exoPlayer.seekTo(0)
-                            }
-                        }
-                        playerFragment.settingBottomPlayButton()
-                        startForegroundService()
+                        startNotification(3)
+                        playerServiceListener?.onIsPlaying(3)
+                        playerServiceListener?.onStateEnded()
+
                     }
                     Player.STATE_BUFFERING ->{
                         //your logic
@@ -128,7 +164,366 @@ class VideoService: Service() {
                 }
             }
         })
+        mediaSessionBuilder()
+        createNotificationChannel()
     }
+
+    private fun createNotificationChannel(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                CHANNEL_ID,
+                "Music Player Channel", // 채널표시명
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = this.getSystemService(NotificationManager::class.java)
+            manager?.createNotificationChannel(serviceChannel)
+        }
+    }
+
+    private fun mediaSessionBuilder(){
+        mediaSession = MediaSessionCompat(this, "PlayerService").apply {
+            playbackStateBuilder = PlaybackStateCompat.Builder()
+            setPlaybackState(playbackStateBuilder.build())
+            setCallback(MediaSessionCallback())
+            metaDataBuilder = MediaMetadataCompat.Builder()
+        }
+    }
+
+    inner class MediaSessionCallback: MediaSessionCompat.Callback(){
+        override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
+            if (mediaButtonEvent != null) {
+                val action = mediaButtonEvent?.action
+                if (action == Intent.ACTION_MEDIA_BUTTON) {
+                    val event =
+                        mediaButtonEvent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+                    if (event != null && event.action == KeyEvent.ACTION_UP) {
+                        when (event.keyCode) {
+                            KeyEvent.KEYCODE_MEDIA_NEXT -> {
+                                serviceListenerToActivity?.clickNext()
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
+                                exoPlayer.pause()
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                                exoPlayer.play()
+                            }
+                            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                                if (exoPlayer.currentPosition >= 4000) {
+                                    exoPlayer.seekToPrevious()
+                                } else {
+                                    serviceListenerToActivity?.clickPrev()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return super.onMediaButtonEvent(mediaButtonEvent)
+        }
+        override fun onSeekTo(pos: Long) {
+            super.onSeekTo(pos)
+            exoPlayer.seekTo(pos)
+        }
+    }
+
+    fun startNotification(type: Int) {
+        if (currentVideoData != null){
+            val serviceIntent = Intent(this, VideoService::class.java)
+
+            val notification = when (type) {
+                0 -> createPrepareNotification()
+                1 -> createPlayingNotification()
+                2 -> createPausedNotification()
+                else -> createFinishedNotification()
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                applicationContext.startForegroundService(serviceIntent)
+            }
+            startForeground(NOTIFICATION_ID, notification)
+        }
+    }
+
+    private fun getNotificationBuilder(
+        bitmapThumbnail: Bitmap?,
+        actions: List<NotificationCompat.Action>,
+        isOnGoing: Boolean,
+        type: Int
+    ): Notification {
+        val notificationIntent = Intent(this, Activity::class.java)
+        notificationIntent.action = Actions.MAIN
+        notificationIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val pendingIntent = PendingIntent
+            .getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+
+        return NotificationCompat.Builder(this,CHANNEL_ID)
+            .setContentTitle(currentVideoData?.title)
+            .setContentText(currentVideoData?.channelTitle)
+            .setLargeIcon(bitmapThumbnail)
+            .setSmallIcon(R.mipmap.app_icon)
+            .setOngoing(isOnGoing)
+            .apply {
+                if (type == 0){
+                    setStyle(androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.sessionToken)
+                    )
+                }
+                else{
+                    setStyle(androidx.media.app.NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.sessionToken)
+                        .setShowActionsInCompactView(0, 2, 4)
+                    )
+                }
+            }
+            .apply {
+                actions.forEach{ action ->
+                    addAction(action)
+                }
+            }
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setContentIntent(pendingIntent)
+            .setSilent(true)
+            .build()
+    }
+
+    private fun createPrepareNotification(): Notification {
+
+        val prevIntent = Intent(this, VideoService::class.java)
+        prevIntent.action = Actions.PREV
+        val prevPendingIntent = PendingIntent
+            .getService(this, 0, prevIntent, PendingIntent.FLAG_IMMUTABLE)
+
+       val prevAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_controls_previous,
+            "Prev", prevPendingIntent)
+
+        val nextIntent = Intent(this, VideoService::class.java)
+        nextIntent.action = Actions.NEXT
+        val nextPendingIntent = PendingIntent
+            .getService(this, 0, nextIntent, PendingIntent.FLAG_IMMUTABLE)
+
+        val nextAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_notification_next,
+            "Next", nextPendingIntent)
+
+        val actions = listOf(prevAction, nextAction)
+
+        mediaSession.setMetadata(null)
+        mediaSession.setPlaybackState(null)
+
+        notification = getNotificationBuilder(
+            currentVideoThumbnailBitmap,
+            actions,
+            true,
+            0
+        )
+        Log.d("크레이트 프리페어 노티피케이션","실행")
+        return notification
+    }
+
+    private fun createPlayingNotification(): Notification {
+        val minusIntent = Intent(this, VideoService::class.java)
+        minusIntent.action = Actions.MINUS
+        val minusPendingIntent = PendingIntent
+            .getService(this, 0, minusIntent, PendingIntent.FLAG_IMMUTABLE)
+        val minusAction = NotificationCompat.Action(R.drawable.ic_baseline_exposure_neg_1_24,
+            "Minus", minusPendingIntent)
+
+        val prevIntent = Intent(this, VideoService::class.java)
+        prevIntent.action = Actions.PREV
+        val prevPendingIntent = PendingIntent
+            .getService(this, 0, prevIntent, PendingIntent.FLAG_IMMUTABLE)
+        val prevAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_controls_previous,
+            "Prev", prevPendingIntent)
+
+        val playIntent = Intent(this, VideoService::class.java)
+        playIntent.action = Actions.PLAY
+        val playPendingIntent = PendingIntent
+            .getService(this, 0, playIntent, PendingIntent.FLAG_IMMUTABLE)
+        val playAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_notification_pause,
+            "Play", playPendingIntent)
+
+        val nextIntent = Intent(this, VideoService::class.java)
+        nextIntent.action = Actions.NEXT
+        val nextPendingIntent = PendingIntent
+            .getService(this, 0, nextIntent, PendingIntent.FLAG_IMMUTABLE)
+        val nextAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_notification_next,
+            "Next", nextPendingIntent)
+
+        val plusIntent = Intent(this, VideoService::class.java)
+        plusIntent.action = Actions.PLUS
+        val plusPendingIntent = PendingIntent
+            .getService(this, 0, plusIntent, PendingIntent.FLAG_IMMUTABLE)
+        val plusAction = NotificationCompat.Action(R.drawable.ic_baseline_exposure_plus_1_24,
+            "Plus", plusPendingIntent)
+
+        val actions = listOf(minusAction, prevAction, playAction, nextAction, plusAction)
+
+        mediaSession.setMetadata(MediaMetadataCompat.Builder().apply {
+            putLong(MediaMetadata.METADATA_KEY_DURATION,exoPlayer.duration)
+        }.build())
+
+        mediaSession.setPlaybackState(
+            playbackStateBuilder
+                .setState(
+                    if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING
+                    else PlaybackStateCompat.STATE_PAUSED,
+                    exoPlayer.currentPosition,
+                    1f,
+                    SystemClock.elapsedRealtime()
+                )
+                .setActions(PlaybackStateCompat.ACTION_SEEK_TO)
+                .build()
+        )
+
+        notification = getNotificationBuilder(
+            currentVideoThumbnailBitmap,
+            actions,
+            true,
+            1
+        )
+        return notification
+    }
+
+    private fun createPausedNotification(): Notification {
+        val minusIntent = Intent(this, VideoService::class.java)
+        minusIntent.action = Actions.MINUS
+        val minusPendingIntent = PendingIntent
+            .getService(this, 0, minusIntent, PendingIntent.FLAG_IMMUTABLE)
+        val minusAction = NotificationCompat.Action(R.drawable.ic_baseline_exposure_neg_1_24,
+            "Minus", minusPendingIntent)
+
+        val prevIntent = Intent(this, VideoService::class.java)
+        prevIntent.action = Actions.PREV
+        val prevPendingIntent = PendingIntent
+            .getService(this, 0, prevIntent, PendingIntent.FLAG_IMMUTABLE)
+        val prevAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_controls_previous,
+            "Prev", prevPendingIntent)
+
+        val playIntent = Intent(this, VideoService::class.java)
+        playIntent.action = Actions.PLAY
+        val playPendingIntent = PendingIntent
+            .getService(this, 0, playIntent, PendingIntent.FLAG_IMMUTABLE)
+        val playAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_notification_play,
+            "Play", playPendingIntent)
+
+        val nextIntent = Intent(this, VideoService::class.java)
+        nextIntent.action = Actions.NEXT
+        val nextPendingIntent = PendingIntent
+            .getService(this, 0, nextIntent, PendingIntent.FLAG_IMMUTABLE)
+        val nextAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_notification_next,
+            "Next", nextPendingIntent)
+
+        val plusIntent = Intent(this, VideoService::class.java)
+        plusIntent.action = Actions.PLUS
+        val plusPendingIntent = PendingIntent
+            .getService(this, 0, plusIntent, PendingIntent.FLAG_IMMUTABLE)
+        val plusAction = NotificationCompat.Action(R.drawable.ic_baseline_exposure_plus_1_24,
+            "Plus", plusPendingIntent)
+
+        val actions = listOf(minusAction, prevAction, playAction, nextAction, plusAction)
+
+        mediaSession.setMetadata(MediaMetadataCompat.Builder().apply {
+            putLong(MediaMetadata.METADATA_KEY_DURATION,exoPlayer.duration)
+        }.build())
+
+        mediaSession.setPlaybackState(
+            playbackStateBuilder
+                .setState(
+                    if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING
+                    else PlaybackStateCompat.STATE_PAUSED,
+                    exoPlayer.currentPosition,
+                    1f,
+                    SystemClock.elapsedRealtime()
+                )
+                .setActions(PlaybackStateCompat.ACTION_SEEK_TO)
+                .build()
+        )
+
+        notification = getNotificationBuilder(
+            currentVideoThumbnailBitmap,
+            actions,
+            false,
+            2
+        )
+
+        return notification
+    }
+
+    private fun createFinishedNotification(): Notification {
+        val minusIntent = Intent(this, VideoService::class.java)
+        minusIntent.action = Actions.MINUS
+        val minusPendingIntent = PendingIntent
+            .getService(this, 0, minusIntent, PendingIntent.FLAG_IMMUTABLE)
+        val minusAction = NotificationCompat.Action(R.drawable.ic_baseline_exposure_neg_1_24,
+            "Minus", minusPendingIntent)
+
+        val prevIntent = Intent(this, VideoService::class.java)
+        prevIntent.action = Actions.PREV
+        val prevPendingIntent = PendingIntent
+            .getService(this, 0, prevIntent, PendingIntent.FLAG_IMMUTABLE)
+        val prevAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_controls_previous,
+            "Prev", prevPendingIntent)
+
+        val replayIntent = Intent(this, VideoService::class.java)
+        replayIntent.action = Actions.REPLAY
+        val replayPendingIntent = PendingIntent
+            .getService(this, 0, replayIntent, PendingIntent.FLAG_IMMUTABLE)
+        val replayAction = NotificationCompat.Action(
+            R.drawable.ic_baseline_loop_24,
+            "Replay", replayPendingIntent)
+
+        val nextIntent = Intent(this, VideoService::class.java)
+        nextIntent.action = Actions.NEXT
+        val nextPendingIntent = PendingIntent
+            .getService(this, 0, nextIntent, PendingIntent.FLAG_IMMUTABLE)
+        val nextAction = NotificationCompat.Action(
+            com.google.android.exoplayer2.ui.R.drawable.exo_notification_next,
+            "Next", nextPendingIntent)
+
+        val plusIntent = Intent(this, VideoService::class.java)
+        plusIntent.action = Actions.PLUS
+        val plusPendingIntent = PendingIntent
+            .getService(this, 0, plusIntent, PendingIntent.FLAG_IMMUTABLE)
+        val plusAction = NotificationCompat.Action(R.drawable.ic_baseline_exposure_plus_1_24,
+            "Plus", plusPendingIntent)
+
+        val actions = listOf(minusAction, prevAction, replayAction, nextAction, plusAction)
+
+        mediaSession.setMetadata(MediaMetadataCompat.Builder().apply {
+            putLong(MediaMetadata.METADATA_KEY_DURATION,exoPlayer.duration)
+        }.build())
+
+        mediaSession.setPlaybackState(
+            playbackStateBuilder
+                .setState(
+                    if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING
+                    else PlaybackStateCompat.STATE_PAUSED,
+                    exoPlayer.currentPosition,
+                    1f,
+                    SystemClock.elapsedRealtime()
+                )
+                .setActions(PlaybackStateCompat.ACTION_SEEK_TO)
+                .build()
+        )
+
+        notification = getNotificationBuilder(
+            currentVideoThumbnailBitmap,
+            actions,
+            false,
+            3
+        )
+
+        return notification
+    }
+
 
     private fun requestAudioFocus(){
         val result: Int = audioManager.requestAudioFocus(
@@ -147,11 +542,9 @@ class VideoService: Service() {
             AudioManager.OnAudioFocusChangeListener {
                 when (it) {
                     AudioManager.AUDIOFOCUS_LOSS -> {
-                        Log.d("손실","ㄴㅇㄹ")
                         exoPlayer.playWhenReady = false
                     }
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                        Log.d("손실","일시적")
                         exoPlayer.playWhenReady = false
                     }
                     AudioManager.AUDIOFOCUS_GAIN -> {
@@ -190,67 +583,46 @@ class VideoService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("온스타트커맨드","실행")
 //        MediaButtonReceiver.handleIntent(mediaSession,intent)
             when (intent?.action) {
                 Actions.START_FOREGROUND -> {
                     Log.e(TAG, "Start Foreground 인텐트를 받음")
-                    startForegroundService()
                 }
                 Actions.STOP_FOREGROUND -> {
                     Log.e(TAG, "Stop Foreground 인텐트를 받음")
-                    stopForegroundService()
                 }
                 Actions.MINUS -> {
-                    setPitch(activity.pitchSeekBar.progress-11)
-                    activity.pitchSeekBar.progress = activity.pitchSeekBar.progress - 1
+                    serviceListenerToActivity?.clickMinus()
                 }
                 Actions.PREV -> {
-                    val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-                    if (playerFragment.playlistModel != null)
-                        playerFragment.playPrevPlaylistVideo()
-                    startForegroundService()
+                    serviceListenerToActivity?.clickPrev()
+                }
+                Actions.REPLAY -> {
+                    exoPlayer.seekTo(0)
                 }
                 Actions.PLAY -> {
-                    startForegroundService()
                     exoPlayer.playWhenReady = !exoPlayer.isPlaying
                 }
                 Actions.NEXT -> {
-                    val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-                    if (playerFragment.playlistModel != null)
-                        playerFragment.playNextPlaylistVideo()
-                    startForegroundService()
+                    serviceListenerToActivity?.clickNext()
                 }
                 Actions.PLUS -> {
-                    setPitch(activity.pitchSeekBar.progress - 9)
-                    activity.pitchSeekBar.progress = activity.pitchSeekBar.progress + 1
+                    serviceListenerToActivity?.clickPlus()
                 }
                 Actions.INIT -> {
-                    activity.pitchSeekBar.progress = 10
-                    setPitch(0)
+                    serviceListenerToActivity?.clickInit()
                 }
+
             }
             return START_STICKY
     }
 
-    fun startForegroundService() {
-        val serviceIntent = Intent(this, VideoService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent)
-        }
-        startForeground(NOTIFICATION_ID, createNotification())
-    }
-
 
     fun stopForegroundService() {
+        Log.d("stopForegroundService","실행")
         stopForeground(true)
         exoPlayer.stop()
-    }
-
-    fun initActivity(param: Activity) {
-        activity = param
-    }
-    fun initPlayerFragment(param: PlayerFragment){
-        playerFragment = param
     }
 
     private fun initYoutubeDL(){
@@ -261,11 +633,11 @@ class VideoService: Service() {
             Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
         }
     }
-//    private fun updateYoutubeDL(){
-//        CoroutineScope(Dispatchers.IO+coroutineExceptionHandler).launch{
-//            YoutubeDL.getInstance().updateYoutubeDL(this@VideoService)
-//        }
-//    }
+    private fun updateYoutubeDL(){
+        CoroutineScope(Dispatchers.IO).launch{
+            YoutubeDL.getInstance().updateYoutubeDL(this@VideoService)
+        }
+    }
 
 
     fun playVideo(videoData: VideoData){
@@ -273,17 +645,39 @@ class VideoService: Service() {
             exoPlayer.removeMediaItem(0)
 
         currentVideoData = videoData
-        playerFragment.playerViewInvisibleEvent()
+        currentVideoThumbnailBitmap = null
+
+        playerServiceListener?.playerViewInvisible()
         val youtubeUrl = "https://www.youtube.com/watch?v=${videoData.videoId}".trim()
         startStream(youtubeUrl)
     }
 
-    private fun startStream(url: String){
-        startForegroundService()
+    fun streamingCancel(){
         compositeDisposable.clear()
+    }
+
+    private fun startStream(url: String){
+        playerServiceListener?.onIsPlaying(0)
+        streamingCancel()
+        startNotification(0)
+
+        Glide.with(this)
+            .asBitmap()
+            .load(currentVideoData?.thumbnail)
+            .into(object: CustomTarget<Bitmap>(){
+                override fun onResourceReady(
+                    resource: Bitmap,
+                    transition: Transition<in Bitmap>?
+                ) {
+                    currentVideoThumbnailBitmap = resource
+                }
+                override fun onLoadCleared(placeholder: Drawable?) {
+                    currentVideoThumbnailBitmap = null
+                }
+            })
 
         val disposable: Disposable = Observable.fromCallable {
-            isConverting = true
+
             val request = YoutubeDLRequest(url)
             request.addOption("-f b", "")
 
@@ -295,7 +689,8 @@ class VideoService: Service() {
 
                 val videoUrl: String? = streamInfo.url
                 Log.d("유알엘","$videoUrl")
-                if (TextUtils.isEmpty(videoUrl)) { Toast.makeText(activity, "failed to get stream url", Toast.LENGTH_LONG).show()
+                if (TextUtils.isEmpty(videoUrl)) {
+                    serviceListenerToActivity?.showStreamFailMessage()
                 } else {
                     setUpVideo(videoUrl!!)
                 }
@@ -315,17 +710,14 @@ class VideoService: Service() {
                     throw RuntimeException("Undeliverable exception caught!", e.cause)
                 }
                 if (BuildConfig.DEBUG) Log.d(ContentValues.TAG, "failed to get stream info", e)
-                Toast.makeText(activity, "streaming failed. failed to get stream info", Toast.LENGTH_LONG).show()
-                Log.d("오류",e.toString())
-                playerFragment.playerViewInvisibleEvent()
+                serviceListenerToActivity?.showStreamFailMessage()
+                playerServiceListener?.playerViewInvisible()
             }
         compositeDisposable.add(disposable)
     }
 
     private fun setUpVideo(convertedUrl: String){
-        if (playerFragment.fbinding == null)
-            return
-        playerFragment.playerViewVisibleEvent()
+        playerServiceListener?.playerViewVisible()
         val videoSource: MediaSource = if (convertedUrl.contains("m3u8")){
             HlsMediaSource
                 .Factory(DefaultHttpDataSource.Factory())
@@ -341,217 +733,8 @@ class VideoService: Service() {
         requestAudioFocus()
 
         exoPlayer.playWhenReady = true
-        setTempo(activity.tempoSeekBar.progress - 10)
-        setPitch(activity.pitchSeekBar.progress - 10)
-
+        serviceListenerToActivity?.setTempo()
+        serviceListenerToActivity?.setPitch()
     }
-
-    fun setPitch(value: Int){
-        val pitchValue = value*0.05.toFloat()
-        val tempoValue = (activity.tempoSeekBar.progress - 10)*0.05.toFloat()
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer.playbackParameters = param
-    }
-
-    fun setTempo(value: Int){
-        val tempoValue = value*0.05.toFloat()
-        val pitchValue = (activity.pitchSeekBar.progress - 10)*0.05.toFloat()
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer.playbackParameters = param
-    }
-
-    fun createNotification(
-    ): Notification {
-        // 알림 클릭시 MainActivity로 이동됨
-        val notificationIntent = Intent(this, Activity::class.java)
-        notificationIntent.action = Actions.MAIN
-        notificationIntent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-        val pendingIntent = PendingIntent
-            .getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        val minusIntent = Intent(this, VideoService::class.java)
-        minusIntent.action = Actions.MINUS
-        val minusPendingIntent = PendingIntent
-            .getService(this, 0, minusIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        val prevIntent = Intent(this, VideoService::class.java)
-        prevIntent.action = Actions.PREV
-        val prevPendingIntent = PendingIntent
-            .getService(this, 0, prevIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        val playIntent = Intent(this, VideoService::class.java)
-        playIntent.action = Actions.PLAY
-        val playPendingIntent = PendingIntent
-            .getService(this, 0, playIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        val nextIntent = Intent(this, VideoService::class.java)
-        nextIntent.action = Actions.NEXT
-        val nextPendingIntent = PendingIntent
-            .getService(this, 0, nextIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        val plusIntent = Intent(this, VideoService::class.java)
-        plusIntent.action = Actions.PLUS
-        val plusPendingIntent = PendingIntent
-            .getService(this, 0, plusIntent, PendingIntent.FLAG_IMMUTABLE)
-
-
-        val initIntent = Intent(this, VideoService::class.java)
-        nextIntent.action = Actions.INIT
-        val initPendingIntent = PendingIntent
-            .getService(this, 0, initIntent, PendingIntent.FLAG_IMMUTABLE)
-
-
-        val mediaStyle = androidx.media.app.NotificationCompat.MediaStyle()
-            .setShowActionsInCompactView(0,2,4)
-            .setMediaSession(mediaSession.sessionToken)
-
-            val metadataBuilder = MediaMetadataCompat.Builder().apply {
-                putString(MediaMetadata.METADATA_KEY_TITLE, currentVideoData.title)
-                putString(MediaMetadata.METADATA_KEY_ARTIST, currentVideoData.channelTitle)
-                putString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, currentVideoData.thumbnail)
-                putString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI, currentVideoData.thumbnail)
-                putLong(MediaMetadata.METADATA_KEY_DURATION,exoPlayer.duration)
-            }
-            mediaSession.setMetadata(metadataBuilder.build())
-
-        mediaSession.setPlaybackState(
-            PlaybackStateCompat.Builder()
-                .setState(
-                    if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING
-                    else PlaybackStateCompat.STATE_PAUSED,
-                    exoPlayer.currentPosition,
-                    1f,
-                    SystemClock.elapsedRealtime()
-                )
-                .setActions(PlaybackStateCompat.ACTION_SEEK_TO
-                )
-                .build()
-        )
-
-        mediaSession.setCallback(object: MediaSessionCompat.Callback(){
-            override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
-                Log.d("미디어 버튼","여")
-                val action = mediaButtonEvent?.action
-                if (action == Intent.ACTION_MEDIA_BUTTON) {
-                    val event = mediaButtonEvent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
-                    if (event != null && event.action == KeyEvent.ACTION_UP){
-                        when(event.keyCode) {
-                            KeyEvent.KEYCODE_MEDIA_NEXT -> {
-                                val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-                                if (playerFragment.playlistModel != null)
-                                    playerFragment.playNextPlaylistVideo()
-                                startForegroundService()
-                            }
-                            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                                exoPlayer.pause()
-                            }
-                            KeyEvent.KEYCODE_MEDIA_PLAY -> {
-                                exoPlayer.play()
-                            }
-                            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                                if (exoPlayer.currentPosition >= 4000){
-                                    exoPlayer.seekToPrevious()
-                                }
-                                else{
-                                    val playerFragment = activity.supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-                                    if (playerFragment.playlistModel != null)
-                                        playerFragment.playPrevPlaylistVideo()
-                                    startForegroundService()
-                                }
-                            }
-                        }
-                    }
-                }
-                return super.onMediaButtonEvent(mediaButtonEvent)
-            }
-            override fun onSeekTo(pos: Long) {
-                super.onSeekTo(pos)
-                exoPlayer.seekTo(pos)
-                mediaSession.setPlaybackState(
-                    PlaybackStateCompat.Builder()
-                        .setState(
-                            if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING
-                            else PlaybackStateCompat.STATE_PAUSED,
-                            exoPlayer.currentPosition,
-                            1f,
-                            SystemClock.elapsedRealtime()
-                        )
-                        .setActions(PlaybackStateCompat.ACTION_SEEK_TO)
-                        .build()
-                )
-            }
-        })
-
-        if (exoPlayer.isPlaying){
-            notification = NotificationCompat.Builder(this,
-                CHANNEL_ID
-            )
-                .setContentTitle("Music Player")
-                .setContentText(currentVideoData.title)
-                .setSmallIcon(R.drawable.ic_launcher_background)
-                .setStyle(mediaStyle)
-                .setOngoing(true) // true 일경우 알림 리스트에서 클릭하거나 좌우로 드래그해도 사라지지 않음
-                .addAction(NotificationCompat.Action(R.drawable.ic_baseline_exposure_neg_1_24,
-                    "Minus", minusPendingIntent))
-                .addAction(NotificationCompat.Action(
-                    com.google.android.exoplayer2.ui.R.drawable.exo_controls_previous,
-                    "Prev", prevPendingIntent))
-                .addAction(NotificationCompat.Action(
-                    com.google.android.exoplayer2.ui.R.drawable.exo_notification_pause,
-                    "Play", playPendingIntent))
-                .addAction(NotificationCompat.Action(
-                    com.google.android.exoplayer2.ui.R.drawable.exo_notification_next,
-                    "Next", nextPendingIntent))
-                .addAction(NotificationCompat.Action(R.drawable.ic_baseline_exposure_plus_1_24,
-                    "Plus", plusPendingIntent))
-//                .addAction(NotificationCompat.Action(R.drawable.ic_baseline_replay_24,
-//                    "initialize", initPendingIntent))
-                .setContentIntent(pendingIntent)
-                .setSilent(true)
-                .build()
-        }
-        else{
-            notification = NotificationCompat.Builder(this,
-                CHANNEL_ID
-            )
-                .setContentTitle("Music Player")
-                .setContentText(currentVideoData.title)
-                .setStyle(mediaStyle)
-                .setSmallIcon(R.drawable.ic_launcher_background)
-                .addAction(NotificationCompat.Action(R.drawable.ic_baseline_exposure_neg_1_24,
-                    "Minus", minusPendingIntent))
-                .addAction(NotificationCompat.Action(
-                    com.google.android.exoplayer2.ui.R.drawable.exo_controls_previous,
-                    "Prev", prevPendingIntent))
-                .addAction(NotificationCompat.Action(
-                    com.google.android.exoplayer2.ui.R.drawable.exo_notification_play,
-                    "Play", playPendingIntent))
-                .addAction(NotificationCompat.Action(
-                    com.google.android.exoplayer2.ui.R.drawable.exo_notification_next,
-                    "Next", nextPendingIntent))
-                .addAction(NotificationCompat.Action(R.drawable.ic_baseline_exposure_plus_1_24,
-                    "Plus", plusPendingIntent))
-//                .addAction(NotificationCompat.Action(R.drawable.ic_baseline_replay_24,
-//                    "initialize", initPendingIntent))
-                .setContentIntent(pendingIntent)
-                .setSilent(true)
-                .build()
-        }
-
-        // Oreo 부터는 Notification Channel을 만들어야 함
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(
-                CHANNEL_ID,
-                "Music Player Channel", // 채널표시명
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            val manager = this.getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(serviceChannel)
-        }
-
-        return notification
-    }
-
 
 }
