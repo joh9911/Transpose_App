@@ -3,7 +3,6 @@ package com.myFile.transpose.fragment
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -23,7 +22,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.myFile.transpose.*
 import com.myFile.transpose.retrofit.*
 import com.myFile.transpose.adapter.MyPlaylistItemRecyclerViewAdapter
-import com.myFile.transpose.model.PlayerFragmentMainItem
+import com.myFile.transpose.adapter.model.PlayerFragmentMainItem
 import com.myFile.transpose.adapter.PlayerFragmentMainRecyclerViewAdapter
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
 import com.myFile.transpose.dto.ChannelSearchData
@@ -37,7 +36,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 
-class PlayerFragment(): Fragment() {
+class PlayerFragment: Fragment(), PlayerServiceListener {
 
     lateinit var videoData: VideoData
     var playlistModel: PlaylistModel? = null
@@ -62,6 +61,7 @@ class PlayerFragment(): Fragment() {
 
     var player: ExoPlayer? = null
     lateinit var playerView: PlayerView
+    private var currentPlaybackType = 0
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<View>
     private lateinit var callbackPlaylistVersion: OnBackPressedCallback
     private lateinit var callback: OnBackPressedCallback
@@ -93,6 +93,63 @@ class PlayerFragment(): Fragment() {
         getDetailData(videoData)
         setMotionLayoutListenerForInitialize()
         return view
+    }
+
+    private fun initCallback(){
+        callback = object : OnBackPressedCallback(true){
+            override fun handleOnBackPressed() {
+                binding.playerMotionLayout.transitionToState(R.id.start)
+            }
+        }
+        callbackPlaylistVersion = object : OnBackPressedCallback(true){
+            override fun handleOnBackPressed() {
+                if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
+                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                else
+                    binding.playerMotionLayout.transitionToState(R.id.start)
+            }
+        }
+        addCallback()
+    }
+
+    /**
+     * 서비스의 exoPlayer와 연결해주는 함수
+     */
+    private fun initListener(){
+        Log.d("initListerner","처음")
+        playerView = binding.playerView
+        activity.isServiceBound.observe(viewLifecycleOwner) { isBound ->
+            if (isBound) {
+                Log.d("initlistener","obserer")
+                activity.videoService?.setPlayerServiceListener(this)
+                player = activity.exoPlayer
+                playerView.player = player
+                activity.videoService!!.playVideo(videoData)
+            }
+        }
+    }
+
+    override fun onIsPlaying(type: Int) {
+        settingBottomPlayButton(type)
+    }
+
+    override fun onStateEnded() {
+        if (playlistModel != null){
+            val playModePreferences = activity.getSharedPreferences("play_mode_preferences",Context.MODE_PRIVATE)
+            if (playModePreferences.getInt("play_mode",0) == 0)
+                playNextPlaylistVideo()
+            else{
+                player?.seekTo(0)
+            }
+        }
+    }
+
+    override fun playerViewInvisible() {
+        playerViewInvisibleEvent()
+    }
+
+    override fun playerViewVisible() {
+        playerViewVisibleEvent()
     }
 
     private fun initBundleData(){
@@ -365,38 +422,38 @@ class PlayerFragment(): Fragment() {
 
             override fun pitchMinusButtonClick(v: View) {
                 activity.pitchSeekBar.progress -= 1
-                activity.videoService!!.setPitch(activity.pitchSeekBar.progress - 10)
+                activity.setPitch()
                 Toast.makeText(activity,String.format(activity.getString(R.string.pitch_minus_text),activity.pitchSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
             }
 
             override fun pitchInitButtonClick(v: View) {
                 activity.pitchSeekBar.progress = 10
-                activity.videoService!!.setPitch(0)
+                activity.setPitch()
                 Toast.makeText(activity,String.format(activity.getString(R.string.pitch_initialize_text),activity.pitchSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
             }
 
             override fun pitchPlusButtonClick(v: View) {
                 activity.pitchSeekBar.progress += 1
-                activity.videoService!!.setPitch(activity.pitchSeekBar.progress - 10)
+                activity.setPitch()
                 Toast.makeText(activity,String.format(activity.getString(R.string.pitch_plus_text),activity.pitchSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
             }
 
             override fun tempoMinusButtonClick(v: View) {
                 activity.tempoSeekBar.progress -= 1
-                activity.videoService!!.setTempo(activity.tempoSeekBar.progress - 10)
+                activity.setTempo()
                 Toast.makeText(activity,String.format(activity.getString(R.string.tempo_minus_text),activity.tempoSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
 
             }
 
             override fun tempoInitButtonClick(v: View) {
                 activity.tempoSeekBar.progress = 10
-                activity.videoService!!.setTempo(0)
+                activity.setTempo()
                 Toast.makeText(activity,String.format(activity.getString(R.string.tempo_init_text),activity.tempoSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
             }
 
             override fun tempoPlusButtonClick(v: View) {
                 activity.tempoSeekBar.progress += 1
-                activity.videoService!!.setTempo(activity.tempoSeekBar.progress - 10)
+                activity.setTempo()
                 Toast.makeText(activity,String.format(activity.getString(R.string.tempo_plus_text),activity.tempoSeekBar.progress - 10),Toast.LENGTH_SHORT).show()
             }
 
@@ -412,13 +469,22 @@ class PlayerFragment(): Fragment() {
             activity.supportFragmentManager.beginTransaction().remove(this).commit()
         }
         binding.bottomPlayerPauseButton.setOnClickListener {
-            if (player?.isPlaying!!){
-                player?.pause()
-                binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
-            }
-            else{
-                player?.play()
-                binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
+            when (currentPlaybackType){
+                1 -> {
+                    player?.pause()
+                    currentPlaybackType = 2
+                    binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+                }
+                2 -> {
+                    player?.play()
+                    currentPlaybackType = 1
+                    binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
+                }
+                3 -> {
+                    player?.seekTo(0)
+                    currentPlaybackType = 1
+                    binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
+                }
             }
         }
         binding.bottomTitleTextView.text = currentPlayingVideoData.title
@@ -461,20 +527,24 @@ class PlayerFragment(): Fragment() {
         activity.videoService!!.playVideo(videoData)
     }
 
-    fun settingBottomPlayButton(){
-        if (player?.isPlaying!!)
-            binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
-        else
-            binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+    private fun settingBottomPlayButton(type: Int){
+        currentPlaybackType = type
+        when(type){
+            0 -> binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+            1 -> binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_pause_24)
+            2 -> binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_play_arrow_24)
+            3 -> binding.bottomPlayerPauseButton.setImageResource(R.drawable.ic_baseline_loop_24)
+        }
     }
 
-    fun playerViewInvisibleEvent(){
+    private fun playerViewInvisibleEvent(){
         binding.playerView.visibility = View.INVISIBLE
         binding.bufferingProgressBar.visibility = View.VISIBLE
         binding.playerThumbnailView.visibility = View.VISIBLE
     }
 
-    fun playerViewVisibleEvent(){
+    private fun playerViewVisibleEvent(){
+        Log.d("playerViewVisibel Event","실행")
         binding.playerView.visibility = View.VISIBLE
         binding.bufferingProgressBar.visibility = View.GONE
         binding.playerThumbnailView.visibility = View.GONE
@@ -502,20 +572,7 @@ class PlayerFragment(): Fragment() {
         updateVideoDetailAndGetRelatedVideoData(nowPlaylistModel.currentMusicModel())
     }
 
-    /**
-     * 서비스의 exoPlayer와 연결해주는 함수
-     */
-    private fun initListener(){
-        playerView = binding.playerView
-        activity.isServiceBound.observe(viewLifecycleOwner) { isBound ->
-            if (isBound) {
-                activity.videoService?.initPlayerFragment(this)
-                player = activity.exoPlayer
-                playerView.player = player
-                activity.videoService!!.playVideo(videoData)
-            }
-        }
-    }
+
 
     private fun setMotionLayoutListenerForInitialize() {
         binding.playerMotionLayout.setTransitionListener(null)
@@ -541,13 +598,13 @@ class PlayerFragment(): Fragment() {
             }
         }
         override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+            activity.transposePageInvisibleEvent()
             for (fragment: Fragment in activity.supportFragmentManager.fragments){
                 if (fragment is HomeFragment && fragment.isVisible){
-                    val bundle = Bundle().apply {
-                        putParcelable("channelData", channelDataMapper())
-                    }
                     val channelFragment = ChannelFragment().apply {
-                        arguments = bundle
+                        arguments = Bundle().apply {
+                            putParcelable("channelData", channelDataMapper())
+                        }
                     }
                     fragment.childFragmentManager.beginTransaction()
                         .add(fragment.binding.searchResultFrameLayout.id,
@@ -557,11 +614,10 @@ class PlayerFragment(): Fragment() {
                         .commit()
                 }
                 if (fragment is MyPlaylistFragment && fragment.isVisible){
-                    val bundle = Bundle().apply {
-                        putParcelable("channelData", channelDataMapper())
-                    }
                     val channelFragment = ChannelFragment().apply {
-                        arguments = bundle
+                        arguments = Bundle().apply {
+                            putParcelable("channelData", channelDataMapper())
+                        }
                     }
                     fragment.childFragmentManager.beginTransaction()
                         .add(fragment.binding.resultFrameLayout.id,
@@ -577,7 +633,6 @@ class PlayerFragment(): Fragment() {
                 else
                     callback.remove()
 
-                settingBottomPlayButton()
                 binding.playerView.useController = false
             }
             else{
@@ -616,19 +671,13 @@ class PlayerFragment(): Fragment() {
         }
         override fun onTransitionCompleted(p0: MotionLayout?, p1: Int) {
             if (binding.playerMotionLayout.currentState == R.id.start){
-                Log.d("이게","되야할 텐데")
                 if (playlistModel != null){
                     callbackPlaylistVersion.remove()
-                    Log.d("여길까","!")
                 }
 
                 else{
                     callback.remove()
-                    Log.d("여길까","?")
                 }
-
-
-                settingBottomPlayButton()
                 binding.playerView.useController = false
             }
             else{
@@ -643,11 +692,17 @@ class PlayerFragment(): Fragment() {
         }
     }
 
-
     override fun onDestroy() {
         super.onDestroy()
         Log.d("프레그먼트의","onDestroy")
-        activity.videoService!!.stopForegroundService()
+        if (activity.videoService!!.getPlayerServiceListener() == this){
+            Log.d("프레그먼트의","onDestroy 조건문")
+            activity.videoService!!.disconnectPlayerServiceListener()
+            activity.videoService!!.stopForegroundService()
+            activity.videoService!!.exoPlayer.stop()
+            activity.videoService!!.streamingCancel()
+        }
+
         fbinding = null
         callback.remove()
     }
@@ -664,7 +719,6 @@ class PlayerFragment(): Fragment() {
 
     override fun onResume() {
         Log.d("프레그먼트플레이어","온리줌")
-        activity.videoService?.initPlayerFragment(this)
         binding.mainRecyclerView.scrollToPosition(0)
         super.onResume()
     }
@@ -679,24 +733,7 @@ class PlayerFragment(): Fragment() {
         Log.d("프레그먼트플레이어","온스타트")
     }
 
-    private fun initCallback(){
-        callback = object : OnBackPressedCallback(true){
-            override fun handleOnBackPressed() {
-                Log.d("동영상 플레이어의","백프레스")
-                binding.playerMotionLayout.transitionToState(R.id.start)
-            }
-        }
-        callbackPlaylistVersion = object : OnBackPressedCallback(true){
-            override fun handleOnBackPressed() {
-                Log.d("동영상 플레이어의","백프레스ㅍ르레이르스")
-                if (bottomSheetBehavior.state == BottomSheetBehavior.STATE_EXPANDED)
-                    bottomSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
-                else
-                    binding.playerMotionLayout.transitionToState(R.id.start)
-            }
-        }
-        addCallback()
-    }
+
 
     private fun addCallback(){
         if (playlistModel != null)
@@ -718,5 +755,7 @@ class PlayerFragment(): Fragment() {
             .replace("&quot;".toRegex(), "'")
             .replace("&#39;".toRegex(), "'")
     }
+
+
 
 }
