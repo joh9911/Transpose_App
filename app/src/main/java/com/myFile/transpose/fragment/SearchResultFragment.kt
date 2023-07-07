@@ -15,10 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.myFile.transpose.*
 import com.myFile.transpose.retrofit.*
 import com.myFile.transpose.adapter.SearchResultFragmentRecyclerViewAdapter
-import com.myFile.transpose.database.AppDatabase
-import com.myFile.transpose.database.CashedKeyword
-import com.myFile.transpose.database.YoutubeCashedData
-import com.myFile.transpose.database.YoutubeCashedDataDao
+import com.myFile.transpose.database.*
 import com.myFile.transpose.databinding.FragmentSearchResultBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogForNotification
@@ -56,7 +53,7 @@ class SearchResultFragment: Fragment() {
         getSearchWord()
         initRecyclerView()
         errorEvent()
-        getData(nextPageToken)
+        getData()
         return view
     }
 
@@ -75,14 +72,13 @@ class SearchResultFragment: Fragment() {
                 binding.recyclerView.visibility = View.VISIBLE
                 binding.errorLinearLayout.visibility = View.INVISIBLE
                 videoDataList.clear()
-                getData(nextPageToken)
+                getData()
             }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        Log.d("서치프레그먼트","온리즘")
         if (parentFragment is HomeFragment){
             val fragment =  parentFragment as HomeFragment
             fragment.searchView.setQuery(searchWord,false)
@@ -94,7 +90,7 @@ class SearchResultFragment: Fragment() {
         }
     }
 
-    fun initRecyclerView(){
+    private fun initRecyclerView(){
 
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.recyclerView.layoutManager = LinearLayoutManager(activity)
@@ -105,11 +101,10 @@ class SearchResultFragment: Fragment() {
             override fun channelClick(v: View, position: Int) {
                     if (parentFragment is HomeFragment){
                         val channelData = channelDataList[position]
-                        val bundle = Bundle().apply {
-                            putParcelable("channelData",channelData)
-                        }
                         val channelFragment = ChannelFragment().apply {
-                            arguments = bundle
+                            arguments = Bundle().apply {
+                                putParcelable("channelData",channelData)
+                            }
                         }
                         val fragment = parentFragment as HomeFragment
                         parentFragmentManager.beginTransaction()
@@ -121,11 +116,10 @@ class SearchResultFragment: Fragment() {
                     }
                     if (parentFragment is MyPlaylistFragment){
                         val channelData = channelDataList[position]
-                        val bundle = Bundle().apply {
-                            putParcelable("channelData",channelData)
-                        }
                         val channelFragment = ChannelFragment().apply {
-                            arguments = bundle
+                            arguments = Bundle().apply {
+                                putParcelable("channelData",channelData)
+                            }
                         }
                         val fragment = parentFragment as MyPlaylistFragment
                         parentFragmentManager.beginTransaction()
@@ -186,22 +180,8 @@ class SearchResultFragment: Fragment() {
                 val itemTotalCount = recyclerView.adapter!!.itemCount-1
                 // 스크롤이 끝에 도달했는지 확인
                 if (!binding.recyclerView.canScrollVertically(1) && lastVisibleItemPosition == itemTotalCount) {
-                    Log.d("스크롤 끝에","도달!")
                     CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
-                        val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
-                        Log.d("캐시월드","$cashedKeyword")
-                        if (cashedKeyword != null){
-                            val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
-                            cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)
-                            videoTempDataList.clear()
-                            for (index in 0 until list.size / 50 + 1){
-                                Log.d("반복문이 실행됐어요","$index")
-                                getSearchVideoData(nextPageToken, 1)
-                            }
-                        }
-                        else{
-                            getData(nextPageToken)
-                        }
+                        getSearchVideoData(nextPageToken)
                     }
                 }
             }
@@ -218,12 +198,11 @@ class SearchResultFragment: Fragment() {
         디비에 저장된 시간이 20일이 지났는지 확인하기
         디비에 저장된 데이터의 숫자와 현재 요청한 데이터 숫자와 비교하기
      */
-    private fun getData(pageToken: String?) {
+    private fun getData() {
         CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
-
             val cashedKeyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
             if (cashedKeyword == null){
-                getSearchVideoData(nextPageToken,0)
+                getSearchVideoData(nextPageToken)
             }
             else{
                 getDataFromDb()
@@ -232,6 +211,8 @@ class SearchResultFragment: Fragment() {
     }
     private suspend fun getDataFromDb(){
         val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
+        val pageToken = cashedDataDao.getPageTokenBySearchKeyword(searchWord)!!
+        nextPageToken = pageToken.nextPageToken
         list.forEach{
             videoDataList.add(it.searchVideoData)
         }
@@ -244,7 +225,7 @@ class SearchResultFragment: Fragment() {
         Log.d("디비에서 받아온 개수","${list.size}")
     }
 
-    private suspend fun getSearchVideoDataWithNoKey(pageToken: String?, tempTag: Int){
+    private suspend fun getSearchVideoDataWithNoKey(pageToken: String?){
         val retrofit = RetrofitYT.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java).getVideoSearchResult(
             null,"snippet",searchWord,"50","video",
@@ -255,7 +236,7 @@ class SearchResultFragment: Fragment() {
         if (response.isSuccessful) {
             if (response.body()?.items?.size != 0) {
                 withContext(Dispatchers.Main){
-                    searchResultDataMapping(response.body()!!, tempTag)
+                    searchResultDataMapping(response.body()!!)
                 }
                 if (response.body()?.nextPageToken != null)
                     nextPageToken = response.body()?.nextPageToken!!
@@ -284,16 +265,15 @@ class SearchResultFragment: Fragment() {
         }
     }
 
-    private suspend fun getSearchVideoData(pageToken: String?, tempTag: Int) {
+    private suspend fun getSearchVideoData(pageToken: String?) {
         val random = Random()
         val keyList = listOf(BuildConfig.API_KEY6,  BuildConfig.API_KEY11,
          BuildConfig.TOY_PROJECT, BuildConfig.API_KEY110901_3, BuildConfig.API_KEY11098608_3,
         BuildConfig.API_KEY110999_3, BuildConfig.API_KEY38922_3,BuildConfig.API_KEY389251_3,
         BuildConfig.API_KEY860801_3,BuildConfig.API_KEY991101_3,BuildConfig.API_KEY38923_1, BuildConfig.API_KEY38924_3,BuildConfig.API_KEY38926_3,
-        BuildConfig.API_KEY38928_3, BuildConfig.API_KEY38929_3,BuildConfig.API_KEY38930_3,
-        BuildConfig.API_KEY38931_3,BuildConfig.API_KEY38933_3,BuildConfig.API_KEY38934_3, BuildConfig.API_KEY38935_1, BuildConfig.API_KEY38936_1, BuildConfig.API_KEY38937_1)
+        BuildConfig.API_KEY38931_3,BuildConfig.API_KEY38933_3,BuildConfig.API_KEY38934_3, BuildConfig.API_KEY38935_1, BuildConfig.API_KEY38936_1, BuildConfig.API_KEY38937_1
+        ,BuildConfig.API_KEY38941, BuildConfig.API_KEY38942, BuildConfig.API_KEY38943, BuildConfig.API_KEY38944)
         val num = random.nextInt(keyList.size)
-        Log.d("이 apikey가 쓰였음","$num")
         val retrofit = RetrofitData.initRetrofit()
         val response = retrofit.create(RetrofitService::class.java).getVideoSearchResult(
             keyList[num],"snippet",searchWord,"50","video",
@@ -303,7 +283,7 @@ class SearchResultFragment: Fragment() {
         if (response.isSuccessful) {
             if (response.body()?.items?.size != 0) {
                 withContext(Dispatchers.Main){
-                    searchResultDataMapping(response.body()!!, tempTag)
+                    searchResultDataMapping(response.body()!!)
                 }
                 if (response.body()?.nextPageToken != null)
                     nextPageToken = response.body()?.nextPageToken!!
@@ -331,13 +311,13 @@ class SearchResultFragment: Fragment() {
         }
 
     }
-    private fun searchResultDataMapping(responseData: VideoSearchData, tempTag: Int){
+    private fun searchResultDataMapping(responseData: VideoSearchData){
         val youtubeDigitConverter = YoutubeDigitConverter(activity)
         binding.progressBar.visibility = View.INVISIBLE
         binding.recyclerView.visibility = View.VISIBLE
         if (videoDataList.isNotEmpty()){
-            if (videoDataList[videoDataList.size - 1].title == " ")
-                videoDataList.removeAt(videoDataList.size - 1)
+            if (videoDataList.last().title == " ")
+                videoDataList.removeLast()
         }
         for (index in 0 until responseData.items.size){
             val thumbnail = responseData.items[index].snippet?.thumbnails?.high?.url!!
@@ -348,20 +328,10 @@ class SearchResultFragment: Fragment() {
             val channelId = responseData.items[index].snippet?.channelId!!
             val channelTitle = responseData.items[index].snippet?.channelTitle!!
             videoDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
-            if (tempTag == 1)
-                videoTempDataList.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
-        }
-        if (tempTag == 1){
-            videoDataList.clear()
-            videoDataList.addAll(videoTempDataList)
-            videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
-            searchResultAdapter.submitList(videoDataList.toMutableList())
-        }
-        else{
-            videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
-            searchResultAdapter.submitList(videoDataList.toMutableList())
-        }
 
+        }
+        videoDataList.add(VideoData(" ", " ", " ", " ", " ", " ", false))
+        searchResultAdapter.submitList(videoDataList.toMutableList())
         Log.d("어댑터의 아이템 개수","${searchResultAdapter.itemCount}")
     }
 
@@ -370,18 +340,14 @@ class SearchResultFragment: Fragment() {
      * 디비 내 데이터를 지우고 다시 넣어줌
      */
     private fun saveDataToDb(){
-
         CoroutineScope(Dispatchers.IO).launch {
-            val keyword = cashedDataDao.getCashedKeywordDataBySearchKeyword(searchWord)
             val list = cashedDataDao.getAllCashedDataBySearchKeyword(searchWord)!!
-            Log.d("keyword","$keyword")
-            Log.d("list","${list.size}")
-            Log.d("videolist","${videoDataList.size}")
             if (list.size < videoDataList.size - 1){
                 val cashedKeyword = CashedKeyword(searchWord, System.currentTimeMillis())
                 videoDataList.removeLast()
                 val youtubeDataList = videoDataList.map{YoutubeCashedData(0, it, searchWord)}
-                cashedDataDao.insertData(searchWord,cashedKeyword, youtubeDataList)
+                val pageToken = PageToken(0, nextPageToken, searchWord)
+                cashedDataDao.insertData(searchWord,cashedKeyword, youtubeDataList, pageToken)
             }
         }
     }
