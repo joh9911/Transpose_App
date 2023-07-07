@@ -37,7 +37,7 @@ data class YoutubeCashedData(
 )
 data class PageToken(
     @PrimaryKey(autoGenerate = true) val tokenId: Int,
-    val nextPageToken: String,
+    val nextPageToken: String?,
     val keyWord: String
 )
 

@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [MyPlaylist::class, Musics::class,CashedKeyword::class, YoutubeCashedData::class, PageToken::class], version = 6)
+@Database(entities = [MyPlaylist::class, Musics::class,CashedKeyword::class, YoutubeCashedData::class, PageToken::class], version = 7)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase(){
     abstract fun myPlaylistDao(): MyPlaylistDao
@@ -17,14 +17,8 @@ abstract class AppDatabase : RoomDatabase(){
     companion object{
         @Volatile
         private var INSTANCE: AppDatabase? = null
-        private val MIGRATION_5_6 = object : Migration(5, 6) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
-                    "CREATE TABLE `PageToken` (`tokenId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nextPageToken` TEXT, `keyWord` TEXT, " +
-                            "FOREIGN KEY(`keyWord`) REFERENCES `CashedKeyword`(`searchKeyword`) ON UPDATE NO ACTION ON DELETE CASCADE )"
-                )
-            }
-        }
+
+
         fun getDatabase(context: Context): AppDatabase{
             val tempInstance = INSTANCE
             if (tempInstance != null)
@@ -34,7 +28,9 @@ abstract class AppDatabase : RoomDatabase(){
                     context.applicationContext,
                     AppDatabase::class.java,
                     "database-name"
-                ).addMigrations(MIGRATION_5_6)
+                )
+                    .addMigrations(MIGRATION_6_7)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 return instance
@@ -43,6 +39,30 @@ abstract class AppDatabase : RoomDatabase(){
     }
 }
 
+// nextPageToken null 가능하게 바꾸기
+val MIGRATION_6_7= object : Migration(6, 7) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Create new temporary table with the same structure but with nextPageToken as nullable
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS `PageToken_new` (
+                `tokenId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                `nextPageToken` TEXT, 
+                `keyWord` TEXT NOT NULL, 
+                FOREIGN KEY(`keyWord`) REFERENCES `CashedKeyword`(`searchKeyword`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                )""".trimIndent())
+
+        // Copy the data
+        database.execSQL("""
+            INSERT INTO PageToken_new (tokenId, nextPageToken, keyWord)
+            SELECT tokenId, nextPageToken, keyWord FROM PageToken""".trimIndent())
+
+        // Remove the old table
+        database.execSQL("DROP TABLE PageToken")
+
+        // Rename the new table to the old one
+        database.execSQL("ALTER TABLE PageToken_new RENAME TO PageToken")
+    }
+}
 
 val migration_3_4 = object: Migration(3,4){
     override fun migrate(database: SupportSQLiteDatabase) {
@@ -65,4 +85,14 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         )
     }
 }
+
+private val MIGRATION_4_6 = object : Migration(4, 6) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "CREATE TABLE `PageToken` (`tokenId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nextPageToken` TEXT, `keyWord` TEXT, " +
+                    "FOREIGN KEY(`keyWord`) REFERENCES `CashedKeyword`(`searchKeyword`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+    }
+}
+
 
