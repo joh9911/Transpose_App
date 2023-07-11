@@ -76,4 +76,7 @@ interface YoutubeCashedDataDao{
     @Query("DELETE FROM CashedKeyword WHERE searchKeyword = (:searchKeyword)")
     fun deleteAllBySearchKeyword(searchKeyword: String)
 
+    @Query("DELETE FROM CashedKeyword WHERE savedTime < :thirtyDaysAgo")
+    fun deleteOldCashedData(thirtyDaysAgo: Long)
+
 }
