@@ -21,7 +21,9 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.ktx.startUpdateFlowForResult
 import com.google.android.play.core.review.ReviewManagerFactory
+import com.myFile.transpose.constants.TimeTarget
 import com.myFile.transpose.constants.TimeTarget.REVIEW_TARGET_DURATION
+import com.myFile.transpose.database.AppDatabase
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogForNotification
 import com.myFile.transpose.fragment.HomeFragment
@@ -49,6 +51,8 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
     private lateinit var appUsageTimeChecker: AppUsageTimeChecker
     private lateinit var appUpdateManager: AppUpdateManager
 
+    var toastMessage: Toast? = null
+
     val isServiceBound: MutableLiveData<Boolean> = MutableLiveData<Boolean>().apply { value = false }
 
     private val bindConnection = object: ServiceConnection{
@@ -75,14 +79,22 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 //        showNoticeDialog()
+        checkUpdateInfo()
         initView()
         initExceptionHandler()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         checkNetworkConnection()
         bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
         appUsageTimeSave()
+        clearCashedDataByTime()
         initFragment()
-        checkUpdateInfo()
+    }
+
+    private fun clearCashedDataByTime(){
+        val youtubeCashedDao = AppDatabase.getDatabase(this).youtubeCashedDataDao()
+        CoroutineScope(Dispatchers.IO).launch {
+            youtubeCashedDao.deleteOldCashedData(System.currentTimeMillis() - TimeTarget.DATA_DELETE_TARGET_DURATION)
+        }
     }
 
     fun showNoticeDialog() {
@@ -90,6 +102,12 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         val dialog = DialogForNotification()
 
         dialog.show(this.supportFragmentManager, "NoticeDialogFragment")
+    }
+
+    fun showToastMessage(message: String){
+        toastMessage?.cancel()
+        toastMessage = Toast.makeText(this,message,Toast.LENGTH_SHORT)
+        toastMessage?.show()
     }
 
     /**
@@ -134,7 +152,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
                     AppUsageSharedPreferences(this).initializeAppUsageStartTime()
                 } else {
                     // There was some problem, log or handle the error code.
-                    Toast.makeText(this, "오류가 발생",Toast.LENGTH_SHORT).show()
+                    showToastMessage("오류가 발생")
                 }
             }
         }
@@ -234,7 +252,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
             Log.d("코루틴 에러","$throwable")
             CoroutineScope(Dispatchers.Main).launch {
-                Toast.makeText(this@Activity,resources.getString(R.string.network_error_message),Toast.LENGTH_SHORT).show()
+                showToastMessage(resources.getString(R.string.network_error_message))
             }
         }
     }
@@ -518,7 +536,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
     }
 
     override fun showStreamFailMessage() {
-        Toast.makeText(this, "failed to get stream url", Toast.LENGTH_LONG).show()
+        showToastMessage("failed to get stream url")
     }
 
 }
