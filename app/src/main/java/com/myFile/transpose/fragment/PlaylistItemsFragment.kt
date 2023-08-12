@@ -2,33 +2,36 @@ package com.myFile.transpose.fragment
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
+import androidx.recyclerview.widget.RecyclerView
 import com.myFile.transpose.*
-import com.myFile.transpose.retrofit.*
 import com.myFile.transpose.adapter.PlaylistItemsRecyclerViewAdapter
 import com.myFile.transpose.databinding.FragmentPlaylistBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
-import com.myFile.transpose.dto.PlayListVideoSearchData
-import com.myFile.transpose.model.PlayerFragmentBundle
-import com.myFile.transpose.model.PlaylistModel
-import kotlinx.coroutines.*
+import com.myFile.transpose.model.PlaylistDataModel
+import com.myFile.transpose.model.VideoDataModel
+import com.myFile.transpose.viewModel.PlaylistItemsViewModel
+import com.myFile.transpose.viewModel.PlaylistItemsViewModelFactory
+import com.myFile.transpose.viewModel.SharedViewModel
 
-class PlaylistItemsFragment(): Fragment() {
-    lateinit var playListData: PlayListData
+class PlaylistItemsFragment: Fragment() {
     lateinit var activity: Activity
     lateinit var playlistItemsRecyclerViewAdapter: PlaylistItemsRecyclerViewAdapter
     lateinit var mainBinding: MainBinding
     var fbinding: FragmentPlaylistBinding? = null
     val binding get() = fbinding!!
 
-    val playlistVideoData = arrayListOf<VideoData>()
+    private lateinit var sharedViewModel: SharedViewModel
+    private lateinit var playlistItemsViewModel: PlaylistItemsViewModel
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,113 +41,119 @@ class PlaylistItemsFragment(): Fragment() {
         fbinding = FragmentPlaylistBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
-        initPlaylistData()
-        initView()
-        getData()
+        initViewModel()
+        initRecyclerView()
         return view
     }
-
-    private fun initPlaylistData(){
-        playListData = arguments?.getParcelable("playlistItemsFragment")!!
+    private fun initViewModel(){
+        val application = requireActivity().application as MyApplication
+        val viewModelFactory = PlaylistItemsViewModelFactory(application.youtubeDataRepository)
+        sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
+        playlistItemsViewModel = ViewModelProvider(this, viewModelFactory)[PlaylistItemsViewModel::class.java]
     }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        initObserver()
+    }
+
+    private fun initObserver(){
+        sharedViewModel.playlistData.observe(viewLifecycleOwner){
+            addRecyclerViewHeaderView(it)
+            playlistItemsViewModel.fetchPlaylistItemsData(it, resources.getStringArray(R.array.publish_date_formats))
+        }
+        playlistItemsViewModel.playlistItems.observe(viewLifecycleOwner){ playlistItems ->
+            loadingFinishEvent()
+            addRecyclerViewItemView(playlistItems)
+        }
+    }
+
+    private fun addRecyclerViewHeaderView(playlistDataModel: PlaylistDataModel){
+        val currentList = playlistItemsRecyclerViewAdapter.currentList.toMutableList()
+        currentList.add(PlaylistItemsRecyclerViewAdapter.PlaylistItemsRecyclerViewItems.HeaderTitleData(playlistDataModel))
+        playlistItemsRecyclerViewAdapter.submitList(currentList)
+    }
+
+    private fun addRecyclerViewItemView(playlistItems: List<VideoDataModel>) {
+        val currentList = playlistItemsRecyclerViewAdapter.currentList.toMutableList()
+        val loadingData = PlaylistItemsRecyclerViewAdapter.PlaylistItemsRecyclerViewItems.LoadingData
+        if (currentList.isNotEmpty() && currentList.last() == loadingData)
+            currentList.removeLast()
+        currentList.addAll(playlistItems.map{PlaylistItemsRecyclerViewAdapter.PlaylistItemsRecyclerViewItems.ItemData(it)})
+        if (playlistItemsViewModel.nextPageToken != null)
+            currentList.add(loadingData)
+        playlistItemsRecyclerViewAdapter.submitList(currentList)
+    }
+
+    private fun loadingFinishEvent(){
+        binding.progressBar.visibility = View.GONE
+        binding.playlistItemRecyclerView.visibility = View.VISIBLE
+    }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
     }
 
-    fun initView(){
-        Glide.with(binding.playlistThumbnail)
-            .load(playListData.thumbnail)
-            .into(binding.playlistThumbnail)
-        binding.playlistTitle.text = playListData.title
-        binding.playlistDescription.text = playListData.description
+    private fun initRecyclerView(){
         binding.playlistItemRecyclerView.layoutManager = LinearLayoutManager(activity)
         playlistItemsRecyclerViewAdapter = PlaylistItemsRecyclerViewAdapter()
         playlistItemsRecyclerViewAdapter.setItemClickListener(object: PlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                val playlistModel = PlaylistModel(playListData.title,playlistVideoData, position)
-                val videoData = playlistVideoData[position]
-                val playerFragmentBundle = PlayerFragmentBundle(videoData, playlistModel)
+                val playlistData = sharedViewModel.playlistData.value
+                val playlistItems = playlistItemsViewModel.playlistItems.value ?: return
+                val nowPlaylistModel = NowPlaylistModel(playlistItems, position - 1, playlistData?.title)
+                val videoData = playlistItems[position - 1]
+                sharedViewModel.setVideoPlayerFragmentData(videoData, nowPlaylistModel)
+                activity.executeVideoPlayerFragment(SharedViewModel.PlaybackMode.PLAYLIST)
 
-                val bundle = Bundle().apply {
-                    putParcelable("playerFragment", playerFragmentBundle)
-                }
-                val playerFragment = PlayerFragment().apply {
-                    arguments = bundle
-                }
-                activity.supportFragmentManager.beginTransaction()
-                    .replace(activity.binding.playerFragment.id,
-                        playerFragment
-                    )
-                    .commit()
             }
 
             override fun optionButtonClick(v: View, position: Int) {
-                val popUp = PopupMenu(activity, v)
-                popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
-                popUp.setOnMenuItemClickListener(PopupMenu.OnMenuItemClickListener {
-                    when (it.itemId) {
-                        R.id.add_my_playlist -> {
-                            showNoticeDialog(playlistVideoData[position])
+                val playlistItems = playlistItemsViewModel.playlistItems.value
+                if (playlistItems != null){
+                    val popUp = PopupMenu(activity, v)
+                    popUp.menuInflater.inflate(R.menu.video_pop_up_menu, popUp.menu)
+                    popUp.setOnMenuItemClickListener {
+                        when (it.itemId) {
+                            R.id.add_my_playlist -> {
+                                showNoticeDialog(playlistItems[position])
+                            }
                         }
+                        true
                     }
-                    true
-                })
-                popUp.show()
+                    popUp.show()
+                }
             }
 
         })
         binding.playlistItemRecyclerView.adapter = playlistItemsRecyclerViewAdapter
+
+        binding.playlistItemRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener(){
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val lastVisibleItemPosition =
+                    (recyclerView.layoutManager as LinearLayoutManager?)!!.findLastCompletelyVisibleItemPosition()
+                val itemTotalCount = recyclerView.adapter!!.itemCount - 1
+                val currentList = playlistItemsViewModel.playlistItems.value ?: arrayListOf()
+                // 스크롤이 끝에 도달했는지 확인
+                if (!binding.playlistItemRecyclerView.canScrollVertically(1) && lastVisibleItemPosition == itemTotalCount) {
+                    Log.d("스크롤 끝에","도달!")
+                    if (currentList.isNotEmpty()){
+                        playlistItemsViewModel.nextPageToken ?: return
+                        val playlistDataModel = sharedViewModel.playlistData.value ?: return
+                        playlistItemsViewModel.fetchPlaylistItemsData(playlistDataModel, resources.getStringArray(R.array.publish_date_formats))
+                    }
+                }
+            }
+        })
     }
-    fun showNoticeDialog(videoData: VideoData) {
+
+    fun showNoticeDialog(videoData: VideoDataModel) {
         // Create an instance of the dialog fragment and show it
         val dialog = DialogFragmentPopupAddPlaylist(videoData)
         dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
     }
 
-    fun getData(){
-        CoroutineScope(Dispatchers.IO + CoroutineExceptionObject.coroutineExceptionHandler).launch {
-            getPlaylistItemsData(null)
-        }
-    }
-
-    private suspend fun getPlaylistItemsData(nextPageToken: String?){
-        val retrofit = RetrofitData.initRetrofit()
-        val response = retrofit.create(RetrofitService::class.java).getPlayListVideoItems(
-            BuildConfig.API_KEY4,"snippet",playListData.playlistId,nextPageToken,"50")
-        if (response.isSuccessful){
-            if (response.body()?.items?.size != 0) {
-                withContext(Dispatchers.Main) {
-                    playlistItemsMapper(response.body()!!)
-                }
-            }
-        }
-    }
-    private fun playlistItemsMapper(playlistItemsResponse: PlayListVideoSearchData) {
-        val youtubeDigitConverter = YoutubeDigitConverter(activity)
-        for (index in 0 until playlistItemsResponse.items.size!!) {
-            val thumbnail =
-                playlistItemsResponse.items[index].snippet?.thumbnails?.high?.url!!
-            val rawDate = playlistItemsResponse.items[index].snippet?.publishedAt!!
-            val date = youtubeDigitConverter.intervalBetweenDateText(rawDate)
-            val channelTitle = playlistItemsResponse.items[index].snippet?.videoOwnerChannelTitle?.replace(" - Topic", "")!!
-            val title = stringToHtmlSign(playlistItemsResponse.items[index].snippet?.title!!)
-            val videoId = playlistItemsResponse.items[index].snippet?.resourceId?.videoId!!
-            val channelId = playlistItemsResponse.items[index].snippet?.channelId!!
-            playlistVideoData.add(VideoData(thumbnail, title, channelTitle, channelId, videoId, date,  false))
-        }
-        playlistItemsRecyclerViewAdapter.submitList(playlistVideoData.toMutableList())
-        binding.playlistProgressBar.visibility = View.GONE
-        binding.playlistItemRecyclerView.visibility = View.VISIBLE
-    }
-
-    private fun stringToHtmlSign(str: String): String {
-        return str.replace("&amp;".toRegex(), "[&]")
-            .replace("[<]".toRegex(), "&lt;")
-            .replace("[>]".toRegex(), "&gt;")
-            .replace("&quot;".toRegex(), "'")
-            .replace("&#39;".toRegex(), "'")
-    }
     override fun onDestroy() {
         super.onDestroy()
     }
