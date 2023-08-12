@@ -10,10 +10,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.myFile.transpose.R
-import com.myFile.transpose.retrofit.VideoData
 import com.myFile.transpose.databinding.MyPlaylistItemRecyclerViewItemBinding
+import com.myFile.transpose.model.VideoDataModel
 
-class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoData, MyPlaylistItemRecyclerViewAdapter.MyViewHolder>(
+class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoDataModel, MyPlaylistItemRecyclerViewAdapter.MyViewHolder>(
     diffUtil
 ) {
 
@@ -37,7 +37,7 @@ class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoData, MyPlaylistItemRe
             binding.titleTextView.setTextColor(Color.parseColor("#FF000000"))
         }
 
-        fun bind(videoData: VideoData, position: Int){
+        fun bind(videoData: VideoDataModel, position: Int){
             binding.channelTextView.text = videoData.channelTitle
             binding.titleTextView.text = videoData.title
             binding.videoDetailText.text = videoData.date
@@ -78,13 +78,13 @@ class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoData, MyPlaylistItemRe
     private lateinit var itemClickListener : OnItemClickListener
 
 
-    companion object diffUtil : DiffUtil.ItemCallback<VideoData>() {
+    companion object diffUtil : DiffUtil.ItemCallback<VideoDataModel>() {
 
-        override fun areItemsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+        override fun areItemsTheSame(oldItem: VideoDataModel, newItem: VideoDataModel): Boolean {
             return oldItem.title == newItem.title
         }
 
-        override fun areContentsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+        override fun areContentsTheSame(oldItem: VideoDataModel, newItem: VideoDataModel): Boolean {
             return oldItem == newItem
         }
     }
