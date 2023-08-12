@@ -63,7 +63,36 @@ class MusicCategoryRepository {
         "RDCLAK5uy_krjFmKbzWzkGvhqkYvvNnUbdrHy0QN1S8",
         "RDCLAK5uy_kQ09S7a68znbjr7h26ur1RJb2tCXDlruY"
     )
+
     private val popularTop100MusicId = "PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m"
+
+
+    private val koreanPopularSongsId = "PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m"
+
+    private val americanPopularSongsId = "PL4fGSI1pDJn6O1LS0XSdF3RyO0Rq_LDeI"
+
+    private val indonesiaPopularSongsId = "PL4fGSI1pDJn5ObxTlEPlkkornHXUiKX1z"
+
+    private val globalPopularSongsId = "PL4fGSI1pDJn6puJdseH2Rt9sMvt9E2M4i"
+
+    private val unitedKingdomPopularSongsId = "PL4fGSI1pDJn6_f5P3MnzXg9l3GDfnSlXa"
+
+    private val japanesePopularSongsId = "PL4fGSI1pDJn4-UIb6RKHdxam-oAUULIGB"
+
+    private val australiaPopularSongsId= " PL4fGSI1pDJn7xvYy-bP6UFeG5tITQgScd"
+
+    private val spainPopularSongsId = "PL4fGSI1pDJn4jhQB4kb9M36dvVmJQPt4T"
+
+    val nationalPlaylistIds = arrayOf(koreanPopularSongsId, americanPopularSongsId,
+        indonesiaPopularSongsId, unitedKingdomPopularSongsId, japanesePopularSongsId, globalPopularSongsId,
+        australiaPopularSongsId, spainPopularSongsId
+    )
+
+    val recommendPlaylistChannelId = "UCvt5p3A11M8zd8iJPCC5XvQ"
+
+    val typedPlaylistChannelId = "UCSGC87iX0QhnIfUOI_B_Rdg"
+
+
 
     fun getThisYearMusicIdArray(): Array<String> {
         return this.thisYearMusicId
