@@ -1,10 +1,10 @@
 package com.myFile.transpose
 
-import com.myFile.transpose.retrofit.VideoData
+import com.myFile.transpose.model.VideoDataModel
 
 
 data class NowPlaylistModel (
-    private var playMusicList: List<VideoData> = emptyList(),
+    private var playMusicList: List<VideoDataModel> = emptyList(),
     private var currentPosition: Int = -1, // -1: 초기화 되지 않은 값
     private var playlistTitle: String?
 ){
@@ -15,7 +15,7 @@ data class NowPlaylistModel (
         return currentPosition
     }
 
-    fun getPlayMusicList(): List<VideoData>{
+    fun getPlayMusicList(): List<VideoDataModel>{
         return playMusicList
     }
 
@@ -37,7 +37,7 @@ data class NowPlaylistModel (
         currentPosition = position
     }
 
-    fun nextMusic(): VideoData? {
+    fun nextMusic(): VideoDataModel? {
         if (playMusicList.isEmpty()) return null
 
         currentPosition = if ((currentPosition + 1) == playMusicList.size) 0 else currentPosition + 1
@@ -45,7 +45,7 @@ data class NowPlaylistModel (
         return playMusicList[currentPosition]
     }
 
-    fun prevMusic(): VideoData? {
+    fun prevMusic(): VideoDataModel? {
         if (playMusicList.isEmpty()) return null
 
         // kotlin 의 lastIndex 사용 해보기
@@ -54,7 +54,7 @@ data class NowPlaylistModel (
         return playMusicList[currentPosition]
     }
 
-    fun currentMusicModel(): VideoData {
+    fun currentMusicModel(): VideoDataModel {
         return playMusicList[currentPosition]
     }
 }
