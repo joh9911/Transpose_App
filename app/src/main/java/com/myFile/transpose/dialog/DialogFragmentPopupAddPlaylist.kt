@@ -1,7 +1,9 @@
 package com.myFile.transpose.dialog
 
 import android.app.AlertDialog
+import android.app.Application
 import android.app.Dialog
+import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.util.Log
@@ -9,37 +11,31 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
+import com.myFile.transpose.MyApplication
 import com.myFile.transpose.R
-import com.myFile.transpose.retrofit.VideoData
 import com.myFile.transpose.adapter.MyPlaylistRecyclerViewAdapter
 import com.myFile.transpose.database.AppDatabase
 import com.myFile.transpose.database.Musics
 import com.myFile.transpose.database.MyPlaylist
 import com.myFile.transpose.database.MyPlaylistDao
+import com.myFile.transpose.model.VideoDataModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class DialogFragmentPopupAddPlaylist(val videoData: VideoData): DialogFragment() {
+class DialogFragmentPopupAddPlaylist(val videoData: VideoDataModel): DialogFragment() {
 
-    var myPlaylists = listOf<MyPlaylist>()
-    lateinit var db: AppDatabase
-    lateinit var myPlaylistDao: MyPlaylistDao
+    private lateinit var viewModel: DialogFragmentPopupAddPlaylistViewModel
     private lateinit var myPlaylistRecyclerViewAdapter: MyPlaylistRecyclerViewAdapter
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return activity?.let {
-            db = Room.databaseBuilder(
-                requireActivity(),
-                AppDatabase::class.java, "database-name"
-            )
-                .build()
-            myPlaylistDao = db.myPlaylistDao()
-
+            getMyPlaylist()
             val builder = AlertDialog.Builder(it)
             // Get the layout inflater
             val inflater = requireActivity().layoutInflater;
@@ -51,11 +47,8 @@ class DialogFragmentPopupAddPlaylist(val videoData: VideoData): DialogFragment()
             myPlaylistRecyclerViewAdapter = MyPlaylistRecyclerViewAdapter()
             myPlaylistRecyclerViewAdapter.setItemClickListener(object: MyPlaylistRecyclerViewAdapter.OnItemClickListener{
                 override fun onClick(v: View, position: Int) {
-                    val r = Runnable {
-                        myPlaylistDao.insertMusic(Musics(0,videoData,myPlaylists[position].uid))
-                    }
-                    val thread = Thread(r)
-                    thread.start()
+                    val myPlaylists = viewModel.myPlaylists.value!!
+                    addMusicItem(Musics(0,videoData,myPlaylists[position].uid))
                     Toast.makeText(activity,"재생목록에 추가했습니다.",Toast.LENGTH_SHORT).show()
                     dialog?.dismiss()
                 }
@@ -65,7 +58,7 @@ class DialogFragmentPopupAddPlaylist(val videoData: VideoData): DialogFragment()
                 }
             })
             recyclerView.adapter = myPlaylistRecyclerViewAdapter
-            getMyPlaylist()
+
             builder
                 .setTitle("재생목록에 추가")
                 .setView(dialogView)
@@ -80,16 +73,27 @@ class DialogFragmentPopupAddPlaylist(val videoData: VideoData): DialogFragment()
         } ?: throw IllegalStateException("Activity cannot be null")
     }
 
-    fun getMyPlaylist(){
-        CoroutineScope(Dispatchers.IO).launch{
-            myPlaylists = myPlaylistDao.getAll()
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        viewModel =
+            ViewModelProvider(this, DialogFragmentPopupAddPlaylistViewModelFactory(MyApplication().myPlaylistRepository))
+                .get(DialogFragmentPopupAddPlaylistViewModel::class.java)
+        initObserver()
+    }
+    private fun initObserver(){
+        viewModel.myPlaylists.observe(this){ myPlaylists ->
             myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
-            withContext(Dispatchers.Main){
-                if (myPlaylists.isEmpty()){
-                    dialog?.findViewById<TextView>(R.id.empty_text_view)?.visibility = View.VISIBLE
-                }
-            }
+            if (myPlaylists.isEmpty())
+                dialog?.findViewById<TextView>(R.id.empty_text_view)?.visibility = View.VISIBLE
         }
+    }
+
+    private fun addMusicItem(music: Musics){
+        viewModel.addMusicItem(music)
+    }
+
+    private fun getMyPlaylist(){
+        viewModel.getAllPlaylist()
     }
 
 }
