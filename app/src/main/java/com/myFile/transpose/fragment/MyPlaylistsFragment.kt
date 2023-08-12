@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.util.Log
 import android.view.*
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.PopupMenu
 import androidx.activity.OnBackPressedCallback
@@ -13,46 +12,35 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.room.Room
 import com.myFile.transpose.*
-import com.myFile.transpose.retrofit.RetrofitService
-import com.myFile.transpose.retrofit.RetrofitSuggestionKeyword
 import com.myFile.transpose.adapter.MyPlaylistRecyclerViewAdapter
 import com.myFile.transpose.adapter.SearchSuggestionKeywordRecyclerViewAdapter
-import com.myFile.transpose.database.AppDatabase
 import com.myFile.transpose.database.MyPlaylist
-import com.myFile.transpose.database.MyPlaylistDao
 import com.myFile.transpose.databinding.FragmentMyPlaylistBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogCreatePlaylist
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.myFile.transpose.viewModel.MyPlaylistsViewModel
+import com.myFile.transpose.viewModel.MyPlaylistsViewModelFactory
+import com.myFile.transpose.viewModel.SharedViewModel
 
-class MyPlaylistFragment: Fragment() {
+class MyPlaylistsFragment: Fragment() {
     lateinit var mainBinding: MainBinding
     var fbinding: FragmentMyPlaylistBinding? = null
     val binding get() = fbinding!!
     lateinit var activity: Activity
 
     lateinit var playlistToolBar: androidx.appcompat.widget.Toolbar
-    val suggestionKeywords = ArrayList<String>()
-    var myPlaylists = listOf<MyPlaylist>()
 
     private lateinit var searchKeywordRecyclerAdapter: SearchSuggestionKeywordRecyclerViewAdapter
     private lateinit var myPlaylistRecyclerViewAdapter: MyPlaylistRecyclerViewAdapter
     lateinit var searchView: SearchView
     lateinit var searchViewItem: MenuItem
     private lateinit var callback: OnBackPressedCallback
-    lateinit var db: AppDatabase
-    lateinit var myPlaylistDao: MyPlaylistDao
 
+    private lateinit var sharedViewModel: SharedViewModel
+    private lateinit var myPlaylistViewModel: MyPlaylistsViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,49 +50,56 @@ class MyPlaylistFragment: Fragment() {
         fbinding = FragmentMyPlaylistBinding.inflate(inflater, container, false)
         mainBinding = MainBinding.inflate(layoutInflater)
 //        setHasOptionsMenu(true)
+        initViewModel()
         val view = binding.root
         initRecyclerView()
         initToolbar()
-        initDb()
         addPlaylistButtonEvent()
         initPlaylistRecyclerView()
-        getMyPlaylist()
         return view
     }
-    fun getMyPlaylist(){
-        CoroutineScope(Dispatchers.IO).launch{
-            myPlaylists = myPlaylistDao.getAll()
-            withContext(Dispatchers.Main){
-                myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
-            }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        initObserver()
+        myPlaylistViewModel.getAllPlaylist()
+    }
+    private fun initViewModel(){
+        val application = requireActivity().application as MyApplication
+        val viewModelFactory = MyPlaylistsViewModelFactory(application.myPlaylistRepository, application.suggestionKeywordRepository)
+        sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
+        myPlaylistViewModel = ViewModelProvider(this, viewModelFactory)[MyPlaylistsViewModel::class.java]
+    }
+
+    private fun initObserver(){
+        myPlaylistViewModel.myPlaylists.observe(viewLifecycleOwner){ myPlaylists ->
+            myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
+        }
+        myPlaylistViewModel.suggestionKeywords.observe(viewLifecycleOwner){ suggestionKeywords ->
+            searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
         }
     }
-    fun deleteAndRefreshMyPlaylist(position: Int){
-        CoroutineScope(Dispatchers.IO).launch {
-            myPlaylistDao.delete(myPlaylists[position])
-            myPlaylists = myPlaylistDao.getAll()
-            withContext(Dispatchers.Main){
-                myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
-            }
-        }
+
+    private fun deleteMyPlaylistByPosition(position: Int){
+        val myPlaylist = myPlaylistViewModel.myPlaylists.value?.get(position)!!
+        myPlaylistViewModel.deleteMyPlaylist(myPlaylist)
     }
+
+    private fun addMyPlaylist(myPlaylist: MyPlaylist){
+        myPlaylistViewModel.addMyPlaylist(myPlaylist)
+    }
+
     private fun initPlaylistRecyclerView(){
         binding.playlistRecyclerView.layoutManager = LinearLayoutManager(activity)
         myPlaylistRecyclerViewAdapter = MyPlaylistRecyclerViewAdapter()
         myPlaylistRecyclerViewAdapter.setItemClickListener(object: MyPlaylistRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                val playlistUid = myPlaylists[position].uid
-                val playlistTitle = myPlaylists[position].playlistTitle
-                val bundle = Bundle().apply {
-                    putInt("playlistUid", playlistUid)
-                    putString("playlistTitle",playlistTitle)
-                }
-                val myPlaylistItemsFragment = MyPlaylistItemsFragment().apply {
-                    arguments = bundle
-                }
+                val myPlaylists = myPlaylistViewModel.myPlaylists.value ?: return
+                sharedViewModel.myPlaylistId = myPlaylists[position].uid
+                sharedViewModel.myPlaylistTitle = myPlaylists[position].playlistTitle
                 childFragmentManager.beginTransaction()
                     .replace(binding.resultFrameLayout.id,
-                        myPlaylistItemsFragment
+                        MyPlaylistItemsFragment()
                     )
                     .addToBackStack(null)
                     .commit()
@@ -117,7 +112,7 @@ class MyPlaylistFragment: Fragment() {
                 popUp.setOnMenuItemClickListener {
                     when (it.itemId) {
                         R.id.delete_my_playlist -> {
-                            deleteAndRefreshMyPlaylist(position)
+                            deleteMyPlaylistByPosition(position)
                         }
                     }
                     true
@@ -127,38 +122,30 @@ class MyPlaylistFragment: Fragment() {
         })
         binding.playlistRecyclerView.adapter = myPlaylistRecyclerViewAdapter
     }
-    fun initRecyclerView(){
+    private fun initRecyclerView(){
         binding.searchSuggestionKeywordRecyclerView.layoutManager = LinearLayoutManager(activity)
         searchKeywordRecyclerAdapter = SearchSuggestionKeywordRecyclerViewAdapter()
         searchKeywordRecyclerAdapter.setItemClickListener(object: SearchSuggestionKeywordRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
-                val searchWord = suggestionKeywords[position]
-                suggestionKeywords.clear()
-                searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
-                searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
-                searchView.clearFocus()
-                val searchResultFragment = SearchResultFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("searchWord",searchWord)
-                    }
+                val searchWord = myPlaylistViewModel.suggestionKeywords.value?.get(position)
+                if (searchWord != null && searchWord.isNotEmpty()){
+                    sharedViewModel.setSearchKeywordData(searchWord)
+                    myPlaylistViewModel.clearSuggestionKeywords()
+
+                    searchView.setQuery(searchWord,false) // 검색한 키워드 텍스트 설정
+                    searchView.clearFocus()
+                    childFragmentManager.beginTransaction()
+                        .add(binding.resultFrameLayout.id, SearchResultFragment())
+                        .addToBackStack(null)
+                        .commit()
+                    binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
                 }
-                childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id, searchResultFragment)
-                    .addToBackStack(null)
-                    .commit()
-                binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
             }
         })
         binding.searchSuggestionKeywordRecyclerView.adapter = searchKeywordRecyclerAdapter
     }
 
-    private fun initDb(){
-        db = AppDatabase.getDatabase(activity)
-        myPlaylistDao = db.myPlaylistDao()
-
-    }
     private fun addPlaylistButtonEvent(){
-
         binding.addPlaylistLinearLayout.setOnClickListener {
             showNoticeDialog()
         }
@@ -169,23 +156,16 @@ class MyPlaylistFragment: Fragment() {
 
         dialog.setListener(object: DialogCreatePlaylist.NoticeDialogListener {
             override fun onDialogPositiveClick(dialog: DialogFragment, text: Editable?) {
-                CoroutineScope(Dispatchers.IO).launch{
-                    myPlaylistDao.insertAll(MyPlaylist(0,"$text"))
-                    myPlaylists = myPlaylistDao.getAll()
-                    withContext(Dispatchers.Main){
-                        myPlaylistRecyclerViewAdapter.submitList(myPlaylists.toMutableList())
-                    }
-                }
+                addMyPlaylist(MyPlaylist(0, "$text"))
             }
 
             override fun onDialogNegativeClick(dialog: DialogFragment) {
                 dialog.dismiss()}
-
         })
         dialog.show(activity.supportFragmentManager, "NoticeDialogFragment")
     }
 
-    fun initToolbar(){
+    private fun initToolbar(){
         playlistToolBar = binding.playlistToolBar
         val menu = playlistToolBar.menu
         searchViewItem = menu.findItem(R.id.search_icon)
@@ -262,91 +242,28 @@ class MyPlaylistFragment: Fragment() {
         })
         searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
-                Log.d("playlist","쿼리를 보냈어요")
-                Log.d("playlist","${searchView.query}")
-                searchView.clearFocus()
-                val searchResultFragment = SearchResultFragment().apply {
-                    arguments = Bundle().apply {
-                        putString("searchWord",query!!)
-                    }
+                if (query == null || query.isEmpty()) {
+                    return false  // 키보드의 기본 동작을 유지하려면 false 반환
                 }
+                searchView.clearFocus()
+                sharedViewModel.setSearchKeywordData(query)
+
                 childFragmentManager.beginTransaction()
-                    .replace(binding.resultFrameLayout.id, searchResultFragment)
+                    .add(binding.resultFrameLayout.id, SearchResultFragment())
                     .addToBackStack(null)
                     .commit()
                 binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
-                return false
+                return true
             }
             //SwipeRefreshLayout 새로고침
             override fun onQueryTextChange(newText: String?): Boolean {
-                if (newText != null){
-                    getSuggestionKeyword(newText!!)
-                }
-                else{
-                    Log.d("빈","칸")
-                    suggestionKeywords.clear()
-                    searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
-                }
+                if (newText != null && newText.isNotBlank())
+                    myPlaylistViewModel.getSuggestionKeyword(newText)
+                else
+                    myPlaylistViewModel.clearSuggestionKeywords()
                 return false
             }
         })
-    }
-
-
-    private fun getSuggestionKeyword(newText: String){
-        val retrofit = RetrofitSuggestionKeyword.initRetrofit()
-        retrofit.create(RetrofitService::class.java).getSuggestionKeyword("firefox","yt",newText)
-            .enqueue(object : Callback<ResponseBody> {
-                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                    suggestionKeywords.clear()
-                    if (response.body() != null){
-                        val responseString = convertStringUnicodeToKorean(response.body()?.string()!!)
-                        val splitBracketList = responseString.split('[')
-                        val splitCommaList = splitBracketList[2].split(',')
-                        if (splitCommaList[0] != "]]" && splitCommaList[0] != '"'.toString()){
-                            addSubstringToSuggestionKeyword(splitCommaList)
-                        }
-                    }
-                    searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
-                }
-                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                    Log.d("실패!","!1")
-                }
-            })
-    }
-
-    /**
-    문자열 정보가 이상하게 들어와 알맞게 나눠주고 리스트에 추가
-     **/
-    private fun addSubstringToSuggestionKeyword(splitList: List<String>){
-        for (index in splitList.indices){
-            if (splitList[index].length >= 3){
-                if (splitList[index][splitList[index].length-1] == ']')
-                    suggestionKeywords.add(splitList[index].substring(1, splitList[index].length-2))
-                else
-                    suggestionKeywords.add(splitList[index].substring(1, splitList[index].length-1))
-            }
-        }
-    }
-    private fun convertStringUnicodeToKorean(data: String): String {
-        val sb = StringBuilder() // 단일 쓰레드이므로 StringBuilder 선언
-        var i = 0
-        /**
-         * \uXXXX 로 된 아스키코드 변경
-         * i+2 to i+6 을 16진수의 int 계산 후 char 타입으로 변환
-         */
-        while (i < data.length) {
-            if (data[i] == '\\' && data[i + 1] == 'u') {
-                val word = data.substring(i + 2, i + 6).toInt(16).toChar()
-                sb.append(word)
-                i += 5
-            } else {
-                sb.append(data[i])
-            }
-            i++
-        }
-
-        return sb.toString()
     }
 
     private fun searchViewCollapseEvent(){
@@ -354,9 +271,7 @@ class MyPlaylistFragment: Fragment() {
 //        binding.toolBar.setBackgroundColor(resources.getColor(R.color.black))
         activity.binding.bottomNavigationView.visibility = View.VISIBLE
         binding.searchSuggestionKeywordRecyclerView.visibility = View.INVISIBLE
-        suggestionKeywords.clear()
-        searchKeywordRecyclerAdapter.submitList(suggestionKeywords.toMutableList())
-
+        myPlaylistViewModel.clearSuggestionKeywords()
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
