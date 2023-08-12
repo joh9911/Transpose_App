@@ -1,6 +1,13 @@
 <resources>
     <string name="app_name">Transpose</string>
-    <string name="popular_Top100_playlist_text">Popular Top100</string>
+    <string name="korean_popular_Top100_playlist_text">Korean Popular Songs</string>
+    <string name="American_popular_Top100_playlist_text">American Popular Songs</string>
+    <string name="Indonesian_popular_Top100_playlist_text">Indonesian Popular Songs</string>
+    <string name="nation_playlist_text">National</string>
+    <string name="American_playlist_text">America Playlist</string>
+    <string name="Global_popular_Top100_playlist_text">Global Popular Songs</string>
+    <string name="Recommended_playlist_text">Recommended</string>
+    <string name="Type_based_playlist_text">Typed</string>
     <string name="this_year_playlist_text">This Year Music</string>
     <string name="today_hot_list_playlist_text">Today Hot List</string>
     <string name="latest_music_playlist_text">Latest Music Playlist</string>
@@ -32,14 +39,52 @@
     <string name="view_count_over_million">%sM views</string>
     <string name="view_count_over_hundred_million">%sM views</string>
     <string name="view_count_over_billion">%sB views</string>
-    <string name="subscriber_count_under_thousand">subscribers %s</string>
-    <string name="subscriber_count_over_thousand">subscribers %sk</string>
-    <string name="subscriber_count_over_hundred_thousand">subscribers %sk</string>
-    <string name="subscriber_count_over_million">subscribers %sM</string>
-    <string name="subscriber_count_over_hundred_million">subscribers %sM</string>
-    <string name="subscriber_count_over_billion">subscribers %sB</string>
+    <string name="subscriber_count_under_thousand">%s</string>
+    <string name="subscriber_count_over_thousand">%sk</string>
+    <string name="subscriber_count_over_hundred_thousand">%sk</string>
+    <string name="subscriber_count_over_million">%sM</string>
+    <string name="subscriber_count_over_hundred_million">%sM</string>
+    <string name="subscriber_count_over_billion">%sB</string>
     <string name="playlist_text">"Playlist: %s"</string>
     <string name="playlist_item_empty_text">Empty</string>
-    <string name="search_error_message">We have used up our daily search quota.\n We recommend you add the video to your playlist to enjoy it. </string>
+    <string name="quota_error_message">App has exceeded the daily limit for accessing YouTube.\n
+    We are sorry for the inconvenience and we kindly ask you to try again tomorrow.</string>
     <string name="refresh_text">Refresh</string>
+    <string name="pitch_plus_text">You raised pitch by one. Current state: %d</string>
+    <string name="pitch_minus_text">You reduced pitch by one. Current state: %d</string>
+    <string name="pitch_initialize_text">You initialize pitch. Current state: %d</string>
+    <string name="tempo_plus_text">You raised tempo by one. Current state: %d</string>
+    <string name="tempo_minus_text">You reduced tempo by one. Current state: %d</string>
+    <string name="tempo_init_text">you initialize tempo. Current state: %d</string>
+    <string name="load_fail_message">failed to load</string>
+    <string name="network_error_text">A network connection error has occurred.\n Please verify your connection and press the refresh button.</string>
+    <string name="notification">I\'m currently facing issues with retrieving YouTube search data in the app. \n\nI have reached out to the YouTube team for help, but I\'m not sure when I\'ll get a response. \n\nRest assured, I\'ll provide an update as soon as this issue is resolved. \n\nI apologize for any inconvenience caused."</string>
+    <string name="yt_notification">I\'ve managed to temporarily fix the quota issue, but you might notice that the search speed has been reduced. \n\nI sincerely apologize for any inconvenience this may cause.</string>
+
+    <string-array name="publish_date_formats">
+        <item>@string/publish_date_second</item>
+        <item>@string/publish_date_minute</item>
+        <item>@string/publish_date_hour</item>
+        <item>@string/publish_date_day</item>
+        <item>@string/publish_date_month</item>
+        <item>@string/publish_date_year</item>
+    </string-array>
+
+    <string-array name="view_count_formats">
+        <item>@string/view_count_under_thousand</item>
+        <item>@string/view_count_over_thousand</item>
+        <item>@string/view_count_over_hundred_thousand</item>
+        <item>@string/view_count_over_million</item>
+        <item>@string/view_count_over_hundred_million</item>
+        <item>@string/view_count_over_billion</item>
+    </string-array>
+
+    <string-array name="subscriber_count_formats">
+        <item>@string/subscriber_count_under_thousand</item>
+        <item>@string/subscriber_count_over_thousand</item>
+        <item>@string/subscriber_count_over_hundred_thousand</item>
+        <item>@string/subscriber_count_over_million</item>
+        <item>@string/subscriber_count_over_hundred_million</item>
+        <item>@string/subscriber_count_over_billion</item>
+    </string-array>
 </resources>

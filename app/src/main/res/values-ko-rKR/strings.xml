@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Transpose</string>
-    <string name="popular_Top100_playlist_text">인기 Top100</string>
+    <string name="korean_popular_Top100_playlist_text">한국 인기곡</string>
     <string name="this_year_playlist_text">올해의 음악</string>
     <string name="today_hot_list_playlist_text">오늘의 핫리스트</string>
     <string name="latest_music_playlist_text">최신 음악 플레이리스트</string>
@@ -32,15 +32,34 @@
     <string name="view_count_over_million">조회수 %s만회</string>
     <string name="view_count_over_billion">조회수 %s억회</string>
     <string name="view_count_over_hundred_million">조회수 %s억회</string>
-    <string name="subscriber_count_under_thousand">구독자 %s명</string>
-    <string name="subscriber_count_over_thousand">구독자 %s천명</string>
-    <string name="subscriber_count_over_hundred_thousand">구독자 %s만명</string>
-    <string name="subscriber_count_over_million">구독자 %s만명</string>
-    <string name="subscriber_count_over_hundred_million">구독자 %s억명</string>
-    <string name="subscriber_count_over_billion">구독자 %s억명</string>
+    <string name="subscriber_count_under_thousand">%s</string>
+    <string name="subscriber_count_over_thousand">%s천</string>
+    <string name="subscriber_count_over_hundred_thousand">%s만</string>
+    <string name="subscriber_count_over_million">%s만</string>
+    <string name="subscriber_count_over_hundred_million">%s억</string>
+    <string name="subscriber_count_over_billion">%s억</string>
     <string name="playlist_text">재생목록:  %s</string>
     <string name="playlist_item_empty_text">비어 있음</string>
     <string name="channel_video_count">비디오 %d개</string>
-    <string name="search_error_message">하루 할당량을 모두 사용했습니다. \n영상을 재생 목록에 추가하여 감상하는 것을 권장드립니다.</string>
     <string name="refresh_text">새로고침</string>
+    <string name="pitch_minus_text">음정을 1 내렸습니다. 현재 상태: %d</string>
+    <string name="pitch_initialize_text">음정을 초기화했습니다.  현재 상태: %d</string>
+    <string name="load_fail_message">불러오지 못했음</string>
+    <string name="network_error_text">인터넷에 연결하지 못했습니다.\n 연결 상태를 확인한 후 다시 시도해주세요.</string>
+    <string name="quota_error_message">앱이 Youtube에 접근할 수 있는 오늘의 한도를 초과했습니다.
+    \n내일 다시 시도해 주시기 바랍니다.</string>
+    <string name="pitch_plus_text">음정을 1 올렸습니다. 현재 상태: %d</string>
+    <string name="tempo_plus_text">템포를 1 올렸습니다. 현재 상태: %d</string>
+    <string name="tempo_minus_text">템포를 1 내렸습니다. 현재 상태: %d</string>
+    <string name="tempo_init_text">템포를 초기화했습니다. 현재 상태: %d</string>
+    <string name="notification">\n\n현재 유튜브 검색 데이터를 가져오는 과정에서 어려움을 겪고 있습니다. \n\n\n\n문제가 해결되는 즉시 업데이트를 실시할 예정입니다. \n\n\n\n불편을 드려 대단히 죄송합니다.</string>
+    <string name="yt_notification">할당량 문제에 대한 임시 해결책을 적용하였습니다. 하지만, 검색 속도가 이전보다 느려지게 되었습니다. \n\n\n\n이로 인한 불편함에 대해 진심으로 사과드립니다.</string>
+    <string name="American_popular_Top100_playlist_text">미국 인기곡</string>
+    <string name="Indonesian_popular_Top100_playlist_text">인도네시아 인기곡</string>
+    <string name="American_playlist_text">미국 플레이리스트</string>
+    <string name="Global_popular_Top100_playlist_text">글로벌 인기곡</string>
+    <string name="Recommended_playlist_text">추천</string>
+    <string name="nation_playlist_text">국가별</string>
+    <string name="Type_based_playlist_text">종류별</string>
+
 </resources>
