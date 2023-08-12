@@ -45,7 +45,7 @@
 
     <ConstraintSet android:id="@+id/start">
         <Constraint
-            android:id="@+id/fragmentRecyclerView"
+            android:id="@+id/mainRecyclerView"
             android:layout_width="0dp"
             android:layout_height="0.1dp"
             android:layout_marginBottom="66dp"
@@ -72,20 +72,14 @@
             motion:visibilityMode="ignore"
             motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
             motion:layout_constraintBottom_toBottomOf="parent"/>
-        <Constraint
-            android:id="@+id/related_video_progress_bar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            motion:visibilityMode="ignore"
-            android:visibility="invisible"
-            motion:layout_constraintTop_toBottomOf="@id/fragmentRecyclerView"/>
+
         <Constraint
             android:id="@+id/error_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             motion:visibilityMode="ignore"
             android:visibility="invisible"
-            motion:layout_constraintTop_toBottomOf="@id/fragmentRecyclerView"/>
+            motion:layout_constraintTop_toBottomOf="@id/mainRecyclerView"/>
         <Constraint
             android:id="@+id/mainContainerLayout"
             android:layout_width="0dp"
@@ -185,7 +179,7 @@
             motion:layout_constraintEnd_toEndOf="parent"/>
 
         <Constraint
-            android:id="@+id/fragmentRecyclerView"
+            android:id="@+id/mainRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             motion:visibilityMode="ignore"
@@ -193,15 +187,7 @@
             motion:layout_constraintBottom_toBottomOf="parent"
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"/>
-        <Constraint
-            android:id="@+id/related_video_progress_bar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            motion:visibilityMode="ignore"
-            motion:layout_constraintTop_toBottomOf="@id/mainContainerLayout"
-            motion:layout_constraintBottom_toBottomOf="parent"
-            motion:layout_constraintStart_toStartOf="parent"
-            motion:layout_constraintEnd_toEndOf="parent"/>
+
         <Constraint
             android:id="@+id/error_text_view"
             android:layout_width="wrap_content"

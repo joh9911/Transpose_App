@@ -17,7 +17,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.exoplayer2.ui.PlayerView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -26,6 +26,7 @@
         app:layout_constraintStart_toStartOf="@id/mainContainerLayout"
         app:layout_constraintTop_toTopOf="@id/mainContainerLayout"
         app:resize_mode="fill"
+        app:auto_show="false"
         app:show_buffering="always"/>
 
     <ImageView
@@ -63,7 +64,7 @@
         android:layout_height="wrap_content"
         android:padding="12dp"
         android:background="?attr/selectableItemBackground"
-        android:src="@drawable/ic_baseline_pause_24"
+        android:src="@drawable/ic_baseline_play_arrow_24"
         app:layout_constraintBottom_toBottomOf="@id/mainContainerLayout"
         app:layout_constraintStart_toEndOf="@id/bottomTitleTextView"
         app:layout_constraintEnd_toStartOf="@id/bottomPlayerCloseButton"
@@ -195,6 +196,7 @@
                 android:layout_marginStart="10dp"
                 android:padding="5dp"
                 android:src="@drawable/loop_4"
+                android:visibility="gone"
                 android:background="?attr/selectableItemBackground"/>
 
             <androidx.recyclerview.widget.RecyclerView

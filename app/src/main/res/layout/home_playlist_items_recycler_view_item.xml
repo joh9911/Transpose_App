@@ -10,24 +10,14 @@
     android:paddingTop="10dp"
     android:paddingBottom="10dp"
     android:id="@+id/data_item">
-    <TextView
-        android:id="@+id/ranking_text_view"
-        android:layout_width="40dp"
-        android:layout_height="wrap_content"
-        android:text="1"
-        android:textSize="13dp"
-        android:paddingLeft="10dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintVertical_bias="0.6"/>
+
     <ImageView
         android:id="@+id/thumbnail_image_view"
         android:layout_width="70dp"
         android:layout_height="match_parent"
         android:scaleType="fitXY"
         android:src="@drawable/ic_launcher_background"
-        app:layout_constraintStart_toEndOf="@id/ranking_text_view"
+        app:layout_constraintStart_toStartOf="parent"
         android:layout_marginLeft="10dp"/>
     <TextView
         android:id="@+id/title_text_view"

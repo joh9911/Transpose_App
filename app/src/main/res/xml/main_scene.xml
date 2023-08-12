@@ -37,20 +37,10 @@
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
         </Constraint>
-<!--        <Constraint android:id="@+id/search_result_frame_layout">-->
-<!--            <PropertySet-->
-<!--                app:applyMotionScene="false"-->
-<!--                app:visibilityMode="ignore" />-->
-<!--        </Constraint>-->
-<!--        <Constraint android:id="@+id/video_recycler_view">-->
-<!--            <PropertySet-->
-<!--                app:applyMotionScene="false"-->
-<!--                app:visibilityMode="ignore" />-->
-<!--        </Constraint>-->
+
         <Constraint android:id="@+id/basic_frame_layout"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginBottom="56dp"
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"
             motion:layout_constraintTop_toTopOf="parent"
