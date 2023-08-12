@@ -7,15 +7,22 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.myFile.transpose.retrofit.VideoData
 import com.myFile.transpose.databinding.ProgressBarItemBinding
 import com.myFile.transpose.databinding.SearchResultRecyclerItemBinding
+import com.myFile.transpose.model.VideoDataModel
 
-class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerView.ViewHolder>(
+class SearchResultFragmentRecyclerViewAdapter: ListAdapter<SearchResultFragmentRecyclerViewAdapter.SearchResultRecyclerViewItem, RecyclerView.ViewHolder>(
     diffUtil
 ) {
-    private val VIEW_TYPE_ITEM = 0
-    private val VIEW_TYPE_LOADING = 1
+    companion object{
+        private const val VIEW_TYPE_ITEM = 0
+        private const val VIEW_TYPE_LOADING = 1
+    }
+
+    sealed class SearchResultRecyclerViewItem{
+        data class ItemData(val videoData: VideoDataModel): SearchResultRecyclerViewItem()
+        object LoadingData: SearchResultRecyclerViewItem()
+    }
 
     inner class MyProgressViewHolder(binding: ProgressBarItemBinding): RecyclerView.ViewHolder(binding.root){
     }
@@ -32,7 +39,7 @@ class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerVi
             }
 
         }
-        fun bind(videoData: VideoData){
+        fun bind(videoData: VideoDataModel){
             binding.channelTextView.text = videoData.channelTitle
             binding.titleTextView.text = videoData.title
             binding.videoDetailText.text = videoData.date
@@ -59,15 +66,16 @@ class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerVi
         }
     }
     override fun getItemViewType(position: Int): Int {
-        return when (currentList[position].title) {
-            " " -> VIEW_TYPE_LOADING
-            else -> VIEW_TYPE_ITEM
+        return when (currentList[position]) {
+            is SearchResultRecyclerViewItem.ItemData -> VIEW_TYPE_ITEM
+            is SearchResultRecyclerViewItem.LoadingData -> VIEW_TYPE_LOADING
         }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if(holder is MyViewHolder){
-            holder.bind(currentList[position])
+            val item = currentList[position] as SearchResultRecyclerViewItem.ItemData
+            holder.bind(item.videoData)
         }
 
 
@@ -85,13 +93,13 @@ class SearchResultFragmentRecyclerViewAdapter: ListAdapter<VideoData, RecyclerVi
     // (4) setItemClickListener로 설정한 함수 실행
     private lateinit var itemClickListener : OnItemClickListener
 
-    companion object diffUtil : DiffUtil.ItemCallback<VideoData>() {
+    object diffUtil : DiffUtil.ItemCallback<SearchResultRecyclerViewItem>() {
 
-        override fun areItemsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
-            return oldItem.title == newItem.title
+        override fun areItemsTheSame(oldItem: SearchResultRecyclerViewItem, newItem: SearchResultRecyclerViewItem): Boolean {
+            return oldItem == newItem
         }
 
-        override fun areContentsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+        override fun areContentsTheSame(oldItem: SearchResultRecyclerViewItem, newItem: SearchResultRecyclerViewItem): Boolean {
             return oldItem == newItem
         }
     }
