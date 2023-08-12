@@ -8,29 +8,37 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.myFile.transpose.R
-import com.myFile.transpose.retrofit.ChannelData
-import com.myFile.transpose.retrofit.VideoData
 import com.myFile.transpose.databinding.ChannelVideoRecyclerViewHeaderViewBinding
 import com.myFile.transpose.databinding.ProgressBarItemBinding
 import com.myFile.transpose.databinding.SearchResultRecyclerItemBinding
+import com.myFile.transpose.model.ChannelDataModel
+import com.myFile.transpose.model.VideoDataModel
 
-class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<VideoData, RecyclerView.ViewHolder>(
+class ChannelVideoRecyclerViewAdapter: ListAdapter<ChannelVideoRecyclerViewAdapter.ChannelFragmentRecyclerViewItem, RecyclerView.ViewHolder>(
     diffUtil
 ) {
+    companion object{
+        private const val VIEW_TYPE_HEADER = 0
+        private const val VIEW_TYPE_LOADING = 2
+        private const val VIEW_TYPE_ITEM = 1
+    }
 
-    private val VIEW_TYPE_HEADER = 0
-    private val VIEW_TYPE_LOADING = 2
-    private val VIEW_TYPE_ITEM = 1
-    var channelDataVar = channelData
+    sealed class ChannelFragmentRecyclerViewItem{
+        object LoadingData: ChannelFragmentRecyclerViewItem()
+        data class HeaderTitleData(val channelDataModel: ChannelDataModel): ChannelFragmentRecyclerViewItem()
+        data class ItemData(val videoData: VideoDataModel): ChannelFragmentRecyclerViewItem()
+    }
 
-    inner class MyHeaderViewHolder(binding: ChannelVideoRecyclerViewHeaderViewBinding): RecyclerView.ViewHolder(binding.root){
-        init {
-            binding.channelTitle.text = channelDataVar.channelTitle
+
+    inner class MyHeaderViewHolder(private val binding: ChannelVideoRecyclerViewHeaderViewBinding): RecyclerView.ViewHolder(binding.root){
+
+        fun bind(channelDataModel: ChannelDataModel){
+            binding.channelTitle.text = channelDataModel.channelTitle
             binding.channelInfo.text =
-                String.format(binding.channelInfo.context.getString(R.string.channel_video_count), channelDataVar.channelVideoCount.toInt())
-            binding.channelDescription.text = channelDataVar.channelDescription
+                String.format(binding.channelInfo.context.getString(R.string.channel_video_count), channelDataModel.channelVideoCount.toInt())
+            binding.channelDescription.text = channelDataModel.channelDescription
             Glide.with(binding.channelBanner)
-                .load(channelDataVar.channelBanner)
+                .load(channelDataModel.channelBanner)
                 .into(binding.channelBanner)
         }
     }
@@ -39,13 +47,15 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
     inner class MyViewHolder(private val binding: SearchResultRecyclerItemBinding): RecyclerView.ViewHolder(binding.root) {
         init{
             binding.dataItem.setOnClickListener {
-                itemClickListener.videoClick(it, bindingAdapterPosition - 1)
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION)
+                    itemClickListener.videoClick(it, bindingAdapterPosition)
             }
             binding.optionButton.setOnClickListener {
-                itemClickListener.optionButtonClick(it, bindingAdapterPosition - 1)
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION)
+                    itemClickListener.optionButtonClick(it, bindingAdapterPosition)
             }
         }
-        fun bind(videoData: VideoData){
+        fun bind(videoData: VideoDataModel){
             binding.channelTextView.text = videoData.channelTitle
             binding.titleTextView.text = videoData.title
             binding.videoDetailText.text = videoData.date
@@ -56,7 +66,7 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
     }
 
     override fun getItemCount(): Int {
-        return currentList.size + 1
+        return currentList.size
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -85,22 +95,26 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
     }
 
     override fun getItemViewType(position: Int): Int {
-        return when (position) {
-            0 -> VIEW_TYPE_HEADER
-            else -> {
-                if (currentList[position - 1].title == " ")
-                    return VIEW_TYPE_LOADING
-                else
-                    return VIEW_TYPE_ITEM
-            }
+        return when (currentList[position]) {
+            is ChannelFragmentRecyclerViewItem.HeaderTitleData -> VIEW_TYPE_HEADER
+            is ChannelFragmentRecyclerViewItem.ItemData -> VIEW_TYPE_ITEM
+            is ChannelFragmentRecyclerViewItem.LoadingData -> VIEW_TYPE_LOADING
         }
     }
 
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        if(holder is MyViewHolder){
-            holder.bind(currentList[position - 1])
+        when(holder){
+            is MyHeaderViewHolder -> {
+                val item = currentList[position] as ChannelFragmentRecyclerViewItem.HeaderTitleData
+                holder.bind(item.channelDataModel)
+            }
+            is MyViewHolder -> {
+                val item = currentList[position] as ChannelFragmentRecyclerViewItem.ItemData
+                holder.bind(item.videoData)
+            }
         }
+
     }
     // (2) 리스너 인터페이스
     interface OnItemClickListener {
@@ -114,13 +128,13 @@ class ChannelVideoRecyclerViewAdapter(channelData: ChannelData): ListAdapter<Vid
     // (4) setItemClickListener로 설정한 함수 실행
     private lateinit var itemClickListener : OnItemClickListener
 
-    companion object diffUtil : DiffUtil.ItemCallback<VideoData>() {
+    object diffUtil : DiffUtil.ItemCallback<ChannelFragmentRecyclerViewItem>() {
 
-        override fun areItemsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
-            return oldItem.title == newItem.title
+        override fun areItemsTheSame(oldItem: ChannelFragmentRecyclerViewItem, newItem: ChannelFragmentRecyclerViewItem): Boolean {
+            return oldItem == newItem
         }
 
-        override fun areContentsTheSame(oldItem: VideoData, newItem: VideoData): Boolean {
+        override fun areContentsTheSame(oldItem: ChannelFragmentRecyclerViewItem, newItem: ChannelFragmentRecyclerViewItem): Boolean {
             return oldItem == newItem
         }
     }
