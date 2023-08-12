@@ -11,11 +11,11 @@ import com.myFile.transpose.databinding.HomePlaylistRecyclerItemBinding
 import com.myFile.transpose.databinding.NationalRecyclerViewItemBinding
 import com.myFile.transpose.model.PlaylistDataModel
 
-class HomePlaylistRecyclerViewAdapter: ListAdapter<PlaylistDataModel, HomePlaylistRecyclerViewAdapter.MyViewHolder>(
+class HomeRecommendedPlaylistRecyclerViewAdapter: ListAdapter<PlaylistDataModel, HomeRecommendedPlaylistRecyclerViewAdapter.MyViewHolder>(
     diffUtil
 ) {
 
-    inner class MyViewHolder(private val binding: HomePlaylistRecyclerItemBinding) :
+    inner class MyViewHolder(private val binding: NationalRecyclerViewItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
             itemView.setOnClickListener {
@@ -24,17 +24,16 @@ class HomePlaylistRecyclerViewAdapter: ListAdapter<PlaylistDataModel, HomePlayli
             }
         }
         fun bind(playlistDataModel: PlaylistDataModel) {
-            binding.playlistTitle.text = playlistDataModel.title
-            binding.playlistChannelTitle.text = playlistDataModel.channelTitle
-            binding.playlistDate.text = playlistDataModel.date
-                Glide.with(binding.playlistThumbnail)
-                    .load(playlistDataModel.thumbnail)
-                    .into(binding.playlistThumbnail)
+            binding.nationName.text = playlistDataModel.title
+            binding.description.text = playlistDataModel.description
+            Glide.with(binding.nationIcon)
+                .load(playlistDataModel.thumbnail)
+                .into(binding.nationIcon)
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = HomePlaylistRecyclerItemBinding.inflate(
+        val binding = NationalRecyclerViewItemBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
