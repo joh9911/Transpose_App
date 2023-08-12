@@ -1,9 +1,8 @@
 package com.myFile.transpose.database
 
-import android.os.Parcelable
 import androidx.room.*
-import com.myFile.transpose.retrofit.VideoData
-import kotlinx.parcelize.Parcelize
+import com.myFile.transpose.model.VideoDataModel
+import kotlinx.coroutines.flow.Flow
 
 
 @Entity
@@ -24,7 +23,7 @@ data class MyPlaylist(
 )
 data class Musics(
     @PrimaryKey(autoGenerate = true) val musicId: Int,
-    val musicData: VideoData,
+    val musicData: VideoDataModel,
     val playlistId: Int
 )
 
@@ -32,31 +31,31 @@ data class Musics(
 @Dao
 interface MyPlaylistDao{
     @Query("SELECT * FROM MyPlaylist")
-    fun getAll(): List<MyPlaylist>
+    suspend fun getAllPlaylist(): List<MyPlaylist>
 
     @Query("SELECT * FROM MyPlaylist WHERE uid = (:position)")
-    fun getPlaylistByPosition(position: Int): MyPlaylist
+    suspend fun getPlaylistItemByPosition(position: Int): List<MyPlaylist>
 
     @Insert
-    fun insertAll(vararg myPlaylist: MyPlaylist)
+    suspend fun addPlaylist(vararg myPlaylist: MyPlaylist)
 
     @Delete
-    fun delete(myPlaylist: MyPlaylist)
+    suspend fun deletePlaylist(myPlaylist: MyPlaylist)
 
     @Query("DELETE FROM MyPlaylist")
-    fun deleteAll()
+    suspend fun deleteAllPlaylists()
 
     @Query("SELECT * FROM Musics WHERE playlistId = (:playlistId)")
-    fun getMusicItemsByPlaylistId(playlistId: Int): List<Musics>
+    suspend fun getPlaylistItemByPlaylistId(playlistId: Int): List<Musics>
 
     @Query("DELETE FROM musics")
-    fun deleteMusicAll()
+    suspend fun deleteAllMusicItems()
 
     @Insert
-    fun insertMusic(vararg musics: Musics)
+    suspend fun addMusicItem(vararg musics: Musics)
 
     @Delete
-    fun deleteMusic(musics: Musics)
+    suspend fun deleteMusicItem(musics: Musics)
 }
 
 

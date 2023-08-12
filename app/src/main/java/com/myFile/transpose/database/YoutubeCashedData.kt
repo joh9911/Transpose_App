@@ -1,7 +1,7 @@
 package com.myFile.transpose.database
 
 import androidx.room.*
-import com.myFile.transpose.retrofit.VideoData
+import com.myFile.transpose.model.VideoDataModel
 
 @Entity
 data class CashedKeyword(
@@ -21,7 +21,7 @@ data class CashedKeyword(
 )
 data class YoutubeCashedData(
     @PrimaryKey(autoGenerate = true) val dataId: Int,
-    val searchVideoData: VideoData,
+    val searchVideoData: VideoDataModel,
     val keyWord: String
 )
 
@@ -45,26 +45,26 @@ data class PageToken(
 @Dao
 interface YoutubeCashedDataDao{
     @Query("SELECT * FROM YoutubeCashedData WHERE keyWord = (:searchKeyword)")
-    fun getAllCashedDataBySearchKeyword(searchKeyword: String): List<YoutubeCashedData>?
+    suspend fun getAllCashedDataBySearchKeyword(searchKeyword: String): List<YoutubeCashedData>?
 
     @Query("SELECT * FROM CashedKeyword WHERE searchKeyword = (:searchKeyword)")
-    fun getCashedKeywordDataBySearchKeyword(searchKeyword: String): CashedKeyword?
+    suspend fun getCashedKeywordDataBySearchKeyword(searchKeyword: String): CashedKeyword?
 
     @Query("SELECT * FROM PageToken WHERE keyWord = (:searchKeyword)")
-    fun getPageTokenBySearchKeyword(searchKeyword: String): PageToken?
+    suspend fun getPageTokenBySearchKeyword(searchKeyword: String): PageToken?
 
 
     @Insert (onConflict = OnConflictStrategy.IGNORE)
-    fun insertCashedData(vararg youtubeCashedData: YoutubeCashedData)
+    suspend fun insertCashedData(vararg youtubeCashedData: YoutubeCashedData)
 
     @Insert (onConflict = OnConflictStrategy.IGNORE)
-    fun insertKeyword(vararg cashedKeyword: CashedKeyword)
+    suspend fun insertKeyword(vararg cashedKeyword: CashedKeyword)
 
-    @Insert (onConflict = OnConflictStrategy.IGNORE)
-    fun insertPageToken(vararg pageToken: PageToken)
+    @Insert (onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPageToken(vararg pageToken: PageToken)
 
     @Transaction
-    fun insertData(searchKeyword: String, cashedKeyword: CashedKeyword, youtubeCashedDataList: List<YoutubeCashedData>, pageToken: PageToken) {
+    suspend fun insertData(searchKeyword: String, cashedKeyword: CashedKeyword, youtubeCashedDataList: List<YoutubeCashedData>, pageToken: PageToken) {
         deleteAllBySearchKeyword(searchKeyword)
         insertKeyword(cashedKeyword)
         youtubeCashedDataList.forEach { youtubeCashedData ->
@@ -74,9 +74,9 @@ interface YoutubeCashedDataDao{
     }
 
     @Query("DELETE FROM CashedKeyword WHERE searchKeyword = (:searchKeyword)")
-    fun deleteAllBySearchKeyword(searchKeyword: String)
+    suspend fun deleteAllBySearchKeyword(searchKeyword: String)
 
     @Query("DELETE FROM CashedKeyword WHERE savedTime < :thirtyDaysAgo")
-    fun deleteOldCashedData(thirtyDaysAgo: Long)
+    suspend fun deleteOldCashedData(thirtyDaysAgo: Long)
 
 }
