@@ -1,50 +1,53 @@
 package com.myFile.transpose
 
+import android.app.ActivityManager
 import android.content.*
+import android.media.AudioManager
+import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.fragment.app.Fragment
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.MutableLiveData
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.PlaybackParameters
+import androidx.lifecycle.ViewModelProvider
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.google.android.play.core.ktx.startUpdateFlowForResult
 import com.google.android.play.core.review.ReviewManagerFactory
-import com.myFile.transpose.constants.TimeTarget
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
+import com.myFile.transpose.constants.Actions
 import com.myFile.transpose.constants.TimeTarget.REVIEW_TARGET_DURATION
-import com.myFile.transpose.database.AppDatabase
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.dialog.DialogForNotification
 import com.myFile.transpose.fragment.HomeFragment
-import com.myFile.transpose.fragment.MyPlaylistFragment
-import com.myFile.transpose.fragment.PlayerFragment
-import kotlinx.coroutines.*
+import com.myFile.transpose.fragment.MyPlaylistsFragment
+import com.myFile.transpose.fragment.VideoPlayerFragment
+import com.myFile.transpose.viewModel.SharedViewModel
+import com.myFile.transpose.viewModel.SharedViewModelModelFactory
+import java.util.jar.Manifest
 
 
-class Activity: AppCompatActivity(), ServiceListenerToActivity {
+class Activity: AppCompatActivity() {
     var mBinding: MainBinding? = null
     val binding get() = mBinding!!
 
-    lateinit var exoPlayer: ExoPlayer
     lateinit var transposePage: LinearLayout
 
     lateinit var bottomNavigationView: BottomNavigationView
     lateinit var pitchSeekBar: SeekBar
     lateinit var tempoSeekBar: SeekBar
     lateinit var homeFragment: HomeFragment
-    lateinit var myPlaylistFragment: MyPlaylistFragment
-    var videoService: VideoService? = null
+    lateinit var myPlaylistFragment: MyPlaylistsFragment
 
     private lateinit var connection: NetworkConnection
 
@@ -53,48 +56,69 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
 
     var toastMessage: Toast? = null
 
-    val isServiceBound: MutableLiveData<Boolean> = MutableLiveData<Boolean>().apply { value = false }
+    private lateinit var sharedViewModel: SharedViewModel
 
-    private val bindConnection = object: ServiceConnection{
-        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-            Log.d("서버 커네그","$p1")
-            val b = p1 as VideoService.VideoServiceBinder
-            videoService = b.getService()
-            videoService?.setServiceListenerToActivity(this@Activity)
-            exoPlayer = b.getExoPlayerInstance()
-            isServiceBound.value = true
+    private lateinit var receiver: BroadcastReceiver
 
-        }
+    lateinit var controllerFuture: ListenableFuture<MediaController>
+    val controller: MediaController?
+        get() = if (controllerFuture.isDone) controllerFuture.get() else null
 
-        override fun onServiceDisconnected(p0: ComponentName?) {
-            videoService = null
-            isServiceBound.value = false
-        }
-
-    }
-    private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
+//    private val bindConnection = object: ServiceConnection{
+//        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+//            Log.d("서버 커네그","$p1")
+//            initViewModel()
+//            val b = p1 as VideoService.VideoServiceBinder
+//            videoService = b.getService()
+//            videoService?.setServiceListenerToActivity(this@Activity)
+//            isServiceBound.value = true
+//
+//        }
+//
+//        override fun onServiceDisconnected(p0: ComponentName?) {
+//            videoService = null
+//            isServiceBound.value = false
+//        }
+//
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = MainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        initViewModel()
+
 //        showNoticeDialog()
+        volumeControlStream = AudioManager.STREAM_MUSIC
+        initController()
         checkUpdateInfo()
+        if (Build.VERSION.SDK_INT >= 33) {
+            Log.d("퍼미션 ","요청")
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 0)
+        }
+        initBroadcastReceiver()
+        initBottomNavigationView()
         initView()
-        initExceptionHandler()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         checkNetworkConnection()
-        bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
+//        bindService(Intent(this, VideoService::class.java), bindConnection, BIND_AUTO_CREATE)
         appUsageTimeSave()
-        clearCashedDataByTime()
         initFragment()
     }
 
-    private fun clearCashedDataByTime(){
-        val youtubeCashedDao = AppDatabase.getDatabase(this).youtubeCashedDataDao()
-        CoroutineScope(Dispatchers.IO).launch {
-            youtubeCashedDao.deleteOldCashedData(System.currentTimeMillis() - TimeTarget.DATA_DELETE_TARGET_DURATION)
-        }
+    private fun initViewModel(){
+        val viewModelFactory = SharedViewModelModelFactory()
+        sharedViewModel = ViewModelProvider(this, viewModelFactory)[SharedViewModel::class.java]
+    }
+
+
+    private fun initController(){
+        val sessionToken = SessionToken(this, ComponentName(this, MediaService::class.java))
+        controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
+        controllerFuture.addListener({
+             startService(Intent(this,MediaService::class.java))
+            // MediaController is available here with controllerFuture.get()
+        }, MoreExecutors.directExecutor())
     }
 
     fun showNoticeDialog() {
@@ -117,6 +141,34 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         val appUsageSharedPreferences = AppUsageSharedPreferences(this)
         appUsageSharedPreferences.saveAppUsageStartTime()
         appUsageTimeChecker = AppUsageTimeChecker(this)
+    }
+
+    /**
+     * 현재 VideoPlayerFragment 가 실행중일 때, 그 후 재생할 mode 가 같으면
+     * 그냥 state를 end로 transition
+     * mode가 다를 경우 서비스 종료 하고 mode 바꾼 후 프레그먼트 replace
+     * 실행중이 아닐 경우 mode 바꾼 후 그냥 프레그먼트 replace
+     */
+    fun executeVideoPlayerFragment(mode: SharedViewModel.PlaybackMode){
+
+        val targetFragment = supportFragmentManager.fragments.firstOrNull { it is VideoPlayerFragment } as? VideoPlayerFragment
+        if (targetFragment != null){
+            if (sharedViewModel.playbackMode == mode) {
+                targetFragment.binding.playerMotionLayout.transitionToEnd()
+            } else {
+                sharedViewModel.playbackMode = mode
+                stopService(Intent(this, MediaService::class.java))
+                supportFragmentManager.beginTransaction()
+                    .replace(binding.playerFragment.id, VideoPlayerFragment())
+                    .commit()
+            }
+        }
+        else{
+            sharedViewModel.playbackMode = mode
+            supportFragmentManager.beginTransaction()
+                .replace(binding.playerFragment.id, VideoPlayerFragment())
+                .commit()
+        }
     }
 
     private fun checkNetworkConnection(){
@@ -174,6 +226,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
                     )
                 }
             }
+        registerReceiver(receiver, IntentFilter("YOUR_CUSTOM_ACTION"))
     }
     private fun checkUpdateInfo(){
         appUpdateManager = AppUpdateManagerFactory.create(this)
@@ -211,7 +264,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
 
     private fun initFragment(){
         homeFragment = HomeFragment()
-        myPlaylistFragment = MyPlaylistFragment()
+        myPlaylistFragment = MyPlaylistsFragment()
         supportFragmentManager.beginTransaction()
             .add(binding.basicFrameLayout.id,homeFragment)
             .commit()
@@ -248,15 +301,6 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         })
     }
 
-    private fun initExceptionHandler(){
-        coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
-            Log.d("코루틴 에러","$throwable")
-            CoroutineScope(Dispatchers.Main).launch {
-                showToastMessage(resources.getString(R.string.network_error_message))
-            }
-        }
-    }
-
     private fun initView() {
         initTranspose()
         initBottomNavigationView()
@@ -272,7 +316,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
             }
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
-                    if(fragment.isVisible && fragment is PlayerFragment) {
+                    if(fragment.isVisible && fragment is VideoPlayerFragment) {
                         setPitch()
                     }
                 }
@@ -281,7 +325,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         binding.pitchInitButton.setOnClickListener {
             pitchSeekBar.progress = 10
             for(fragment in supportFragmentManager.fragments) {
-                if(fragment.isVisible && fragment is PlayerFragment) {
+                if(fragment.isVisible && fragment is VideoPlayerFragment) {
                     setPitch()
                 }
             }
@@ -289,7 +333,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         binding.pitchSeekBarMinusButton.setOnClickListener {
             pitchSeekBar.progress -= 1
             for(fragment in supportFragmentManager.fragments) {
-                if(fragment.isVisible && fragment is PlayerFragment) {
+                if(fragment.isVisible && fragment is VideoPlayerFragment) {
                     setPitch()
                 }
             }
@@ -297,7 +341,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         binding.pitchSeekBarPlusButton.setOnClickListener {
             pitchSeekBar.progress += 1
             for(fragment in supportFragmentManager.fragments) {
-                if(fragment.isVisible && fragment is PlayerFragment) {
+                if(fragment.isVisible && fragment is VideoPlayerFragment) {
                     setPitch()
                 }
             }
@@ -311,7 +355,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
             }
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 for(fragment in supportFragmentManager.fragments) {
-                    if(fragment.isVisible && fragment is PlayerFragment) {
+                    if(fragment.isVisible && fragment is VideoPlayerFragment) {
                         setTempo()
                     }
                 }
@@ -321,7 +365,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         binding.tempoInitButton.setOnClickListener {
             tempoSeekBar.progress = 10
             for(fragment in supportFragmentManager.fragments) {
-                if(fragment.isVisible && fragment is PlayerFragment) {
+                if(fragment.isVisible && fragment is VideoPlayerFragment) {
                     setTempo()
                 }
             }
@@ -329,7 +373,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         binding.tempoSeekBarMinusButton.setOnClickListener {
             tempoSeekBar.progress -= 1
             for(fragment in supportFragmentManager.fragments) {
-                if(fragment.isVisible && fragment is PlayerFragment) {
+                if(fragment.isVisible && fragment is VideoPlayerFragment) {
                     setTempo()
                 }
             }
@@ -337,7 +381,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
         binding.tempoSeekBarPlusButton.setOnClickListener {
             tempoSeekBar.progress += 1
             for(fragment in supportFragmentManager.fragments) {
-                if(fragment.isVisible && fragment is PlayerFragment) {
+                if(fragment.isVisible && fragment is VideoPlayerFragment) {
                     setTempo()
                 }
             }
@@ -354,6 +398,7 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
     override fun onPause() {
         super.onPause()
         Log.d("activity","onPause")
+
     }
 
     private fun initBottomNavigationView(){
@@ -407,136 +452,119 @@ class Activity: AppCompatActivity(), ServiceListenerToActivity {
     }
 
     override fun onBackPressed() {
-        var tag = false
-        for (fragment: Fragment in supportFragmentManager.fragments) {
-            if (fragment is PlayerFragment && fragment.binding.playerMotionLayout.currentState == R.id.end)
-                tag = true
-        }
-        if (tag)
+        val targetFragment = supportFragmentManager.fragments.firstOrNull {
+            it is VideoPlayerFragment && it.binding.playerMotionLayout.currentState == R.id.end
+        } as? VideoPlayerFragment
+
+        if (targetFragment != null) {
             return super.onBackPressed()
-        else {
-            if (transposePage.visibility == View.VISIBLE)
+        } else {
+            if (transposePage.visibility == View.VISIBLE) {
                 transposePageInvisibleEvent()
-            else {
+            } else {
                 return super.onBackPressed()
             }
-
-//  if (transposePage.visibility != View.VISIBLE){
-//                    Log.d("asdfsa","Asdfsaff")
-//                    if (myPlaylistFragment.isVisible) {
-//                        if (myPlaylistFragment.childFragmentManager.backStackEntryCount == 0) {
-//                            supportFragmentManager.beginTransaction().show(homeFragment)
-//                                .commit()
-//                            supportFragmentManager.beginTransaction().hide(myPlaylistFragment)
-//                                .commit()
-//                        } else
-//                            return super.onBackPressed()
-//                    } else
-//                        return super.onBackPressed()
-//                }
-//                else{
-//                    transposePageInvisibleEvent()
-//                    Log.d("이것도","하")
-//                }
-
-
-//        if (transposePage.visibility == View.VISIBLE)
-//            transposePageInvisibleEvent()
-//        else{
-//            if (myPlaylistFragment.isVisible){
-//                if (myPlaylistFragment.childFragmentManager.backStackEntryCount == 0){
-//                    supportFragmentManager.beginTransaction().show(homeFragment).commit()
-//                    supportFragmentManager.beginTransaction().hide(myPlaylistFragment).commit()
-//                }
-//                else
-//                    return super.onBackPressed()
-//            }
-//            else
-//                return super.onBackPressed()
-//        }
-
-
-//        if (supportFragmentManager.findFragmentById(R.id.player_fragment) == null){
-//            if (transposePage.visibility == View.VISIBLE)
-//                transposePageInvisibleEvent()
-//            else
-//                return super.onBackPressed()
-//        }
-//        else{
-//            val playerFragment = supportFragmentManager.findFragmentById(binding.playerFragment.id) as PlayerFragment
-//            if (playerFragment.binding.playerMotionLayout.currentState == R.id.end){
-//                playerFragment.binding.playerMotionLayout.transitionToState(R.id.start)
-//            }
-//            else{
-//                if (transposePage.visibility == View.VISIBLE)
-//                    transposePageInvisibleEvent()
-//                else
-//                    return super.onBackPressed()
-//            }
-//        }
         }
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
-        unbindService(bindConnection)
-        val intent = Intent(this, VideoService::class.java)
+        unregisterReceiver(receiver)
+        MediaController.releaseFuture(this.controllerFuture)
+        val intent = Intent(this, MediaService::class.java)
         stopService(intent)
     }
 
-    override fun clickMinus() {
-        val pitchValue = (binding.pitchSeekBar.progress - 11)*0.05.toFloat()
-        val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
+    fun pitchMinusButtonClick(){
         binding.pitchSeekBar.progress -= 1
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer.playbackParameters = param
+        val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
+        val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+        showToastMessage(String.format(getString(R.string.pitch_minus_text),binding.pitchSeekBar.progress - 10))
     }
 
-    override fun clickPlus() {
-        val pitchValue = (binding.pitchSeekBar.progress - 9)*0.05.toFloat()
+    fun pitchInitButtonClick() {
+        binding.pitchSeekBar.progress = 10
+        val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
         val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+        showToastMessage(String.format(getString(R.string.pitch_initialize_text),binding.pitchSeekBar.progress - 10))
+    }
+
+    fun pitchPlusButtonClick() {
         binding.pitchSeekBar.progress += 1
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer.playbackParameters = param
-    }
-
-    override fun clickInit() {
-        binding.pitchSeekBar.progress = 0
         val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
         val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer.playbackParameters = param
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+        showToastMessage(String.format(getString(R.string.pitch_plus_text),binding.pitchSeekBar.progress - 10))
     }
 
-    override fun clickNext() {
-        val playerFragment = supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-        if (playerFragment.playlistModel != null)
-            playerFragment.playNextPlaylistVideo()
-    }
-
-    override fun clickPrev() {
-        val playerFragment = supportFragmentManager.findFragmentById(R.id.player_fragment) as PlayerFragment
-        if (playerFragment.playlistModel != null)
-            playerFragment.playPrevPlaylistVideo()
-    }
-
-    override fun setPitch() {
+    fun tempoMinusButtonClick() {
+        binding.tempoSeekBar.progress -= 1
         val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
         val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
-        val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer.playbackParameters = param
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+        showToastMessage(String.format(getString(R.string.tempo_minus_text),binding.tempoSeekBar.progress - 10))
+
     }
 
-    override fun setTempo() {
+    fun tempoInitButtonClick() {
+        binding.tempoSeekBar.progress = 10
+        val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
+        val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+        showToastMessage(String.format(getString(R.string.tempo_init_text),binding.tempoSeekBar.progress - 10))
+    }
+
+    fun tempoPlusButtonClick() {
+        binding.tempoSeekBar.progress += 1
+        val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
+        val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+        showToastMessage(String.format(getString(R.string.tempo_plus_text),binding.tempoSeekBar.progress - 10))
+    }
+
+
+    fun setPitch() {
+        val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
+        val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
+    }
+
+    fun setTempo() {
         val tempoValue = (binding.tempoSeekBar.progress - 10)*0.05.toFloat()
         val pitchValue = (binding.pitchSeekBar.progress - 10)*0.05.toFloat()
         val param = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
-        exoPlayer.playbackParameters = param
+        controller?.playbackParameters = PlaybackParameters(1f + tempoValue, 1f + pitchValue)
     }
 
-    override fun showStreamFailMessage() {
+    fun showStreamFailMessage() {
         showToastMessage("failed to get stream url")
     }
+    private fun initBroadcastReceiver(){
+        receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.d("이게 안돼나? 브로드","$intent")
+                when (intent?.getStringExtra("status")) {
+                    "failure" -> {
+                        showStreamFailMessage()
+                    }
+                    "minus" -> {
+                        pitchMinusButtonClick()
+                    }
+                    "plus" -> {
+                        pitchPlusButtonClick()
+                    }
+                }
+                if (intent?.action == "YOUR_CUSTOM_ACTION"){
+                    Log.d("젭ㄹ되라","${intent.getStringExtra("url")}")
+                }
+            }
+        }
+    }
+
+
+
 
 }
