@@ -8,12 +8,18 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.myFile.transpose.databinding.*
-import com.myFile.transpose.model.HeaderViewData
-import com.myFile.transpose.adapter.model.PlayerFragmentMainItem
-import com.myFile.transpose.retrofit.CommentData
-import com.myFile.transpose.retrofit.VideoData
+import com.myFile.transpose.model.ChannelDataModel
+import com.myFile.transpose.model.CommentDataModel
+import com.myFile.transpose.model.VideoDetailDataModel
 
-class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem, RecyclerView.ViewHolder>(diffUtil) {
+class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem, RecyclerView.ViewHolder>(diffUtil) {
+
+    sealed class PlayerFragmentMainItem{
+        object LoadingHeader: PlayerFragmentMainItem()
+        data class HeaderTitleData(val videoTitle: String): PlayerFragmentMainItem()
+        data class HeaderRestData(val videoDetailDataModel: VideoDetailDataModel, val channelDataModel: ChannelDataModel): PlayerFragmentMainItem()
+        data class ContentData(val commentData: CommentDataModel): PlayerFragmentMainItem()
+    }
 
     companion object{
         private const val VIEW_TYPE_TITLE_HEADER = 0
@@ -25,8 +31,8 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem,
 
     inner class HeaderViewTitleViewHolder(private val binding: PlayerFragmentMainRecyclerViewHeaderTitleViewBinding)
         :RecyclerView.ViewHolder(binding.root){
-        fun bind(videoData: VideoData){
-            binding.fragmentVideoTitle.text = videoData.title
+        fun bind(videoTitle: String){
+            binding.fragmentVideoTitle.text = videoTitle
         }
     }
 
@@ -55,15 +61,18 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem,
             binding.tempoPlusButton.setOnClickListener {
                 itemClickListener.tempoPlusButtonClick(it)
             }
+            binding.addButton.setOnClickListener {
+                itemClickListener.addButtonClick(it)
+            }
 
         }
-        fun bind(headerViewData: HeaderViewData){
-            binding.channelTextView.text = headerViewData.channelTitle
-            binding.channelSubscriptionCount.text = headerViewData.channelSubscriptionCount
-            binding.videoTime.text = headerViewData.videoTime
-            binding.videoViewCount.text = headerViewData.videoViewCount
+        fun bind(videoDetailDataModel: VideoDetailDataModel, channelDataModel: ChannelDataModel){
+            binding.channelTextView.text = channelDataModel.channelTitle
+            binding.channelSubscriptionCount.text = channelDataModel.channelSubscriberCount
+            binding.videoTime.text = videoDetailDataModel.videoTime
+            binding.videoViewCount.text = videoDetailDataModel.videoViewCount
             Glide.with(binding.channelImageView)
-                .load(headerViewData.channelThumbnail)
+                .load(channelDataModel.channelThumbnail)
                 .into(binding.channelImageView)
         }
     }
@@ -81,7 +90,7 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem,
 //            binding.optionButton.setOnClickListener {
 //                itemClickListener.optionButtonClick(it,bindingAdapterPosition - 1)
 //            }
-            fun bind(commentData: CommentData) {
+            fun bind(commentData: CommentDataModel) {
                 binding.authorName.text = commentData.authorName
                 binding.commentTime.text = commentData.commentTime
                 binding.commentText.text = commentData.commentText
@@ -149,11 +158,11 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem,
             }
             is HeaderViewTitleViewHolder -> {
                 val item = getItem(position) as PlayerFragmentMainItem.HeaderTitleData
-                holder.bind(item.videoData)
+                holder.bind(item.videoTitle)
             }
             is HeaderViewRestViewHolder -> {
                 val item = getItem(position) as PlayerFragmentMainItem.HeaderRestData
-                holder.bind(item.headerViewData)
+                holder.bind(item.videoDetailDataModel, item.channelDataModel)
             }
         }
     }
@@ -170,6 +179,7 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainItem,
         fun tempoMinusButtonClick(v: View)
         fun tempoInitButtonClick(v: View)
         fun tempoPlusButtonClick(v: View)
+        fun addButtonClick(v: View)
     }
 
     // (3) 외부에서 클릭 시 이벤트 설정
