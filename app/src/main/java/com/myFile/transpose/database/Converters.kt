@@ -2,7 +2,7 @@ package com.myFile.transpose.database
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
-import com.myFile.transpose.model.VideoDataModel
+import com.myFile.transpose.model.model.VideoDataModel
 
 class Converters {
     @TypeConverter

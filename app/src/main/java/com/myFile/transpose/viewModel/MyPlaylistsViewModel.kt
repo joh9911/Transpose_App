@@ -1,13 +1,16 @@
 package com.myFile.transpose.viewModel
 
 import androidx.lifecycle.*
-import com.myFile.transpose.repository.MyPlaylistRepository
+import com.myFile.transpose.MyApplication
+import com.myFile.transpose.model.repository.MyPlaylistRepository
 import com.myFile.transpose.database.MyPlaylist
-import com.myFile.transpose.repository.SuggestionKeywordRepository
+import com.myFile.transpose.model.repository.SuggestionKeywordRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
-class MyPlaylistsViewModel(private val myPlaylistRepository: MyPlaylistRepository, private val suggestionKeywordRepository: SuggestionKeywordRepository): ViewModel() {
+class MyPlaylistsViewModel(application: MyApplication): ViewModel() {
+    private val myPlaylistRepository = application.myPlaylistRepository
+    private val suggestionKeywordRepository = application.suggestionKeywordRepository
     private val _myPlaylists: MutableLiveData<List<MyPlaylist>> = MutableLiveData()
     val myPlaylists: LiveData<List<MyPlaylist>> get() = _myPlaylists
 
@@ -79,11 +82,11 @@ class MyPlaylistsViewModel(private val myPlaylistRepository: MyPlaylistRepositor
 }
 
 
-class MyPlaylistsViewModelFactory(private val myPlaylistRepository: MyPlaylistRepository, private val suggestionKeywordRepository: SuggestionKeywordRepository) : ViewModelProvider.Factory {
+class MyPlaylistsViewModelFactory(private val application: MyApplication) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MyPlaylistsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return MyPlaylistsViewModel(myPlaylistRepository, suggestionKeywordRepository) as T
+            return MyPlaylistsViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

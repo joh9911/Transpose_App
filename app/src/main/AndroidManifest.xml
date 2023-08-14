@@ -5,9 +5,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
 
     <application
+        android:name=".MyApplication"
         android:extractNativeLibs="true"
         android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
@@ -21,10 +24,19 @@
         tools:targetApi="31">
 
 
-        <service android:name="com.myFile.transpose.VideoService"/>
+        <service android:name="com.myFile.transpose.service.MediaService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService"/>
+                <action android:name="androidx.media3.session.MediaSessionService"/>
+            </intent-filter>
+        </service>
+
+
 
         <activity
-            android:name="com.myFile.transpose.Activity"
+            android:name="com.myFile.transpose.view.Activity.Activity"
             android:theme="@style/Theme.YoutubeTranspose"
             android:screenOrientation="portrait"
             android:exported="true">

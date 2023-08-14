@@ -1,7 +1,7 @@
 package com.myFile.transpose.database
 
 import androidx.room.*
-import com.myFile.transpose.model.VideoDataModel
+import com.myFile.transpose.model.model.VideoDataModel
 
 @Entity
 data class CashedKeyword(

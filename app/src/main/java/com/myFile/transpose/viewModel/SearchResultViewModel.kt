@@ -2,21 +2,20 @@ package com.myFile.transpose.viewModel
 
 import android.util.Log
 import androidx.lifecycle.*
-import com.myFile.transpose.YoutubeDataMapper
-import com.myFile.transpose.YoutubeDigitConverter
+import com.myFile.transpose.MyApplication
+import com.myFile.transpose.utils.YoutubeDataMapper
 import com.myFile.transpose.database.CashedKeyword
 import com.myFile.transpose.database.PageToken
 import com.myFile.transpose.database.YoutubeCashedData
-import com.myFile.transpose.model.VideoDataModel
-import com.myFile.transpose.repository.YoutubeCashedDataRepository
-import com.myFile.transpose.repository.YoutubeDataRepository
+import com.myFile.transpose.model.model.VideoDataModel
 import kotlinx.coroutines.launch
 
 class SearchResultViewModel
-    (private val youtubeDataRepository: YoutubeDataRepository,
-    private val youtubeCashedDataRepository: YoutubeCashedDataRepository): ViewModel() {
+    (application: MyApplication): ViewModel() {
+    private val youtubeDataRepository = application.youtubeDataRepository
+    private val youtubeCashedDataRepository = application.youtubeCashedRepository
 
-    private val youtubeDataMapper = YoutubeDataMapper()
+    private val youtubeDataMapper = YoutubeDataMapper(application.applicationContext)
 
     private val _searchKeyword: MutableLiveData<String> = MutableLiveData()
     val searchKeyword: LiveData<String> get() = _searchKeyword
@@ -36,17 +35,17 @@ class SearchResultViewModel
         _searchKeyword.value = query
     }
 
-    fun firstFetchOrGetData(dateArray: Array<String>) = viewModelScope.launch{
+    fun firstFetchOrGetData() = viewModelScope.launch{
         val searchKeyword = this@SearchResultViewModel.searchKeyword.value ?: ""
         val cashedKeyword = youtubeCashedDataRepository.getCashedKeywordDataBySearchKeyword(searchKeyword)
         if (cashedKeyword == null){
-            fetchVideoSearchData(dateArray)
+            fetchVideoSearchData()
         }else{
             getYoutubeCashedData()
         }
     }
 
-    fun fetchVideoSearchData(dateArray: Array<String>) = viewModelScope.launch{
+    fun fetchVideoSearchData() = viewModelScope.launch{
         val searchKeyword = this@SearchResultViewModel.searchKeyword.value ?: return@launch
         try {
             val response = youtubeDataRepository.fetchVideoSearchData(searchKeyword, nextPageToken)
@@ -54,7 +53,7 @@ class SearchResultViewModel
             val body = response.body()
             if (response.isSuccessful && body != null){
                 nextPageToken = body.nextPageToken
-                val newItems = youtubeDataMapper.mapVideoDataModelList(body, dateArray)
+                val newItems = youtubeDataMapper.mapVideoDataModelList(body)
                 val currentList = videoSearchDataList.value ?: arrayListOf()
                 currentList.addAll(newItems)
                 _videoSearchDataList.postValue(currentList)
@@ -99,12 +98,11 @@ class SearchResultViewModel
 
 }
 
-class SearchResultViewModelFactory(private val youtubeDataRepository: YoutubeDataRepository,
-private val youtubeCashedDataRepository: YoutubeCashedDataRepository) : ViewModelProvider.Factory {
+class SearchResultViewModelFactory(private val application: MyApplication) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SearchResultViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SearchResultViewModel(youtubeDataRepository, youtubeCashedDataRepository) as T
+            return SearchResultViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

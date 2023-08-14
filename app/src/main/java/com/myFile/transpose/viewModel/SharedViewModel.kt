@@ -4,17 +4,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.myFile.transpose.NowPlaylistModel
-import com.myFile.transpose.model.ChannelDataModel
-import com.myFile.transpose.model.PlaylistDataModel
-import com.myFile.transpose.model.VideoDataModel
+import com.myFile.transpose.model.model.NowPlaylistModel
+import com.myFile.transpose.model.model.ChannelDataModel
+import com.myFile.transpose.model.model.PlaylistDataModel
+import com.myFile.transpose.model.model.VideoDataModel
 
 
 class SharedViewModel: ViewModel() {
 
     /*
     VideoPlayerFragment 를 위한 playbackMode.
-    PlaybackMode 가 같을 경우 현재 실행중인 VideoPlayerFragment의 뷰만 바꿔줌
+    PlaybackMode 가 같을 경우 현재 실행중인 VideoPlayerFragment 의 뷰만 바꿔줌
     다를 경우 replace
      */
     enum class PlaybackMode {
@@ -43,20 +43,25 @@ class SharedViewModel: ViewModel() {
     val searchKeyword: LiveData<String> get() = _searchKeyword
 
     // ChannelFragment 를 위한 변수
-    private val _channelData: MutableLiveData<ChannelDataModel> = MutableLiveData()
-    val channelData: LiveData<ChannelDataModel> get() = _channelData
+    private val _channelData: MutableLiveData<ChannelDataModel?> = MutableLiveData()
+    val channelData: LiveData<ChannelDataModel?> get() = _channelData
 
     // MyPlaylistItemFragment 를 위한 변수
-    var myPlaylistId: Int = 0
+    private val _myPlaylistId: MutableLiveData<Int> = MutableLiveData(0)
+    val myPlaylistId: LiveData<Int> get() = _myPlaylistId
 
     var myPlaylistTitle: String? = null
+
+    fun setMyPlaylistId(myPlaylistId: Int){
+        _myPlaylistId.value = myPlaylistId
+    }
 
 
     fun setSingleModeVideoId(videoId: String){
         _singleModeVideoId.postValue(videoId)
     }
 
-    fun setChannelData(channelData: ChannelDataModel){
+    fun setChannelData(channelData: ChannelDataModel?){
         _channelData.value = channelData
     }
 

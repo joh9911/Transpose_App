@@ -2,9 +2,8 @@ package com.myFile.transpose.viewModel
 
 import androidx.lifecycle.*
 import com.myFile.transpose.database.Musics
-import com.myFile.transpose.model.VideoDataModel
-import com.myFile.transpose.repository.MyPlaylistRepository
-import com.myFile.transpose.repository.SuggestionKeywordRepository
+import com.myFile.transpose.model.model.VideoDataModel
+import com.myFile.transpose.model.repository.MyPlaylistRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 

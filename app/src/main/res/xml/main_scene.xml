@@ -44,7 +44,7 @@
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"
             motion:layout_constraintTop_toTopOf="parent"
-            motion:layout_constraintBottom_toBottomOf="@id/bottom_navigation_view">
+            motion:layout_constraintBottom_toTopOf="@id/bottom_navigation_view">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />
@@ -93,10 +93,11 @@
         <Constraint android:id="@+id/basic_frame_layout"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+
             motion:layout_constraintStart_toStartOf="parent"
             motion:layout_constraintEnd_toEndOf="parent"
             motion:layout_constraintTop_toTopOf="parent"
-            motion:layout_constraintBottom_toBottomOf="@id/bottom_navigation_view">
+            motion:layout_constraintBottom_toTopOf="@id/bottom_navigation_view">
             <PropertySet
                 app:applyMotionScene="false"
                 app:visibilityMode="ignore" />

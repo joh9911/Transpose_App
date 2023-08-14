@@ -1,48 +1,34 @@
 package com.myFile.transpose.viewModel
 
-import android.content.ContentValues
-import android.content.Intent
-import android.text.TextUtils
 import android.util.Log
-import androidx.core.net.toUri
 import androidx.lifecycle.*
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.hls.HlsMediaSource
-import androidx.media3.exoplayer.source.MediaSource
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import com.myFile.transpose.YoutubeDataMapper
-import com.myFile.transpose.model.*
-import com.myFile.transpose.repository.YoutubeDataRepository
+import com.myFile.transpose.MyApplication
+import com.myFile.transpose.utils.YoutubeDataMapper
+import com.myFile.transpose.model.model.ChannelDataModel
+import com.myFile.transpose.model.model.CommentDataModel
+import com.myFile.transpose.model.model.VideoDataModel
+import com.myFile.transpose.model.model.VideoDetailDataModel
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.disposables.Disposable
-import io.reactivex.rxjava3.exceptions.UndeliverableException
-import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import java.io.IOException
 
-class VideoPlayerViewModel(private val youtubeDataRepository: YoutubeDataRepository): ViewModel() {
+class VideoPlayerViewModel(application: MyApplication): ViewModel() {
+    private val youtubeDataRepository = application.youtubeDataRepository
+    private val youtubeDataMapper = YoutubeDataMapper(application.applicationContext)
 
-    private val youtubeDataMapper = YoutubeDataMapper()
+    private val _currentVideoDetailData: MutableLiveData<VideoDetailDataModel?> = MutableLiveData()
+    val currentVideoDetailData: LiveData<VideoDetailDataModel?> get() = _currentVideoDetailData
 
-    private val _currentVideoDetailData: MutableLiveData<VideoDetailDataModel> = MutableLiveData()
-    val currentVideoDetailData: LiveData<VideoDetailDataModel> get() = _currentVideoDetailData
+    private val _currentChannelDetailData: MutableLiveData<ChannelDataModel?> = MutableLiveData()
+    val currentChannelDetailData: LiveData<ChannelDataModel?> get() = _currentChannelDetailData
 
-    private val _currentChannelDetailData: MutableLiveData<ChannelDataModel> = MutableLiveData()
-    val currentChannelDetailData: LiveData<ChannelDataModel> get() = _currentChannelDetailData
+    private val _currentCommentThreadData: MutableLiveData<List<CommentDataModel>?> = MutableLiveData()
+    val currentCommentThreadData: LiveData<List<CommentDataModel>?> get() = _currentCommentThreadData
 
-    private val _currentCommentThreadData: MutableLiveData<List<CommentDataModel>> = MutableLiveData()
-    val currentCommentThreadData: LiveData<List<CommentDataModel>> get() = _currentCommentThreadData
-
-    private val _currentVideoDataModel: MutableLiveData<VideoDataModel> = MutableLiveData()
-    val currentVideoDataModel: LiveData<VideoDataModel> get() = _currentVideoDataModel
+    private val _currentVideoDataModel: MutableLiveData<VideoDataModel?> = MutableLiveData()
+    val currentVideoDataModel: LiveData<VideoDataModel?> get() = _currentVideoDataModel
 
     private var convertUrlJob: Job? = null
 
@@ -50,44 +36,53 @@ class VideoPlayerViewModel(private val youtubeDataRepository: YoutubeDataReposit
     val currentVideoConvertedUrl: LiveData<String?> get() = _currentVideoConvertedUrl
 
 
-    fun fetchAllData(videoId: String, dateArray: Array<String>, viewArray: Array<String>, subscriberArray: Array<String>) = viewModelScope.launch{
-        fetchDetailData(videoId, dateArray, viewArray, subscriberArray)
-        fetchCommentThreadData(videoId, dateArray)
+    fun fetchAllData(videoId: String) = viewModelScope.launch{
+        fetchDetailData(videoId)
+        fetchCommentThreadData(videoId)
     }
 
-    private suspend fun fetchDetailData(videoId: String, dateArray: Array<String>, viewArray: Array<String>, subscriberArray: Array<String>){
+    private suspend fun fetchDetailData(videoId: String){
 
         try {
             val videoDetailResponse = youtubeDataRepository.fetchVideoDetailData(videoId)
             val videoDetailBody = videoDetailResponse.body()
 
             if (videoDetailResponse.isSuccessful && videoDetailBody != null){
-                val currentVideoDetailData = youtubeDataMapper.mapVideoDetailDataModel(videoDetailBody, dateArray, viewArray)
+                val currentVideoDetailData = youtubeDataMapper.mapVideoDetailDataModel(videoDetailBody)
                 _currentVideoDetailData.postValue(currentVideoDetailData)
 
-                val currentVideoDataModel = youtubeDataMapper.mapVideoDataModelByVideoDetailResponse(videoDetailBody, dateArray)
+
+                val currentVideoDataModel = youtubeDataMapper.mapVideoDataModelByVideoDetailResponse(videoDetailBody)
                 _currentVideoDataModel.postValue(currentVideoDataModel)
                 val channelDetailResponse = youtubeDataRepository.fetchChannelDetailData(currentVideoDetailData.channelId)
                 val channelDetailBody = channelDetailResponse.body()
 
                 if (channelDetailResponse.isSuccessful && channelDetailBody != null){
-                    val channelDataModel = youtubeDataMapper.mapChannelDataModel(channelDetailBody, dateArray, viewArray, subscriberArray)
+                    val channelDataModel = youtubeDataMapper.mapChannelDataModel(channelDetailBody)
                     _currentChannelDetailData.postValue(channelDataModel)
                 }
             }
+            else{
+                _currentVideoDetailData.postValue(null)
+                _currentVideoDataModel.postValue(null)
+                _currentChannelDetailData.postValue(null)
+            }
         }catch (e: Exception){
             Log.d("detailData오류", "$e")
+            _currentVideoDetailData.postValue(null)
+            _currentVideoDataModel.postValue(null)
+            _currentChannelDetailData.postValue(null)
         }
     }
 
 
-    private suspend fun fetchCommentThreadData(videoId: String, dateArray: Array<String>){
+    private suspend fun fetchCommentThreadData(videoId: String){
         try {
             val response = youtubeDataRepository.fetchVideoCommentThreadData(videoId)
 
             val body = response.body()
             if (response.isSuccessful && body != null){
-                val currentCommentDataModel = youtubeDataMapper.mapCommentThreadData(body, dateArray)
+                val currentCommentDataModel = youtubeDataMapper.mapCommentThreadData(body)
                 _currentCommentThreadData.postValue(currentCommentDataModel)
             }
             else{
@@ -116,11 +111,11 @@ class VideoPlayerViewModel(private val youtubeDataRepository: YoutubeDataReposit
 
 }
 
-class VideoPlayerViewModelFactory(private val youtubeDataRepository: YoutubeDataRepository) : ViewModelProvider.Factory {
+class VideoPlayerViewModelFactory(private val application: MyApplication) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(VideoPlayerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return VideoPlayerViewModel(youtubeDataRepository) as T
+            return VideoPlayerViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

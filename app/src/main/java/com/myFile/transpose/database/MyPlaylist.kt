@@ -1,8 +1,7 @@
 package com.myFile.transpose.database
 
 import androidx.room.*
-import com.myFile.transpose.model.VideoDataModel
-import kotlinx.coroutines.flow.Flow
+import com.myFile.transpose.model.model.VideoDataModel
 
 
 @Entity

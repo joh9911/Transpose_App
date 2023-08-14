@@ -1,16 +1,15 @@
 package com.myFile.transpose.viewModel
 
 import androidx.lifecycle.*
-import com.myFile.transpose.YoutubeDataMapper
-import com.myFile.transpose.YoutubeDigitConverter
-import com.myFile.transpose.dto.PlayListVideoSearchData
-import com.myFile.transpose.model.ChannelDataModel
-import com.myFile.transpose.model.VideoDataModel
-import com.myFile.transpose.repository.YoutubeDataRepository
+import com.myFile.transpose.MyApplication
+import com.myFile.transpose.utils.YoutubeDataMapper
+import com.myFile.transpose.model.model.ChannelDataModel
+import com.myFile.transpose.model.model.VideoDataModel
 import kotlinx.coroutines.launch
 
-class ChannelViewModel(private val youtubeDataRepository: YoutubeDataRepository, private val youtubeDigitConverter: YoutubeDigitConverter): ViewModel() {
-    private val youtubeDataMapper = YoutubeDataMapper()
+class ChannelViewModel(application: MyApplication): ViewModel() {
+    private val youtubeDataMapper = YoutubeDataMapper(application.applicationContext)
+    private val youtubeDataRepository = application.youtubeDataRepository
 
     private val _channelDataModel: MutableLiveData<ChannelDataModel> = MutableLiveData()
     val channelDataModel: LiveData<ChannelDataModel> get() = _channelDataModel
@@ -20,18 +19,16 @@ class ChannelViewModel(private val youtubeDataRepository: YoutubeDataRepository,
 
     var nextPageToken: String? = null
 
-    fun setChannelData(channelDataModel: ChannelDataModel){
-        _channelDataModel.value = channelDataModel
-    }
-    fun fetchChannelVideoData(dateArray: Array<String>) = viewModelScope.launch{
-        val channelData = this@ChannelViewModel.channelDataModel.value ?: return@launch
+
+    fun fetchChannelVideoData(channelDataModel: ChannelDataModel?) = viewModelScope.launch{
+        channelDataModel ?: return@launch
         try {
-            val response = youtubeDataRepository.fetchChannelVideoData(channelData.channelPlaylistId, nextPageToken)
+            val response = youtubeDataRepository.fetchChannelVideoData(channelDataModel.channelPlaylistId, nextPageToken)
 
             val body = response.body()
             if (response.isSuccessful && body != null){
                 nextPageToken = body.nextPageToken
-                val newItems = youtubeDataMapper.mapPlaylistItemsDataModelList(body, dateArray)
+                val newItems = youtubeDataMapper.mapPlaylistItemsDataModelList(body)
                 val currentList = channelVideoDataList.value ?: arrayListOf()
                 currentList.addAll(newItems)
                 _channelVideoDataList.postValue(currentList)
@@ -41,11 +38,11 @@ class ChannelViewModel(private val youtubeDataRepository: YoutubeDataRepository,
 
 }
 
-class ChannelViewModelFactory(private val youtubeDataRepository: YoutubeDataRepository, private val youtubeDigitConverter: YoutubeDigitConverter) : ViewModelProvider.Factory {
+class ChannelViewModelFactory(private val application: MyApplication) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ChannelViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ChannelViewModel(youtubeDataRepository, youtubeDigitConverter) as T
+            return ChannelViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

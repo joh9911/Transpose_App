@@ -2,24 +2,19 @@ package com.myFile.transpose.viewModel
 
 import android.util.Log
 import androidx.lifecycle.*
-import com.myFile.transpose.YoutubeDataMapper
-import com.myFile.transpose.YoutubeDigitConverter
-import com.myFile.transpose.dto.PlayListSearchData
-import com.myFile.transpose.dto.PlayListVideoSearchData
-import com.myFile.transpose.model.PlaylistDataModel
-import com.myFile.transpose.model.VideoDataModel
-import com.myFile.transpose.repository.MusicCategoryRepository
-import com.myFile.transpose.repository.SuggestionKeywordRepository
-import com.myFile.transpose.repository.YoutubeDataRepository
+import com.myFile.transpose.MyApplication
+import com.myFile.transpose.utils.YoutubeDataMapper
+import com.myFile.transpose.model.model.PlaylistDataModel
+import com.myFile.transpose.model.repository.MusicCategoryRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlin.collections.ArrayList
 
-class HomeViewModel(private val suggestionKeywordRepository: SuggestionKeywordRepository,
-private val youtubeDataRepository: YoutubeDataRepository,
+class HomeViewModel(application: MyApplication,
 ): ViewModel() {
-
-    private val youtubeDataMapper = YoutubeDataMapper()
+    private val youtubeDataRepository = application.youtubeDataRepository
+    private val suggestionKeywordRepository = application.suggestionKeywordRepository
+    private val youtubeDataMapper = YoutubeDataMapper(application.applicationContext)
 
     private val _nationalPlaylists: MutableLiveData<ArrayList<PlaylistDataModel>> = MutableLiveData()
     val nationalPlaylist: LiveData<ArrayList<PlaylistDataModel>> get() = _nationalPlaylists
@@ -42,18 +37,23 @@ private val youtubeDataRepository: YoutubeDataRepository,
     private val _suggestionKeywords: MutableLiveData<ArrayList<String>> = MutableLiveData()
     val suggestionKeywords: LiveData<ArrayList<String>> get() = _suggestionKeywords
 
+    init {
+        loadAllData()
+    }
+
     fun clearPlaylistData(){
         _nationalPlaylists.value = arrayListOf()
         _recommendedPlaylists.value = arrayListOf()
         _typedPlaylists.value = arrayListOf()
     }
-    fun loadAllData(dateArray: Array<String>) = viewModelScope.launch{
-        async { fetchRecommendedPlaylists(dateArray) }
-        async { fetchNationalPlaylists(dateArray) }
-        async { fetchTypedPlaylists(dateArray) }
+    fun loadAllData() = viewModelScope.launch{
+        Log.d("로드 올 데이타 실행","ㅇ")
+        async { fetchRecommendedPlaylists() }
+        async { fetchNationalPlaylists() }
+        async { fetchTypedPlaylists() }
     }
 
-    private suspend fun fetchNationalPlaylists(dateArray: Array<String>) {
+    private suspend fun fetchNationalPlaylists() {
         val nationPlaylistIds = MusicCategoryRepository().nationalPlaylistIds
         nationPlaylistIds.forEach {
             try {
@@ -63,7 +63,7 @@ private val youtubeDataRepository: YoutubeDataRepository,
                 val responseBody = responses.body()
                 if (responses.isSuccessful && responseBody != null) {
                     val newItem =
-                        youtubeDataMapper.mapPlaylistDataModelList(responseBody, dateArray)
+                        youtubeDataMapper.mapPlaylistDataModelList(responseBody)
                     currentList.add(newItem)
                     _nationalPlaylists.postValue(currentList)
                 }
@@ -74,13 +74,13 @@ private val youtubeDataRepository: YoutubeDataRepository,
         }
     }
 
-    private suspend fun fetchRecommendedPlaylists(dateArray: Array<String>){
+    private suspend fun fetchRecommendedPlaylists(){
         try {
             val responses = youtubeDataRepository.fetchRecommendedPlaylists()
             val body = responses.body()
             val currentList = recommendedPlaylists.value ?: arrayListOf()
             if (responses.isSuccessful && body != null){
-                currentList.addAll(youtubeDataMapper.mapPlaylistDataModelsInChannelId(body, dateArray))
+                currentList.addAll(youtubeDataMapper.mapPlaylistDataModelsInChannelId(body))
                 _recommendedPlaylists.postValue(currentList)
             }else{
                 Log.d("recommendedFail","sadf")
@@ -91,13 +91,13 @@ private val youtubeDataRepository: YoutubeDataRepository,
         }
     }
 
-    private suspend fun fetchTypedPlaylists(dateArray: Array<String>){
+    private suspend fun fetchTypedPlaylists(){
         try {
             val responses = youtubeDataRepository.fetchTypedPlaylists()
             val body = responses.body()
             val currentList = typedPlaylists.value ?: arrayListOf()
             if (responses.isSuccessful && body != null){
-                currentList.addAll(youtubeDataMapper.mapPlaylistDataModelsInChannelId(body, dateArray))
+                currentList.addAll(youtubeDataMapper.mapPlaylistDataModelsInChannelId(body))
                 _typedPlaylists.postValue(currentList)
             }else{
                 Log.d("typePlaylistFail","asdf")
@@ -157,12 +157,11 @@ private val youtubeDataRepository: YoutubeDataRepository,
 
 }
 
-class HomeFragmentViewModelFactory(private val suggestionKeywordRepository: SuggestionKeywordRepository,
-private val youtubeDataRepository: YoutubeDataRepository) : ViewModelProvider.Factory {
+class HomeFragmentViewModelFactory(private val application: MyApplication) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(suggestionKeywordRepository, youtubeDataRepository) as T
+            return HomeViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
