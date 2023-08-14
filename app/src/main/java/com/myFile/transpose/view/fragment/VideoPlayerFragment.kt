@@ -1,9 +1,6 @@
-package com.myFile.transpose.fragment
+package com.myFile.transpose.view.fragment
 
-import android.app.ActivityManager
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
@@ -13,30 +10,26 @@ import android.view.ViewGroup
 import android.widget.PopupMenu
 import androidx.activity.OnBackPressedCallback
 import androidx.constraintlayout.motion.widget.MotionLayout
-import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.SessionCommand
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.work.*
 import com.bumptech.glide.Glide
 import com.myFile.transpose.databinding.FragmentPlayerBinding
 import com.myFile.transpose.databinding.MainBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.gson.Gson
 import com.myFile.transpose.*
 import com.myFile.transpose.R
-import com.myFile.transpose.adapter.MyPlaylistItemRecyclerViewAdapter
-import com.myFile.transpose.adapter.PlayerFragmentMainRecyclerViewAdapter
-import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
-import com.myFile.transpose.model.ChannelDataModel
-import com.myFile.transpose.model.CommentDataModel
-import com.myFile.transpose.model.VideoDataModel
-import com.myFile.transpose.model.VideoDetailDataModel
+import com.myFile.transpose.view.Activity.Activity
+import com.myFile.transpose.view.adapter.MyPlaylistItemRecyclerViewAdapter
+import com.myFile.transpose.view.adapter.PlayerFragmentMainRecyclerViewAdapter
+import com.myFile.transpose.view.dialog.DialogFragmentPopupAddPlaylist
+import com.myFile.transpose.model.model.ChannelDataModel
+import com.myFile.transpose.model.model.CommentDataModel
+import com.myFile.transpose.model.model.VideoDataModel
+import com.myFile.transpose.model.model.VideoDetailDataModel
 import com.myFile.transpose.viewModel.SharedViewModel
 import com.myFile.transpose.viewModel.VideoPlayerViewModel
 import com.myFile.transpose.viewModel.VideoPlayerViewModelFactory
@@ -62,7 +55,7 @@ class VideoPlayerFragment: Fragment() {
     private lateinit var viewModel: VideoPlayerViewModel
     private lateinit var sharedViewModel: SharedViewModel
 
-    private lateinit var myLister: Player.Listener
+    private var myListener: Player.Listener? = null
 
 
 //    private lateinit var controllerFuture: ListenableFuture<MediaController>
@@ -94,20 +87,20 @@ class VideoPlayerFragment: Fragment() {
 
     private fun initViewModel(){
         val application = requireActivity().application as MyApplication
-        val viewModelFactory = VideoPlayerViewModelFactory(application.youtubeDataRepository)
+        val viewModelFactory = VideoPlayerViewModelFactory(application)
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         viewModel = ViewModelProvider(this, viewModelFactory)[VideoPlayerViewModel::class.java]
 
     }
 
     private fun initObserver(){
-        val workManager = WorkManager.getInstance(requireContext())
         when(sharedViewModel.playbackMode){
 
             SharedViewModel.PlaybackMode.SINGLE_VIDEO -> {
 
                 sharedViewModel.singleModeVideoId.observe(viewLifecycleOwner){
                     convertingUiInSingleVideoMode()
+                    sendUrlConvertCommand(it)
                     fetchAllData(it)
                 }
 
@@ -127,7 +120,7 @@ class VideoPlayerFragment: Fragment() {
                 }
 
                 viewModel.currentVideoDataModel.observe(viewLifecycleOwner){
-                    sendUrlConvertCommand(it)
+
                 }
 
             }
@@ -135,7 +128,7 @@ class VideoPlayerFragment: Fragment() {
             SharedViewModel.PlaybackMode.PLAYLIST -> {
 
                 sharedViewModel.currentVideoData.observe(viewLifecycleOwner){ currentVideoData ->
-                    sendUrlConvertCommand(currentVideoData)
+                    sendUrlConvertCommand(currentVideoData.videoId)
                     convertingUiInPlaylistMode()
                     fetchAllData(currentVideoData.videoId)
                     addRecyclerViewHeaderTitleViewInPlaylistMode(currentVideoData)
@@ -167,8 +160,8 @@ class VideoPlayerFragment: Fragment() {
 
     private fun addRecyclerViewHeaderTitleViewInSingleMode(videoDetailDataModel: VideoDetailDataModel?){
         val newList = mutableListOf<PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem>()
-        videoDetailDataModel?.let {
-            val headerTitleData = PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderTitleData(it.videoTitle)
+        videoDetailDataModel.let {
+            val headerTitleData = PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderTitleData(it?.videoTitle ?: "")
             newList.add(headerTitleData)
         }
         mainRecyclerViewAdapter.submitList(newList)
@@ -176,23 +169,22 @@ class VideoPlayerFragment: Fragment() {
 
     private fun addRecyclerViewHeaderTitleViewInPlaylistMode(videoData: VideoDataModel?){
         val newList = mutableListOf<PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem>()
-        videoData?.let {
-            val headerTitleData = PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderTitleData(videoData.title)
+        videoData.let {
+            val headerTitleData = PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderTitleData(videoData?.title ?: "")
             newList.add(headerTitleData)
         }
         mainRecyclerViewAdapter.submitList(newList)
     }
 
     private fun addRecyclerViewHeaderRestView(videoDetailDataModel: VideoDetailDataModel?, channelDataModel: ChannelDataModel?){
-        if (videoDetailDataModel == null || channelDataModel == null)
-            return
         val headerRestData = PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderRestData(videoDetailDataModel, channelDataModel)
         val currentList = mainRecyclerViewAdapter.currentList.toMutableList()
         currentList.add(headerRestData)
         mainRecyclerViewAdapter.submitList(currentList)
     }
 
-    private fun addRecyclerViewCommentDataView(commentDataModelList: List<CommentDataModel>){
+    private fun addRecyclerViewCommentDataView(commentDataModelList: List<CommentDataModel>?){
+        commentDataModelList ?: return
         val commentDataList = commentDataModelList.map{
             PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem.ContentData(it)
         }
@@ -364,6 +356,7 @@ class VideoPlayerFragment: Fragment() {
 
     private fun initMiniPlayerView() {
         binding.bottomPlayerCloseButton.setOnClickListener {
+            sendStopConvertingCommand()
             activity.supportFragmentManager.beginTransaction().remove(this).commit()
         }
         binding.bottomPlayerPauseButton.setOnClickListener {
@@ -377,26 +370,23 @@ class VideoPlayerFragment: Fragment() {
         }
     }
 
-    private fun setMiniPlayerView(currentVideoDetailDataModel: VideoDetailDataModel){
-        binding.bottomTitleTextView.text = currentVideoDetailDataModel.videoTitle
+    private fun setMiniPlayerView(currentVideoDetailDataModel: VideoDetailDataModel?){
+        binding.bottomTitleTextView.text = currentVideoDetailDataModel?.videoTitle
     }
 
 
-    private fun setMiniPlayerView(currentVideoDataModel: VideoDataModel){
+    private fun setMiniPlayerView(currentVideoDataModel: VideoDataModel?){
 
-        binding.bottomTitleTextView.text = currentVideoDataModel.title
+        binding.bottomTitleTextView.text = currentVideoDataModel?.title
 
         Glide.with(binding.playerThumbnailView)
-            .load(currentVideoDataModel.thumbnail)
+            .load(currentVideoDataModel?.thumbnail)
             .placeholder(R.color.before_getting_data_color)
             .into(binding.playerThumbnailView)
     }
 
     private fun fetchAllData(videoId: String){
-        val dateArray = resources.getStringArray(R.array.publish_date_formats)
-        val viewArray = resources.getStringArray(R.array.view_count_formats)
-        val subscribeArray = resources.getStringArray(R.array.subscriber_count_formats)
-        viewModel.fetchAllData(videoId, dateArray, viewArray, subscribeArray)
+        viewModel.fetchAllData(videoId)
     }
 
     private fun convertingUiInSingleVideoMode(){
@@ -425,21 +415,21 @@ class VideoPlayerFragment: Fragment() {
         sharedViewModel.replaceVideoByPosition(position)
         val nowPlaylistModel = sharedViewModel.nowPlaylistModel.value ?: return
 
-        sendUrlConvertCommand(nowPlaylistModel.currentMusicModel())
+        sendUrlConvertCommand(nowPlaylistModel.currentMusicModel().videoId)
     }
 
     fun playPrevVideo(){
         sharedViewModel.playPrevVideo()
         val nowPlaylistModel = sharedViewModel.nowPlaylistModel.value ?: return
 
-        sendUrlConvertCommand(nowPlaylistModel.currentMusicModel())
+        sendUrlConvertCommand(nowPlaylistModel.currentMusicModel().videoId)
     }
 
     fun playNextVideo(){
         sharedViewModel.playNextVideo()
         val nowPlaylistModel = sharedViewModel.nowPlaylistModel.value ?: return
 
-        sendUrlConvertCommand(nowPlaylistModel.currentMusicModel())
+        sendUrlConvertCommand(nowPlaylistModel.currentMusicModel().videoId)
     }
 
 
@@ -451,10 +441,16 @@ class VideoPlayerFragment: Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        activity.controller?.removeListener(myLister)
+        myListener?.let { activity.controller?.removeListener(it) }
         activity.controller?.stop()
         fbinding = null
         callback.remove()
+    }
+
+    private fun sendStopConvertingCommand(){
+        val action = "stopConverting"
+        val sessionCommand = SessionCommand(action, Bundle())
+        activity.controller?.sendCustomCommand(sessionCommand, Bundle())
     }
 
     override fun onPause() {
@@ -480,28 +476,20 @@ class VideoPlayerFragment: Fragment() {
 //        setController()
     }
 
-    private fun startStopService(){
 
-        val intent = Intent(requireActivity(),MediaService::class.java)
-        intent.putExtra("foreground","1")
-        activity.startService(intent)
-    }
-
-
-
-    private fun sendUrlConvertCommand(currentVideoData: VideoDataModel) {
+    private fun sendUrlConvertCommand(currentVideoDataId: String) {
         val controller = activity.controller ?: return
         controller.pause()
 
         val action = "convertUrl"
-        val bundle = Bundle().apply { putParcelable("videoData", currentVideoData) }
+        val bundle = Bundle().apply { putString("videoId", currentVideoDataId) }
         val sessionCommand = SessionCommand(action, bundle)
         controller.sendCustomCommand(sessionCommand, bundle)
     }
 
     private fun initListener(){
         val controller = activity.controller ?: return
-        myLister = object: Player.Listener{
+        myListener = object: Player.Listener{
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
                 if (isPlaying){
@@ -548,7 +536,8 @@ class VideoPlayerFragment: Fragment() {
     private fun setController(){
         val controller = activity.controller ?: return
         binding.playerView.player = controller
-        controller.addListener(myLister)
+        myListener?.let { controller.addListener(it) }
+
     }
 
     private fun releaseController() {
@@ -565,7 +554,7 @@ class VideoPlayerFragment: Fragment() {
         binding.playerMotionLayout.setTransitionListener(TransitionListenerForChannelClick(channelDataModel))
     }
 
-    inner class TransitionListenerForChannelClick(private val channelDataModel: ChannelDataModel): MotionLayout.TransitionListener{
+    inner class TransitionListenerForChannelClick(private val channelDataModel: ChannelDataModel?): MotionLayout.TransitionListener{
         override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {
         }
         override fun onTransitionChange(
