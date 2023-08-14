@@ -1,4 +1,4 @@
-package com.myFile.transpose.fragment
+package com.myFile.transpose.view.fragment
 
 import android.content.Context
 import android.os.Bundle
@@ -12,14 +12,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.myFile.transpose.*
-import com.myFile.transpose.retrofit.*
-import com.myFile.transpose.adapter.ChannelVideoRecyclerViewAdapter
+import com.myFile.transpose.view.Activity.Activity
+import com.myFile.transpose.view.adapter.ChannelVideoRecyclerViewAdapter
 import com.myFile.transpose.databinding.FragmentChannelBinding
-import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
-import com.myFile.transpose.model.ChannelDataModel
+import com.myFile.transpose.view.dialog.DialogFragmentPopupAddPlaylist
+import com.myFile.transpose.model.model.ChannelDataModel
 
-import com.myFile.transpose.model.PlayerFragmentBundle
-import com.myFile.transpose.model.VideoDataModel
+import com.myFile.transpose.model.model.VideoDataModel
 import com.myFile.transpose.viewModel.ChannelViewModel
 import com.myFile.transpose.viewModel.ChannelViewModelFactory
 import com.myFile.transpose.viewModel.SharedViewModel
@@ -48,21 +47,21 @@ class ChannelFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initObserver()
-        channelViewModel.fetchChannelVideoData(resources.getStringArray(R.array.publish_date_formats))
     }
 
     private fun initViewModel(){
         val application = requireActivity().application as MyApplication
-        val viewModelFactory = ChannelViewModelFactory(application.youtubeDataRepository, application.youtubeDigitConverter)
+        val viewModelFactory = ChannelViewModelFactory(application)
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         channelViewModel = ViewModelProvider(this, viewModelFactory)[ChannelViewModel::class.java]
-        channelViewModel.setChannelData(sharedViewModel.channelData.value!!)
     }
 
     private fun initObserver(){
-        channelViewModel.channelDataModel.observe(viewLifecycleOwner){
-            addRecyclerViewHeaderView(channelViewModel.channelDataModel.value)
+        sharedViewModel.channelData.observe(viewLifecycleOwner){
+            channelViewModel.fetchChannelVideoData(it)
+            addRecyclerViewHeaderView(it)
         }
+
         channelViewModel.channelVideoDataList.observe(viewLifecycleOwner){
             addRecyclerViewItemView(channelViewModel.channelVideoDataList.value ?: arrayListOf())
             binding.progressBar.visibility = View.INVISIBLE
@@ -70,7 +69,6 @@ class ChannelFragment: Fragment() {
     }
 
     private fun addRecyclerViewHeaderView(channelDataModel: ChannelDataModel?){
-        channelDataModel ?: return
         val currentList = channelVideoRecyclerViewAdapter.currentList.toMutableList()
         val headerView = ChannelVideoRecyclerViewAdapter.ChannelFragmentRecyclerViewItem.HeaderTitleData(channelDataModel)
         currentList.add(headerView)
@@ -82,10 +80,9 @@ class ChannelFragment: Fragment() {
         val loadingData = ChannelVideoRecyclerViewAdapter.ChannelFragmentRecyclerViewItem.LoadingData
         if (currentList.isNotEmpty() && currentList.last() == loadingData)
             currentList.removeLast()
-        val items = currentVideoList.map{ videoDataModel ->
-            ChannelVideoRecyclerViewAdapter.ChannelFragmentRecyclerViewItem.ItemData(videoDataModel)
-        }
-        currentList.addAll(items)
+        val existingData = channelVideoRecyclerViewAdapter.currentList.filterIsInstance<ChannelVideoRecyclerViewAdapter.ChannelFragmentRecyclerViewItem.ItemData>().map { it.videoData }.toHashSet()
+        val newItems = currentVideoList.filter { it !in existingData }.map{ChannelVideoRecyclerViewAdapter.ChannelFragmentRecyclerViewItem.ItemData(it)}
+        currentList.addAll(newItems)
         if (channelViewModel.nextPageToken != null)
             currentList.add(loadingData)
         channelVideoRecyclerViewAdapter.submitList(currentList)
@@ -102,6 +99,8 @@ class ChannelFragment: Fragment() {
         channelVideoRecyclerViewAdapter.setItemClickListener(object: ChannelVideoRecyclerViewAdapter.OnItemClickListener{
             override fun videoClick(v: View, position: Int) {
                 val currentList = channelViewModel.channelVideoDataList.value ?: return
+                Log.d("현재 비디오 리스트","${currentList.size}")
+                Log.d("해당 포지션 클릭","$position")
                 sharedViewModel.setSingleModeVideoId(currentList[position - 1].videoId)
                 activity.executeVideoPlayerFragment(SharedViewModel.PlaybackMode.SINGLE_VIDEO)
             }
@@ -132,9 +131,9 @@ class ChannelFragment: Fragment() {
                 // 스크롤이 끝에 도달했는지 확인
                 if (!binding.videoRecyclerView.canScrollVertically(1) && lastVisibleItemPosition == itemTotalCount) {
                     Log.d("스크롤 끝에","도달!")
-                    channelViewModel.channelVideoDataList.value ?: return
+                    val channelData = sharedViewModel.channelData.value ?: return
                     channelViewModel.nextPageToken ?: return
-                    channelViewModel.fetchChannelVideoData(resources.getStringArray(R.array.publish_date_formats))
+                    channelViewModel.fetchChannelVideoData(channelData)
                 }
             }
         })

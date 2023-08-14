@@ -1,4 +1,4 @@
-package com.myFile.transpose.fragment
+package com.myFile.transpose.view.fragment
 
 import android.content.Context
 import android.os.Bundle
@@ -12,12 +12,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.myFile.transpose.*
-import com.myFile.transpose.adapter.PlaylistItemsRecyclerViewAdapter
+import com.myFile.transpose.view.Activity.Activity
+import com.myFile.transpose.view.adapter.PlaylistItemsRecyclerViewAdapter
 import com.myFile.transpose.databinding.FragmentPlaylistBinding
 import com.myFile.transpose.databinding.MainBinding
-import com.myFile.transpose.dialog.DialogFragmentPopupAddPlaylist
-import com.myFile.transpose.model.PlaylistDataModel
-import com.myFile.transpose.model.VideoDataModel
+import com.myFile.transpose.view.dialog.DialogFragmentPopupAddPlaylist
+import com.myFile.transpose.model.model.NowPlaylistModel
+import com.myFile.transpose.model.model.PlaylistDataModel
+import com.myFile.transpose.model.model.VideoDataModel
+import com.myFile.transpose.view.adapter.ChannelVideoRecyclerViewAdapter
 import com.myFile.transpose.viewModel.PlaylistItemsViewModel
 import com.myFile.transpose.viewModel.PlaylistItemsViewModelFactory
 import com.myFile.transpose.viewModel.SharedViewModel
@@ -47,7 +50,7 @@ class PlaylistItemsFragment: Fragment() {
     }
     private fun initViewModel(){
         val application = requireActivity().application as MyApplication
-        val viewModelFactory = PlaylistItemsViewModelFactory(application.youtubeDataRepository)
+        val viewModelFactory = PlaylistItemsViewModelFactory(application)
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         playlistItemsViewModel = ViewModelProvider(this, viewModelFactory)[PlaylistItemsViewModel::class.java]
     }
@@ -59,9 +62,10 @@ class PlaylistItemsFragment: Fragment() {
     private fun initObserver(){
         sharedViewModel.playlistData.observe(viewLifecycleOwner){
             addRecyclerViewHeaderView(it)
-            playlistItemsViewModel.fetchPlaylistItemsData(it, resources.getStringArray(R.array.publish_date_formats))
+            playlistItemsViewModel.fetchPlaylistItemsData(it)
         }
         playlistItemsViewModel.playlistItems.observe(viewLifecycleOwner){ playlistItems ->
+            Log.d("플레이리스트 갱신","${playlistItems.size}")
             loadingFinishEvent()
             addRecyclerViewItemView(playlistItems)
         }
@@ -78,7 +82,9 @@ class PlaylistItemsFragment: Fragment() {
         val loadingData = PlaylistItemsRecyclerViewAdapter.PlaylistItemsRecyclerViewItems.LoadingData
         if (currentList.isNotEmpty() && currentList.last() == loadingData)
             currentList.removeLast()
-        currentList.addAll(playlistItems.map{PlaylistItemsRecyclerViewAdapter.PlaylistItemsRecyclerViewItems.ItemData(it)})
+        val existingData = playlistItemsRecyclerViewAdapter.currentList.filterIsInstance<PlaylistItemsRecyclerViewAdapter.PlaylistItemsRecyclerViewItems.ItemData>().map { it.videoData }.toHashSet()
+        val newItems = playlistItems.filter { it !in existingData }.map{ PlaylistItemsRecyclerViewAdapter.PlaylistItemsRecyclerViewItems.ItemData(it)}
+        currentList.addAll(newItems)
         if (playlistItemsViewModel.nextPageToken != null)
             currentList.add(loadingData)
         playlistItemsRecyclerViewAdapter.submitList(currentList)
@@ -101,6 +107,7 @@ class PlaylistItemsFragment: Fragment() {
             override fun onClick(v: View, position: Int) {
                 val playlistData = sharedViewModel.playlistData.value
                 val playlistItems = playlistItemsViewModel.playlistItems.value ?: return
+                Log.d("현재 플레이리스트","${playlistItems.size}")
                 val nowPlaylistModel = NowPlaylistModel(playlistItems, position - 1, playlistData?.title)
                 val videoData = playlistItems[position - 1]
                 sharedViewModel.setVideoPlayerFragmentData(videoData, nowPlaylistModel)
@@ -116,7 +123,7 @@ class PlaylistItemsFragment: Fragment() {
                     popUp.setOnMenuItemClickListener {
                         when (it.itemId) {
                             R.id.add_my_playlist -> {
-                                showNoticeDialog(playlistItems[position])
+                                showNoticeDialog(playlistItems[position-1])
                             }
                         }
                         true
@@ -141,7 +148,7 @@ class PlaylistItemsFragment: Fragment() {
                     if (currentList.isNotEmpty()){
                         playlistItemsViewModel.nextPageToken ?: return
                         val playlistDataModel = sharedViewModel.playlistData.value ?: return
-                        playlistItemsViewModel.fetchPlaylistItemsData(playlistDataModel, resources.getStringArray(R.array.publish_date_formats))
+                        playlistItemsViewModel.fetchPlaylistItemsData(playlistDataModel)
                     }
                 }
             }
