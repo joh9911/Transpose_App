@@ -2,22 +2,25 @@ package com.myFile.transpose.view.fragment
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.myFile.transpose.*
 import com.myFile.transpose.view.Activity.Activity
 import com.myFile.transpose.view.adapter.SearchResultFragmentRecyclerViewAdapter
 import com.myFile.transpose.databinding.FragmentSearchResultBinding
-import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.view.dialog.DialogFragmentPopupAddPlaylist
-import com.myFile.transpose.model.model.VideoDataModel
+import com.myFile.transpose.data.model.VideoDataModel
+import com.myFile.transpose.others.constants.Actions.TAG
 import com.myFile.transpose.viewModel.SearchResultViewModel
 import com.myFile.transpose.viewModel.SearchResultViewModelFactory
 import com.myFile.transpose.viewModel.SharedViewModel
@@ -25,7 +28,6 @@ import java.net.URLEncoder
 
 
 class SearchResultFragment: Fragment() {
-    lateinit var mainBinding: MainBinding
     lateinit var activity: Activity
     lateinit var searchResultAdapter: SearchResultFragmentRecyclerViewAdapter
     var fbinding: FragmentSearchResultBinding? = null
@@ -34,15 +36,17 @@ class SearchResultFragment: Fragment() {
     private lateinit var sharedViewModel: SharedViewModel
     private lateinit var searchResultViewModel: SearchResultViewModel
 
+    var currentPosition = 0
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         fbinding = FragmentSearchResultBinding.inflate(inflater, container, false)
-        mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
         initViewModel()
+        Log.d(TAG, "searchResultFragment onCreate")
 //        initRecyclerView()
 //        errorEvent()
         initWebView()
@@ -50,72 +54,107 @@ class SearchResultFragment: Fragment() {
     }
 
 
+
     private fun initWebView(){
+        val searchKeyword = sharedViewModel.searchKeyword
+        val encodedSearchTerm = URLEncoder.encode(searchKeyword, "UTF-8")
+
         binding.webView.webViewClient = object : WebViewClient() {
 
-            override fun onReceivedError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                error: WebResourceError?
-            ) {
-                super.onReceivedError(view, request, error)
-                Toast.makeText(context, "An error occurred. Please try again.", Toast.LENGTH_LONG).show()
-                view?.post {
-                    view.stopLoading()
-                    view.destroy()
-                    parentFragmentManager.popBackStack()
-                }
-            }
-
-            override fun onReceivedHttpError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                errorResponse: WebResourceResponse?
-            ) {
-                super.onReceivedHttpError(view, request, errorResponse)
-                Toast.makeText(context, "An error occurred. Please try again.", Toast.LENGTH_LONG).show()
-                view?.post {
-                    view.stopLoading()
-                    view.destroy()
-                    parentFragmentManager.popBackStack()
-                }
-            }
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
+                Log.d("시작 페이지","$url")
+                view?.post{
+                    view.scrollTo(0, currentPosition)
+                }
                 binding.progressBar.visibility = View.GONE
             }
+
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                Log.d("페이지 로딩 끝","$url")
+
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val urlString = request?.url.toString()
+
+                return super.shouldOverrideUrlLoading(view, request)
+            }
+
             override fun shouldInterceptRequest(
                 view: WebView?,
                 request: WebResourceRequest?
             ): WebResourceResponse? {
                 val urlString = request?.url.toString()
 
-                Log.d("URLIntercepted", urlString)
-
+                Log.d("요청된 url","$urlString")
                 if (urlString.contains("m.youtube.com/api/stats/qoe") && urlString.contains("docid=")) {
-                    val videoId = Regex("docid=([^&]*)").find(urlString)?.groups?.get(1)?.value
+                    Log.d("서치 리저트 선택된 url","${urlString}")
 
-                    videoId?.let {
-                        Log.d("ExtractedVideoID", it)
-                        view?.post {
-                            view.stopLoading()
-                            view.destroy()
-                            parentFragmentManager.popBackStack()
+                    if (!searchResultViewModel.isIntercepted){
+                        val videoId = Regex("docid=([^&]*)").find(urlString)?.groups?.get(1)?.value
+                        searchResultViewModel.isIntercepted = true
+                        videoId?.let {
+                            Log.d("서치 리저트", it)
+                            if (sharedViewModel.searchResultMode == SharedViewModel.SearchResultMode.SearchKeyword){
+
+                                view?.post {
+                                    Log.d("서치 리저트", "goBack")
+                                    Log.d("서치 현재 url","${view.url}")
+                                    Handler(Looper.getMainLooper()).postDelayed({
+                                        view.stopLoading()
+                                        view.loadUrl("https://www.youtube.com/results?search_query=$encodedSearchTerm")
+                                    },0)
+
+                                    Handler(Looper.getMainLooper()).postDelayed({
+                                        searchResultViewModel.isIntercepted = false
+
+                                    }, 3000) // 3000ms = 3s
+                                }
+                            }
+                            else{
+                                view?.post{
+                                    view.stopLoading()
+                                    view.destroy()
+                                    findNavController().navigateUp()
+                                }
+                            }
+                            sharedViewModel.setSingleModeVideoId(videoId)
+                            activity.activatePlayerInSingleMode(videoId)
                         }
-                        sharedViewModel.setSingleModeVideoId(videoId)
-                        activity.executeVideoPlayerFragment(SharedViewModel.PlaybackMode.SINGLE_VIDEO)
-
-
                     }
                 }
                 return super.shouldInterceptRequest(view, request)
             }
         }
 
-        val searchKeyword = sharedViewModel.searchKeyword.value ?: "cookie"
-        val encodedSearchTerm = URLEncoder.encode(searchKeyword, "UTF-8")
+
         binding.webView.settings.javaScriptEnabled = true
-        binding.webView.loadUrl("https://www.youtube.com/results?search_query=$encodedSearchTerm")
+        binding.webView.settings.mediaPlaybackRequiresUserGesture = true
+        binding.webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            binding.webView.setOnScrollChangeListener { p0, p1, p2, p3, p4 -> currentPosition = p4 }
+        }
+
+        try{
+            if (sharedViewModel.searchResultMode == SharedViewModel.SearchResultMode.SearchKeyword)
+                binding.webView.loadUrl("https://www.youtube.com/results?search_query=$encodedSearchTerm")
+            else
+                binding.webView.loadUrl(sharedViewModel.sharedLink)
+        }catch (e: Exception){
+            Log.d("웹뷰","로드중 예외 발생${e}")
+            binding.webView.post {
+                binding.webView.stopLoading()
+                binding.webView.destroy()
+                findNavController().navigateUp()
+            }
+        }
     }
 
     fun extractVideoIdFromUrl(url: String): String? {
@@ -137,6 +176,7 @@ class SearchResultFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initObserver()
+        sharedViewModel.fromChildFragmentInNavFragment.value = findNavController().currentDestination?.id
 //        searchResultViewModel.deleteOldData()
 //        searchResultViewModel.firstFetchOrGetData(StringUtils.getDateStrings(requireContext()))
     }
@@ -146,11 +186,11 @@ class SearchResultFragment: Fragment() {
         val viewModelFactory = SearchResultViewModelFactory(application)
         sharedViewModel = ViewModelProvider(requireActivity())[SharedViewModel::class.java]
         searchResultViewModel = ViewModelProvider(this, viewModelFactory)[SearchResultViewModel::class.java]
-        val searchKeyword = sharedViewModel.searchKeyword.value ?: ""
-        searchResultViewModel.setSearchKeyword(searchKeyword)
+
     }
 
     private fun initObserver(){
+
 //        searchResultViewModel.videoSearchDataList.observe(viewLifecycleOwner){
 //            addRecyclerViewItem(it)
 //            searchResultViewModel.cashData(it)
@@ -210,17 +250,17 @@ class SearchResultFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (parentFragment is HomeFragment){
-            val fragment =  parentFragment as HomeFragment
-            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
-            fragment.searchView.setQuery(searchKeyword,false)
-        }
-
-        if (parentFragment is MyPlaylistsFragment){
-            val fragment = parentFragment as MyPlaylistsFragment
-            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
-            fragment.searchView.setQuery(searchKeyword,false)
-        }
+//        if (parentFragment is HomeFragment){
+//            val fragment =  parentFragment as HomeFragment
+//            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
+//            fragment.searchView.setQuery(searchKeyword,false)
+//        }
+//
+//        if (parentFragment is MyPlaylistsFragment){
+//            val fragment = parentFragment as MyPlaylistsFragment
+//            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
+//            fragment.searchView.setQuery(searchKeyword,false)
+//        }
     }
 //
 //    private fun initRecyclerView(){
@@ -351,6 +391,7 @@ class SearchResultFragment: Fragment() {
     }
     override fun onDestroyView() {
         super.onDestroyView()
+        searchResultViewModel.isIntercepted = false
         binding.webView.stopLoading()
         binding.webView.destroy()
         fbinding = null
@@ -359,25 +400,25 @@ class SearchResultFragment: Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         activity = context as Activity
-        if (parentFragment is HomeFragment){
-            val fragment =  parentFragment as HomeFragment
-            fragment.childFragmentManager.addOnBackStackChangedListener {
-                if (this@SearchResultFragment.isResumed){
-                    val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
-                    fragment.searchView.setQuery(searchKeyword,false)
-                }
-
-            }
-        }
-        if (parentFragment is MyPlaylistsFragment){
-            val fragment = parentFragment as MyPlaylistsFragment
-            fragment.childFragmentManager.addOnBackStackChangedListener {
-                if (this@SearchResultFragment.isResumed){
-                    val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
-                    fragment.searchView.setQuery(searchKeyword,false)
-                }
-            }
-        }
+//        if (parentFragment is HomeFragment){
+//            val fragment =  parentFragment as HomeFragment
+//            fragment.childFragmentManager.addOnBackStackChangedListener {
+//                if (this@SearchResultFragment.isResumed){
+//                    val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
+//                    fragment.searchView.setQuery(searchKeyword,false)
+//                }
+//
+//            }
+//        }
+//        if (parentFragment is MyPlaylistsFragment){
+//            val fragment = parentFragment as MyPlaylistsFragment
+//            fragment.childFragmentManager.addOnBackStackChangedListener {
+//                if (this@SearchResultFragment.isResumed){
+//                    val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
+//                    fragment.searchView.setQuery(searchKeyword,false)
+//                }
+//            }
+//        }
     }
 
 }
