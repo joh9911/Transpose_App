@@ -7,8 +7,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.myFile.transpose.R
 import com.myFile.transpose.databinding.NationalRecyclerViewItemBinding
-import com.myFile.transpose.model.model.PlaylistDataModel
+import com.myFile.transpose.data.model.PlaylistDataModel
 
 class HomeNationalPlaylistRecyclerViewAdapter: ListAdapter<PlaylistDataModel, HomeNationalPlaylistRecyclerViewAdapter.MyViewHolder>(
     diffUtil
@@ -29,6 +31,8 @@ class HomeNationalPlaylistRecyclerViewAdapter: ListAdapter<PlaylistDataModel, Ho
             binding.playlistDate.text = playlistDataModel.date
             Glide.with(binding.nationIcon)
                 .load(playlistDataModel.thumbnail)
+                .placeholder(R.color.light_gray)
+                .transition(DrawableTransitionOptions.withCrossFade())
                 .into(binding.nationIcon)
         }
     }

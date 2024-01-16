@@ -7,8 +7,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.myFile.transpose.R
 import com.myFile.transpose.databinding.NationalRecyclerViewItemBinding
-import com.myFile.transpose.model.model.PlaylistDataModel
+import com.myFile.transpose.data.model.PlaylistDataModel
 
 class HomeRecommendedPlaylistRecyclerViewAdapter: ListAdapter<PlaylistDataModel, HomeRecommendedPlaylistRecyclerViewAdapter.MyViewHolder>(
     diffUtil
@@ -27,6 +29,8 @@ class HomeRecommendedPlaylistRecyclerViewAdapter: ListAdapter<PlaylistDataModel,
             binding.description.text = playlistDataModel.description
             Glide.with(binding.nationIcon)
                 .load(playlistDataModel.thumbnail)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .placeholder(R.color.placeholder_blur_blue)
                 .into(binding.nationIcon)
         }
     }
