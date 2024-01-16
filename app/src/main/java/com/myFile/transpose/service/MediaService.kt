@@ -1,28 +1,41 @@
 package com.myFile.transpose.service
 
 import android.annotation.SuppressLint
-import android.app.*
-import android.app.Notification.FOREGROUND_SERVICE_IMMEDIATE
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
+import android.media.audiofx.AudioEffect
+import android.media.audiofx.BassBoost
+import android.media.audiofx.DynamicsProcessing
+import android.media.audiofx.EnvironmentalReverb
+import android.media.audiofx.Equalizer
+import android.media.audiofx.LoudnessEnhancer
+import android.media.audiofx.PresetReverb
+import android.media.audiofx.Virtualizer
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.IBinder
 import android.text.TextUtils
 import android.util.Log
-import androidx.annotation.RequiresApi
-import androidx.core.app.NotificationCompat
+import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.*
+import androidx.media3.common.audio.AudioProcessor
+import androidx.media3.common.audio.SonicAudioProcessor
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.*
 import com.google.common.util.concurrent.ListenableFuture
 import com.myFile.transpose.BuildConfig
 import com.myFile.transpose.R
-import com.myFile.transpose.view.Activity.Activity
 import com.myFile.transpose.others.constants.Actions
+import com.myFile.transpose.others.constants.Actions.TAG
+import com.myFile.transpose.view.Activity.Activity
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLException
 import com.yausername.youtubedl_android.YoutubeDLRequest
@@ -34,28 +47,42 @@ import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.exceptions.UndeliverableException
 import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import io.reactivex.rxjava3.schedulers.Schedulers
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.IOException
 
-class MediaService: MediaSessionService(), Player.Listener {
-    private lateinit var exoPlayer: Player
+
+@OptIn(UnstableApi::class) class MediaService: MediaSessionService(){
+    private lateinit var exoPlayer: ExoPlayer
+    private var equalizer: Equalizer? = null
+    private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var bassBoost: BassBoost? = null
+    private var virtualizer: Virtualizer? = null
+    private var presetReverb: PresetReverb? = null
+    private var environmentalReverb: EnvironmentalReverb? = null
+    private var dynamicsProcessing: DynamicsProcessing? = null
     private var mediaSession: MediaSession? = null
     private lateinit var compositeDisposable: CompositeDisposable
 
     private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
     Log.d("dl 업데이트 에러","$throwable ")
-
     }
+
 
     override fun onCreate() {
         super.onCreate()
-        Log.d("서비스가","실행됨")
         initYoutubeDL()
         updateYoutubeDL()
-
         initRxJavaExceptionHandler()
         createNotificationChannel()
-        val customCallback = CustomMediaSessionCallback()
+        initPlayer()
+        initMediaSession()
+        initAudioEffect()
+
+    }
+    private fun initPlayer(){
         exoPlayer = ExoPlayer.Builder(this)
             .setAudioAttributes(AudioAttributes.Builder()
                 .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
@@ -63,19 +90,47 @@ class MediaService: MediaSessionService(), Player.Listener {
                 .build(), true)
             .setHandleAudioBecomingNoisy(true)
             .build()
+        addListener()
 
 
+    }
+
+    @OptIn(UnstableApi::class) private fun addListener(){
+
+        val listener = object: Player.Listener{
+
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                Log.d("오디오 세션","바뀜")
+//                setEqualizer(null)
+                super.onAudioSessionIdChanged(audioSessionId)
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                mediaItem ?: return
+                exoPlayer.playWhenReady = true
+                val title = mediaItem.mediaMetadata.title
+                // 이건 두번 호출됨, 왜냐면 맨처음 아이템을 장착할 때 한번, 두번 째 세팅할 때 한번
+                if (title == "converting.."){
+                    startStream(mediaItem.mediaId)
+                }
+                super.onMediaItemTransition(mediaItem, reason)
+            }
+        }
+        exoPlayer.addListener(listener)
+    }
+
+    @OptIn(UnstableApi::class) private fun initMediaSession(){
+        val customCallback = CustomMediaSessionCallback()
         mediaSession = MediaSession.Builder(this, exoPlayer)
             .setCallback(customCallback)
             .build()
 
         mediaSession?.setCustomLayout(createCommandButton())
         val notificationIntent = Intent(this, Activity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent = PendingIntent.getActivity(applicationContext, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
         mediaSession?.setSessionActivity(pendingIntent)
-
-
     }
+
 
     private fun initRxJavaExceptionHandler() {
     compositeDisposable = CompositeDisposable()
@@ -87,6 +142,32 @@ class MediaService: MediaSessionService(), Player.Listener {
         }
     }
 
+    private fun initAudioEffect(){
+        val audioSessionId = exoPlayer.audioSessionId
+        try{
+            equalizer = Equalizer(0, exoPlayer.audioSessionId)
+            equalizer?.enabled = true
+
+            bassBoost = BassBoost(0, audioSessionId)
+            bassBoost?.enabled = true
+
+            loudnessEnhancer = LoudnessEnhancer(audioSessionId)
+            loudnessEnhancer?.enabled = true
+
+            virtualizer = Virtualizer(0, audioSessionId)
+            virtualizer?.enabled = true
+            virtualizer?.forceVirtualizationMode(Virtualizer.VIRTUALIZATION_MODE_BINAURAL)
+
+            presetReverb = PresetReverb(1, 0)
+            presetReverb?.enabled = true
+        }
+        catch (e: Exception){
+            Log.d(TAG,"initAudioEffect 초기화 오류")
+        }
+
+    }
+
+
 
     private fun createNotificationChannel(){
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -96,7 +177,7 @@ class MediaService: MediaSessionService(), Player.Listener {
                 "Music Player Channel", // 채널표시명
                 NotificationManager.IMPORTANCE_HIGH
             )
-                serviceChannel.setSound(null,null)
+            serviceChannel.setSound(null,null)
             val notificationManager: NotificationManager =
                 this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(serviceChannel)
@@ -111,24 +192,18 @@ class MediaService: MediaSessionService(), Player.Listener {
         Log.e(ContentValues.TAG, "failed to initialize youtubedl-android", e)
     }
 }
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession?
-            = mediaSession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession?{
 
-    override fun onDestroy() {
-        Log.d("종료","서비스")
-        streamingCancel()
-        mediaSession?.run {
-            player.release()
-            release()
-            mediaSession = null
-        }
-        super.onDestroy()
+        return mediaSession
     }
+
+
 
 
     private fun updateYoutubeDL(){
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch{
-            YoutubeDL.getInstance().updateYoutubeDL(this@MediaService)
+            YoutubeDL.getInstance().updateYoutubeDL(this@MediaService, YoutubeDL.UpdateChannel._NIGHTLY)
+            Log.d("업데이트 코드가","실행됨")
         }
     }
 
@@ -136,28 +211,14 @@ class MediaService: MediaSessionService(), Player.Listener {
     @SuppressLint("PrivateResource")
     private fun createCommandButton(): List<CommandButton> {
         val pitchMinusCommand = SessionCommand(Actions.MINUS, Bundle())
-        val previousCommand = SessionCommand("Previous", Bundle())
-        val playPauseCommand = SessionCommand("PlayPause",Bundle())
         val pitchPlusCommand = SessionCommand(Actions.PLUS,Bundle())
-        val thumbsUpCommand = SessionCommand("ACTION_THUMBS_UP", Bundle())
-        val repeatCommand = SessionCommand("ACTION_REPEAT", Bundle())
+
         val minusButton = CommandButton.Builder()
             .setSessionCommand(pitchMinusCommand)
             .setIconResId(R.drawable.ic_baseline_exposure_neg_1_24)
             .setDisplayName("Minus")
             .build()
 
-        val previousButton = CommandButton.Builder()
-            .setSessionCommand(previousCommand)
-            .setIconResId(androidx.media3.ui.R.drawable.exo_notification_previous)
-            .setDisplayName("Previous")
-            .build()
-
-        val playPauseButton = CommandButton.Builder()
-            .setSessionCommand(playPauseCommand)
-            .setIconResId(androidx.media3.ui.R.drawable.exo_notification_play)
-            .setDisplayName("PlayPause")
-            .build()
 
         val plusButton = CommandButton.Builder()
             .setSessionCommand(pitchPlusCommand)
@@ -166,44 +227,199 @@ class MediaService: MediaSessionService(), Player.Listener {
             .build()
 
 
-        return listOf(plusButton, minusButton)
+        return listOf(minusButton, plusButton )
     }
 
-    private fun createProgressNotification() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancelAll()
-        val notificationIntent = Intent(this, Activity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-        val builder = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
-            setContentTitle("Converting...")
-            setContentText("convert in progress")
-            setSmallIcon(R.mipmap.app_icon)
-            setContentIntent(pendingIntent)
-            foregroundServiceBehavior = FOREGROUND_SERVICE_IMMEDIATE
-            priority = NotificationCompat.PRIORITY_MAX
-        }
-        val PROGRESS_MAX = 100
-        var PROGRESS_CURRENT = 0
-        Log.d("크레이트","노티피케이션")
-        builder.setOngoing(true)
-        builder.setProgress(PROGRESS_MAX, PROGRESS_CURRENT, false)
+    // true로 바꿔야함 https://github.com/androidx/media/issues/167
 
-//        NotificationManagerCompat.from(this).apply {
-//            // Issue the initial notification with zero progress
-//            builder.setProgress(PROGRESS_MAX, PROGRESS_CURRENT, false)
-//            notify(NOTIFICATION_ID, builder.build())
-//
-//            // Do the job here that tracks the progress.
-//            // Usually, this should be in a
-//            // worker thread
-//            // To show progress, update PROGRESS_CURRENT and update the notification with:
-//            // builder.setProgress(PROGRESS_MAX, PROGRESS_CURRENT, false);
-//            // notificationManager.notify(notificationId, builder.build());
-//
-//
-//            // When done, update the notification one more time to remove the progress bar
-//        }
-        startForeground(200, builder.build())
+    override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
+        try {
+            Log.d("노티피케이션","업데이트호출")
+            super.onUpdateNotification(session, true)
+        }catch (e: Exception){
+            Log.d("업데이트노티","$e")
+        }
+    }
+
+
+    private fun setEqualizer(value: Int?){
+        value ?: return
+        if (value == -1){
+            disableEqualizer()
+            return
+        }
+        if (equalizer == null){
+            try{
+                equalizer = Equalizer(0, exoPlayer.audioSessionId)
+                equalizer?.enabled = true
+            }
+            catch (e: Exception){
+                Log.d(TAG,"equalizer 재 초기화 오류")
+            }
+
+
+
+        }
+
+        equalizer?.usePreset(value.toShort())
+
+        val i = equalizer?.numberOfBands!!
+        val intent = Intent(Actions.GET_EQUALIZER_INFO)
+        for (index in 0 until i){
+            Log.d("이퀼라이저","${equalizer?.getBandLevel(index.toShort())}")
+
+            intent.putExtra("$index","${equalizer?.getBandLevel(index.toShort())}")
+
+        }
+        sendBroadcast(intent)
+        val sonic = DefaultRenderersFactory(this)
+    }
+
+    private fun disableEqualizer(){
+        setEqualizer(3)
+        equalizer?.release()
+        equalizer = null
+    }
+
+    private fun useBassBoost(value: Int){
+        bassBoost ?: return
+        val audioSessionId = exoPlayer.audioSessionId
+
+        if (audioSessionId != AudioEffect.ERROR_BAD_VALUE) {
+            if (bassBoost?.strengthSupported!!) {
+                Log.d("bass","조건문2")
+                bassBoost?.setStrength(value.toShort()) // Set bass strength, values are between 0 and 1000
+                exoPlayer.setAuxEffectInfo(AuxEffectInfo(bassBoost?.id!!, 1f))
+            }
+        }
+    }
+
+    private fun useLoudnessEnhancer(value: Int){
+        loudnessEnhancer ?: return
+        val audioSessionId = exoPlayer.audioSessionId
+        if (audioSessionId != AudioEffect.ERROR_BAD_VALUE){
+            Log.d("loud","조건문 1")
+
+            loudnessEnhancer?.setTargetGain(value)
+        }
+    }
+
+    @OptIn(UnstableApi::class) private fun useVirtualizer(value: Int) {
+        virtualizer ?: return
+        Log.d("버튜얼","$value")
+        virtualizer?.setStrength(value.toShort())
+        virtualizer?.enabled = true
+        virtualizer?.forceVirtualizationMode(Virtualizer.VIRTUALIZATION_MODE_BINAURAL)
+
+
+        exoPlayer.setAuxEffectInfo(AuxEffectInfo(virtualizer!!.id, 0.5f))
+    }
+
+    private fun usePresetReverb(value: Int, sendLevel: Int) {
+
+        if (value == -1 && sendLevel == -1){
+            disablePresetReverb()
+            return
+        }
+        if (presetReverb == null){
+            try{
+                presetReverb = PresetReverb(1, 0)
+                presetReverb?.enabled = true
+            }catch (e: Exception){
+                Log.d(TAG,"usePresetReverb 초기화 오류")
+            }
+
+        }
+
+        Log.d("리버브","활성화")
+        // reverb 효과는 오디오 세션 0에서 작동
+        try {
+            val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            val normalizedVolume = currentVolume.toFloat() / maxVolume
+
+
+            presetReverb?.preset = value.toShort()
+
+            if (sendLevel == -1)
+                exoPlayer.setAuxEffectInfo(AuxEffectInfo(presetReverb!!.id, normalizedVolume))
+            else
+                exoPlayer.setAuxEffectInfo(AuxEffectInfo(presetReverb!!.id, sendLevel.toFloat() / 100f))
+        }catch (e: Exception){
+            Log.d("예외","$e")
+        }
+
+    }
+
+    private fun disablePresetReverb(){
+        usePresetReverb(0, -1)
+        presetReverb?.release()
+        presetReverb = null
+    }
+
+    private fun useEnvironmentReverb(){
+        Log.d("환경","사용 ${exoPlayer.audioSessionId == C.AUDIO_SESSION_ID_UNSET}")
+        if (environmentalReverb == null){
+            environmentalReverb = EnvironmentalReverb(0, 0)
+            environmentalReverb!!.reflectionsLevel = -8500
+            environmentalReverb!!.roomLevel = -8500
+            environmentalReverb!!.enabled = true
+            exoPlayer.setAuxEffectInfo(AuxEffectInfo(environmentalReverb!!.id, 1.0f))
+        } else{
+            Log.d("환경","해제")
+            environmentalReverb?.release()
+            environmentalReverb = null
+        }
+
+    }
+
+    private fun clearAudioEffect(){
+
+    }
+
+    private fun createMyCustomCommands(): List<SessionCommand> {
+
+        val myCommands = arrayListOf<SessionCommand>()
+        val downloadUrl = SessionCommand(CONVERT_URL, Bundle())
+
+        val stopConverting = SessionCommand(STOP_CONVERTING, Bundle())
+
+        val bassBoostCommand = SessionCommand(Actions.SET_BASS_BOOST, Bundle())
+
+        val loudnessEnhancementCommand = SessionCommand(Actions.SET_LOUDNESS_ENHANCER, Bundle())
+
+        val equalizerCommand = SessionCommand(Actions.SET_EQUALIZER, Bundle())
+
+        val reverbCommand = SessionCommand(Actions.SET_REVERB, Bundle())
+
+        val virtualizerCommand = SessionCommand(Actions.SET_VIRTUALIZER, Bundle())
+
+        val environmentalReverbCommand = SessionCommand(Actions.SET_ENVIRONMENT_REVERB, Bundle())
+
+        myCommands.add(downloadUrl)
+        myCommands.add(stopConverting)
+        myCommands.add(bassBoostCommand)
+        myCommands.add(loudnessEnhancementCommand)
+        myCommands.add(equalizerCommand)
+        myCommands.add(reverbCommand)
+        myCommands.add(virtualizerCommand)
+        myCommands.add(environmentalReverbCommand)
+        return myCommands
+    }
+
+    private fun releaseAudioEffects(){
+        equalizer?.release()
+        equalizer = null
+
+        bassBoost?.release()
+        bassBoost = null
+
+        loudnessEnhancer?.release()
+        loudnessEnhancer = null
+
+        virtualizer?.release()
+        virtualizer = null
     }
 
 
@@ -216,6 +432,28 @@ class MediaService: MediaSessionService(), Player.Listener {
             session.setCustomLayout(controller, createCommandButton())
         }
 
+        override fun onPlaybackResumption(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            exoPlayer.setMediaItem(
+                MediaItem.Builder()
+                    .setUri("asset:///15-seconds-of-silence.mp3")
+                    .also {
+                        val metadata = MediaMetadata.Builder()
+                            .setTitle("ExceptionCircumvent..")
+                            .setAlbumTitle("converting..")
+                            .setAlbumArtist("converting..")
+                            .setArtist("converting..")
+                            .build()
+                        it.setMediaMetadata(metadata)
+                    }
+                    .build()
+            )
+            exoPlayer.play()
+            return super.onPlaybackResumption(mediaSession, controller)
+        }
+
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo
@@ -223,11 +461,9 @@ class MediaService: MediaSessionService(), Player.Listener {
 
             val connectionResult = super.onConnect(session, controller)
 
-            val downloadUrl = SessionCommand(CONVERT_URL, Bundle())
-
-            val stopConverting = SessionCommand(STOP_CONVERTING, Bundle())
 
             val commandButtons = createCommandButton()
+            val myCustomCommands = createMyCustomCommands()
             val sessionCommands = connectionResult.availableSessionCommands.buildUpon()
 
             commandButtons.forEach { commandButton ->
@@ -236,10 +472,11 @@ class MediaService: MediaSessionService(), Player.Listener {
                 }
             }
             // Add custom commands
-            sessionCommands.add(downloadUrl)
-            sessionCommands.add(stopConverting)
+            myCustomCommands.forEach { customCommand ->
+                sessionCommands.add(customCommand)
+            }
 
-            Log.d("온커넥트", "ㅁㄴㅇㄹ")
+
             return MediaSession.ConnectionResult.accept(
                 sessionCommands.build(), connectionResult.availablePlayerCommands
             )
@@ -271,6 +508,44 @@ class MediaService: MediaSessionService(), Player.Listener {
                 STOP_CONVERTING -> {
                     streamingCancel()
                 }
+                Actions.SET_BASS_BOOST -> {
+
+                    val value=
+                        customCommand.customExtras.getInt("value")
+                    Log.d("액션을 받음","제발 $value")
+                    useBassBoost(value)
+                }
+                Actions.SET_LOUDNESS_ENHANCER -> {
+                    Log.d("라우드","받음")
+                    val value=
+                        customCommand.customExtras.getInt("value")
+                    useLoudnessEnhancer(value)
+                }
+                Actions.SET_EQUALIZER -> {
+                    Log.d("이퀼라이저","받음")
+                    val value = customCommand.customExtras.getInt("value")
+                    setEqualizer(value)
+
+                }
+                Actions.SET_VIRTUALIZER -> {
+                    Log.d("버튜얼","받음")
+                    val value=
+                        customCommand.customExtras.getInt("value")
+                    useVirtualizer(value)
+                }
+                Actions.SET_REVERB -> {
+                    Log.d("리버브","받음")
+                    val value=
+                        customCommand.customExtras.getInt("value")
+                    val sendLevel =
+                        customCommand.customExtras.getInt("sendLevel")
+                    usePresetReverb(value, sendLevel)
+
+                }
+                Actions.SET_ENVIRONMENT_REVERB -> {
+                    useEnvironmentReverb()
+                }
+
                 Actions.MINUS -> {
                     val intent = Intent("YOUR_CUSTOM_ACTION")
                     intent.putExtra("status", "minus")
@@ -286,11 +561,6 @@ class MediaService: MediaSessionService(), Player.Listener {
         }
     }
 
-//    override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
-//        Log.d("업데이트","노티 호출")
-//
-//        super.onUpdateNotification(session, startInForegroundRequired)
-//    }
 
     companion object{
         const val NOTIFICATION_ID = 200
@@ -304,19 +574,14 @@ class MediaService: MediaSessionService(), Player.Listener {
 
     private fun streamingCancel(){
         compositeDisposable.clear()
-        stopForeground(true)
     }
 
     fun startStream(videoId: String){
-        if (exoPlayer.currentMediaItem != null)
-            exoPlayer.removeMediaItem(0)
 
-        exoPlayer.stop()
         streamingCancel()
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            createProgressNotification()
-        }, 100) // 1000ms = 1초
+        val defaultResolutionIndex = this.getSharedPreferences("defaultResolution", 0)
+        val resolutionList = arrayOf("1080p", "720p", "480p", "360p", "240p", "144p")
 
         Log.d("스타트","스트림${videoId}")
         val disposable: Disposable = Observable.fromCallable {
@@ -332,7 +597,7 @@ class MediaService: MediaSessionService(), Player.Listener {
                 val videoUrl: String? = streamInfo.url
                 Log.d("유알엘","$videoUrl")
                 if (TextUtils.isEmpty(videoUrl)) {
-                    sendFailBroadCast()
+                    sendFailBroadCast("empty url")
                     Log.d("유알엘 빌때","$videoUrl")
                 } else {
                     setUpVideo(videoUrl!!, streamInfo)
@@ -353,13 +618,13 @@ class MediaService: MediaSessionService(), Player.Listener {
                     throw RuntimeException("Undeliverable exception caught!", e.cause)
                 }
                 if (BuildConfig.DEBUG) Log.d(ContentValues.TAG, "failed to get stream info", e)
-                sendFailBroadCast()
+                sendFailBroadCast(e.toString())
                 Log.d("원인","$e")
             }
         compositeDisposable.add(disposable)
     }
 
-    private fun sendFailBroadCast(){
+    private fun sendFailBroadCast(string: String){
         val intent = Intent("YOUR_CUSTOM_ACTION")
         intent.putExtra("status", "failure")
         sendBroadcast(intent)
@@ -380,11 +645,51 @@ class MediaService: MediaSessionService(), Player.Listener {
             }
             .build()
 
+        // single mode 일 때와 playlist mode 일 때 구분
+        if (exoPlayer.mediaItemCount == 1){
+            exoPlayer.addMediaItem(exoPlayer.currentMediaItemIndex, mediaItem)
+            exoPlayer.seekTo(0,0)
+            exoPlayer.removeMediaItem(exoPlayer.nextMediaItemIndex)
+        }else{
+            val mediaItemCount = exoPlayer.mediaItemCount
+            val currentPosition = exoPlayer.currentMediaItemIndex
+            if (currentPosition == mediaItemCount - 1){
+                exoPlayer.addMediaItem(exoPlayer.currentMediaItemIndex, mediaItem)
+                exoPlayer.seekToPreviousMediaItem()
+                exoPlayer.removeMediaItem(exoPlayer.nextMediaItemIndex)
+            }else{
+                exoPlayer.addMediaItem(exoPlayer.nextMediaItemIndex, mediaItem)
+                exoPlayer.seekToNextMediaItem()
+                exoPlayer.removeMediaItem(exoPlayer.previousMediaItemIndex)
+            }
+        }
 
-        exoPlayer.setMediaItem(mediaItem)
         exoPlayer.prepare()
 
         exoPlayer.playWhenReady = true
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        Log.d("서비스의","언바인드")
+        return super.onUnbind(intent)
+    }
+
+    override fun onBind(intent: Intent?): IBinder? {
+        Log.d("서비스의","바인드")
+        return super.onBind(intent)
+    }
+
+    override fun onDestroy() {
+        Log.d("종료","서비스")
+        streamingCancel()
+        mediaSession?.run {
+            Log.d("종료시 이 코드는","실행이 될까?")
+            player.release()
+            clearListener()
+            release()
+            mediaSession = null
+        }
+        super.onDestroy()
     }
 
 
