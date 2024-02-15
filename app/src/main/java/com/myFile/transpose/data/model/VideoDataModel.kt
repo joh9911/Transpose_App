@@ -1,4 +1,4 @@
-package com.myFile.transpose.model.model
+package com.myFile.transpose.data.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

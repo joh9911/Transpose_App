@@ -1,4 +1,4 @@
-package com.myFile.transpose.model.repository
+package com.myFile.transpose.data.repository
 
 import com.myFile.transpose.network.retrofit.RetrofitService
 import okhttp3.ResponseBody
