@@ -1,4 +1,8 @@
-package com.myFile.transpose.model.model
+package com.myFile.transpose.data.model
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 data class NowPlaylistModel (
@@ -23,11 +27,13 @@ data class NowPlaylistModel (
 
     // 가져 갈 때마다 position 위치 보고 반환
     fun refreshPlaylist() {
-        playMusicList = playMusicList.mapIndexed { index, musicModel ->
-            val newItem = musicModel.copy(
-                isPlaying = index == currentPosition
-            )
-            newItem
+        CoroutineScope(Dispatchers.IO).launch {
+            playMusicList = playMusicList.mapIndexed { index, musicModel ->
+                val newItem = musicModel.copy(
+                    isPlaying = index == currentPosition
+                )
+                newItem
+            }
         }
     }
 
