@@ -1,4 +1,4 @@
-package com.myFile.transpose.model.model
+package com.myFile.transpose.data.model
 
 data class CommentDataModel(
     val authorName: String,

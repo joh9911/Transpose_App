@@ -1,4 +1,4 @@
-package com.myFile.transpose.model.repository
+package com.myFile.transpose.data.repository
 
 object CountriesAndCodesRepository {
     val countriesAndCodes = arrayOf(
