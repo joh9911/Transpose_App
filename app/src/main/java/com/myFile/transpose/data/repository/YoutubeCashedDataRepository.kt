@@ -1,4 +1,4 @@
-package com.myFile.transpose.model.repository
+package com.myFile.transpose.data.repository
 
 import com.myFile.transpose.others.constants.TimeTarget
 import com.myFile.transpose.database.CashedKeyword

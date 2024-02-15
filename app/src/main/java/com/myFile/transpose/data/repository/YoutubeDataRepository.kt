@@ -1,13 +1,13 @@
-package com.myFile.transpose.model.repository
+package com.myFile.transpose.data.repository
 
 import com.myFile.transpose.BuildConfig
 import com.myFile.transpose.network.dto.ChannelSearchData
 import com.myFile.transpose.network.dto.CommentThreadData
 import com.myFile.transpose.network.dto.PlayListSearchData
 import com.myFile.transpose.network.dto.PlayListVideoSearchData
-import com.myFile.transpose.model.model.PlaylistDataModel
-import com.myFile.transpose.model.VideoDetailData
-import com.myFile.transpose.model.VideoSearchData
+import com.myFile.transpose.data.model.PlaylistDataModel
+import com.myFile.transpose.data.VideoDetailData
+import com.myFile.transpose.data.VideoSearchData
 import com.myFile.transpose.network.retrofit.RetrofitService
 import retrofit2.Response
 import java.util.*
@@ -36,17 +36,16 @@ class YoutubeDataRepository(
     suspend fun fetchTypedPlaylists(): Response<PlayListSearchData>{
         val channelId = musicCategoryRepository.typedPlaylistChannelId
         val keyList = listOf(BuildConfig.TOY_PROJECT)
-        val num = Random().nextInt(keyList.size)
 
-        return retrofitService.getPlayListsInChannel(keyList[num], "snippet", channelId, "50", null)
+        return retrofitService.getPlayListsInChannel(keyList.first(), "snippet", channelId, "50", null)
 
     }
 
     suspend fun fetchVideoDetailData(videoId: String): Response<VideoDetailData> {
         val keyList = listOf(
-            BuildConfig.API_KEY110999_3, BuildConfig.API_KEY38922_3,BuildConfig.API_KEY389251_3,
+            BuildConfig.API_KEY110999_3, BuildConfig.API_KEY38922_3,
             BuildConfig.API_KEY860801_3,BuildConfig.API_KEY991101_3,BuildConfig.API_KEY38924_3,
-            BuildConfig.API_KEY38931_3,BuildConfig.API_KEY38933_3,BuildConfig.API_KEY38934_3)
+            BuildConfig.API_KEY38931_3,)
         val num = Random().nextInt(keyList.size)
 
         return retrofitService.getVideoDetail(keyList[num], "snippet, statistics",videoId)
@@ -55,7 +54,7 @@ class YoutubeDataRepository(
     suspend fun fetchChannelDetailData(channelId: String): Response<ChannelSearchData> {
         val keyList = listOf(
             BuildConfig.API_KEY12, BuildConfig.RAISE_DEVELOP,
-            BuildConfig.API_KEY110901_3, BuildConfig.API_KEY11098608_3,)
+            BuildConfig.API_KEY110901_3, BuildConfig.API_KEY11098608_3,BuildConfig.API_KEY38934_3, BuildConfig.API_KEY38933_3)
         val num = Random().nextInt(keyList.size)
         return retrofitService.getChannelData(
             keyList[num], "snippet, contentDetails, statistics, brandingSettings"
