@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_nav_graph"
+    app:startDestination="@id/playlistFragment">
+
+    <fragment
+        android:id="@+id/playlistItemsFragment"
+        android:name="com.myFile.transpose.view.fragment.PlaylistItemsFragment"
+        android:label="PlaylistItemsFragment"
+        tools:layout="@layout/fragment_playlist_item">
+        <action
+            android:id="@+id/action_playlistItemsFragment_to_playlistFragment"
+            app:destination="@id/playlistFragment" />
+        <action
+            android:id="@+id/action_playlistItemsFragment_to_suggestionKeywordFragment2"
+            app:destination="@id/suggestionKeywordFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/searchResultFragment"
+        android:name="com.myFile.transpose.view.fragment.SearchResultFragment"
+        android:label="SearchResultFragment"
+        tools:layout="@layout/fragment_search_result">
+        <action
+            android:id="@+id/action_searchResultFragment_to_playlistFragment"
+            app:destination="@id/playlistFragment" />
+        <action
+            android:id="@+id/action_searchResultFragment_to_playlistItemsFragment2"
+            app:destination="@id/playlistItemsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/playlistFragment"
+        android:name="com.myFile.transpose.view.fragment.PlaylistFragment"
+        android:label="PlaylistFragment" >
+        <action
+            android:id="@+id/action_playlistFragment_to_playlistItemsFragment"
+            app:destination="@id/playlistItemsFragment" />
+        <action
+            android:id="@+id/action_playlistFragment_to_suggestionKeywordFragment2"
+            app:destination="@id/suggestionKeywordFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/suggestionKeywordFragment"
+        android:name="com.myFile.transpose.view.fragment.SuggestionKeywordFragment"
+        android:label="SuggestionKeywordFragment" >
+        <action
+            android:id="@+id/action_suggestionKeywordFragment_to_searchResultFragment2"
+            app:destination="@id/searchResultFragment" />
+    </fragment>
+</navigation>

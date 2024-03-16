@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/library_nav_graph"
+    app:startDestination="@id/myPlaylistsFragment">
+
+    <fragment
+        android:id="@+id/myPlaylistsFragment"
+        android:name="com.myFile.transpose.view.fragment.MyPlaylistsFragment"
+        android:label="MyPlaylistsFragment" >
+        <action
+            android:id="@+id/action_myPlaylistsFragment_to_myPlaylistItemsFragment"
+            app:destination="@id/myPlaylistItemsFragment"
+
+
+            />
+        <action
+            android:id="@+id/action_myPlaylistsFragment_to_searchResultFragment"
+            app:destination="@id/searchResultFragment"
+            />
+    </fragment>
+
+    <fragment
+        android:id="@+id/myPlaylistItemsFragment"
+        android:name="com.myFile.transpose.view.fragment.MyPlaylistItemsFragment"
+        android:label="MyPlaylistItemsFragment" >
+        <action
+            android:id="@+id/action_myPlaylistItemsFragment_to_myPlaylistsFragment"
+            app:destination="@id/myPlaylistsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/searchResultFragment"
+        android:name="com.myFile.transpose.view.fragment.SearchResultFragment"
+        android:label="SearchResultFragment" />
+    <fragment
+        android:id="@+id/suggestionKeywordFragment"
+        android:name="com.myFile.transpose.view.fragment.SuggestionKeywordFragment"
+        android:label="SuggestionKeywordFragment" />
+    <fragment
+        android:id="@+id/myAudioFileItemsFragment"
+        android:name="com.myFile.transpose.view.fragment.MyAudioFileItemsFragment"
+        android:label="MyAudioFileItemsFragment" />
+    <fragment
+        android:id="@+id/myVideoFileItemsFragment"
+        android:name="com.myFile.transpose.view.fragment.MyVideoFileItemsFragment"
+        android:label="MyVideoFileItemsFragment" />
+    <fragment
+        android:id="@+id/myVideoFileSearchFragment"
+        android:name="com.myFile.transpose.view.fragment.MyVideoFileSearchFragment"
+        android:label="MyVideoFileSearchFragment" />
+    <fragment
+        android:id="@+id/myAudioFileSearchFragment"
+        android:name="com.myFile.transpose.view.fragment.MyAudioFileSearchFragment"
+        android:label="MyAudioFileSearchFragment" />
+</navigation>

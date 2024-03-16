@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/convert_nav_graph"
+    app:startDestination="@id/audioEditFragment">
+
+    <fragment
+        android:id="@+id/audioEditFragment"
+        android:name="com.myFile.transpose.view.fragment.AudioEditFragment"
+        android:label="AudioEditFragment" />
+    <fragment
+        android:id="@+id/suggestionKeywordFragment"
+        android:name="com.myFile.transpose.view.fragment.SuggestionKeywordFragment"
+        android:label="SuggestionKeywordFragment" />
+    <fragment
+        android:id="@+id/searchResultFragment"
+        android:name="com.myFile.transpose.view.fragment.SearchResultFragment"
+        android:label="SearchResultFragment" />
+</navigation>
