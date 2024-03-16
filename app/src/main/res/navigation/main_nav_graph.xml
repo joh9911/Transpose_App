@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.myFile.transpose.view.fragment.HomeFragment"
+        android:label="HomeFragment"
+        tools:layout="@layout/fragment_home"/>
+    <fragment
+        android:id="@+id/libraryFragment"
+        android:name="com.myFile.transpose.view.fragment.LibraryFragment"
+        android:label="LibraryFragment"
+        tools:layout="@layout/fragment_library"/>
+    <fragment
+        android:id="@+id/convertFragment"
+        android:name="com.myFile.transpose.view.fragment.ConvertFragment"
+        android:label="ConvertFragment" />
+
+</navigation>
