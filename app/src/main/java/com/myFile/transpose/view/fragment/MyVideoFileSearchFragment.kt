@@ -95,25 +95,24 @@ class MyVideoFileSearchFragment: Fragment() {
             override fun onClick(v: View, position: Int) {
                 val myPlaylistItems = sharedViewModel.myVideoFiles.value ?: return
                 val mySearchedVideoFiles = sharedViewModel.mySearchedVideoFiles.value ?: return
+                if (position >= mySearchedVideoFiles.count()) return
 
                 val myPlaylistTitle = "MyVideoFiles"
-                val nowPlaylistModel = NowPlaylistModel(myPlaylistItems, mySearchedVideoFiles[position].second, myPlaylistTitle)
+                val nowPlaylistModel = NowPlaylistModel(myPlaylistItems, mySearchedVideoFiles[position].second, myPlaylistTitle, null)
                 hideKeyboard(activity)
                 activity.myFileSearchView.clearFocus()
                 activity.activatePlayerInMyVideoFilesMode(nowPlaylistModel)
             }
 
             override fun optionButtonClick(v: View, position: Int) {
-
                 val popUp = PopupMenu(requireContext(), v)
-                popUp.menuInflater.inflate(R.menu.my_playlist_pop_up_menu, popUp.menu)
+                popUp.menuInflater.inflate(R.menu.delete_video_from_device_pop_up_menu_text, popUp.menu)
                 popUp.setOnMenuItemClickListener {
                     when (it.itemId) {
-                        R.id.delete_my_playlist -> {
+                        R.id.delete_video_from_device -> {
                             sharedViewModel.myVideoFilesOrigin.value?.let { items ->
                                 deletePosition = position
                                 requestMediaWritePermission(items[position].id)
-
                             }
                         }
                     }

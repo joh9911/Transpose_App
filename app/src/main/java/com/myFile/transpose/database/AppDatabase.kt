@@ -29,13 +29,19 @@ abstract class AppDatabase : RoomDatabase(){
                     AppDatabase::class.java,
                     "database-name"
                 )
-                    .addMigrations(MIGRATION_6_7)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_7_8)
                     .build()
                 INSTANCE = instance
                 return instance
             }
         }
+    }
+}
+
+// Musics 테이블에 AudioEfects 필드 추가
+val MIGRATION_7_8 = object: Migration(7,8){
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE Musics ADD COLUMN audioEffects TEXT")
     }
 }
 

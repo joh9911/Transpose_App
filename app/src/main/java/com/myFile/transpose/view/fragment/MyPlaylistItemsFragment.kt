@@ -1,34 +1,34 @@
 package com.myFile.transpose.view.fragment
 
 import android.content.Context
+import android.graphics.Rect
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.myFile.transpose.*
 import com.myFile.transpose.view.Activity.Activity
-import com.myFile.transpose.view.adapter.MyPlaylistItemRecyclerViewAdapter
 import com.myFile.transpose.databinding.FragmentMyPlaylistItemBinding
-import com.myFile.transpose.databinding.MainBinding
-import com.myFile.transpose.model.model.NowPlaylistModel
+import com.myFile.transpose.data.model.NowPlaylistModel
+import com.myFile.transpose.view.adapter.MyPlaylistItemsRecyclerViewAdapter
 import com.myFile.transpose.viewModel.MyPlaylistItemsViewModel
 import com.myFile.transpose.viewModel.MyPlaylistItemsViewModelFactory
 import com.myFile.transpose.viewModel.SharedViewModel
 
 class MyPlaylistItemsFragment(): Fragment() {
 
-    lateinit var mainBinding: MainBinding
     var fbinding: FragmentMyPlaylistItemBinding? = null
     val binding get() = fbinding!!
     lateinit var activity: Activity
 
-    private lateinit var myPlaylistItemRecyclerAdapter: MyPlaylistItemRecyclerViewAdapter
-    private lateinit var fragmentLifecycleCallbacks: FragmentManager.FragmentLifecycleCallbacks
+    private lateinit var myPlaylistItemRecyclerAdapter: MyPlaylistItemsRecyclerViewAdapter
 
     lateinit var viewModel: MyPlaylistItemsViewModel
     private lateinit var sharedViewModel: SharedViewModel
@@ -39,32 +39,16 @@ class MyPlaylistItemsFragment(): Fragment() {
         savedInstanceState: Bundle?
     ): View {
         fbinding = FragmentMyPlaylistItemBinding.inflate(inflater, container, false)
-        mainBinding = MainBinding.inflate(layoutInflater)
         val view = binding.root
         initViewModel()
         initRecyclerView()
-        initEmptyItemVisible()
         return view
     }
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        fragmentLifecycleCallbacks = object : FragmentManager.FragmentLifecycleCallbacks() {
-
-            override fun onFragmentCreated(fm: FragmentManager, f: Fragment, savedInstanceState: Bundle?) {
-                if (f is VideoPlayerFragment) {
-                    binding.emptyItem.visibility = View.VISIBLE
-                }
-            }
-
-            override fun onFragmentDestroyed(fm: FragmentManager, f: Fragment) {
-                if (f is VideoPlayerFragment) {
-                    binding.emptyItem.visibility = View.GONE
-                }
-            }
-        }
-        activity.supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentLifecycleCallbacks,false)
+        sharedViewModel.fromChildFragmentInNavFragment.value = findNavController().currentDestination?.id
         initObserver()
     }
 
@@ -80,42 +64,31 @@ class MyPlaylistItemsFragment(): Fragment() {
             viewModel.getPlaylistItemsByPlaylistId(it)
         }
         viewModel.myPlaylistItems.observe(viewLifecycleOwner){ myPlaylistItems ->
+            Log.d("마이 플레이리스트","$myPlaylistItems")
             myPlaylistItemRecyclerAdapter.submitList(myPlaylistItems.map{it.musicData}.toMutableList())
         }
     }
 
-    /**
-     * PlayerFragment에 의해 아이템이 가려지지 않도록 visible 설정
-     */
-    private fun initEmptyItemVisible(){
-        for (fragment in activity.supportFragmentManager.fragments){
-            if (fragment is VideoPlayerFragment){
-                binding.emptyItem.visibility = View.VISIBLE
-            }
-        }
-    }
 
     private fun initRecyclerView(){
         binding.myPlaylistItemRecyclerView.layoutManager = LinearLayoutManager(activity)
-        myPlaylistItemRecyclerAdapter = MyPlaylistItemRecyclerViewAdapter()
-        myPlaylistItemRecyclerAdapter.setItemClickListener(object: MyPlaylistItemRecyclerViewAdapter.OnItemClickListener{
+        myPlaylistItemRecyclerAdapter = MyPlaylistItemsRecyclerViewAdapter()
+        myPlaylistItemRecyclerAdapter.setItemClickListener(object: MyPlaylistItemsRecyclerViewAdapter.OnItemClickListener{
             override fun onClick(v: View, position: Int) {
                 val myPlaylistItems = viewModel.myPlaylistItems.value ?: return
                 val myPlaylistTitle = sharedViewModel.myPlaylistTitle
                 val items = myPlaylistItems.map{it.musicData}
-                val playlistModel = NowPlaylistModel(items, position, myPlaylistTitle)
-                val videoData = items[position]
-                sharedViewModel.setVideoPlayerFragmentData(videoData, playlistModel)
-
-                activity.executeVideoPlayerFragment(SharedViewModel.PlaybackMode.PLAYLIST)
+                val audioEffects = myPlaylistItems.map { it.audioEffects }
+                val nowPlaylistModel = NowPlaylistModel(items, position, myPlaylistTitle, audioEffects)
+                activity.activatePlayerInPlaylistMode(nowPlaylistModel)
             }
 
             override fun optionButtonClick(v: View, position: Int) {
                 val popUp = PopupMenu(activity, v)
-                popUp.menuInflater.inflate(R.menu.my_playlist_pop_up_menu, popUp.menu)
+                popUp.menuInflater.inflate(R.menu.delete_video_from_playlist_pop_up_menu, popUp.menu)
                 popUp.setOnMenuItemClickListener {
                     when (it.itemId) {
-                        R.id.delete_my_playlist -> {
+                        R.id.delete_video_from_playlist -> {
                             viewModel.myPlaylistItems.value?.let { items ->
                                 viewModel.deletePlaylistItem(items[position], sharedViewModel.myPlaylistId.value ?: 0)
                             }
@@ -127,6 +100,28 @@ class MyPlaylistItemsFragment(): Fragment() {
             }
         })
         binding.myPlaylistItemRecyclerView.adapter = myPlaylistItemRecyclerAdapter
+        val paddingInPixels = dpToPx(requireContext(), 56)
+        binding.myPlaylistItemRecyclerView.addItemDecoration(CustomItemDecoration(paddingInPixels))
+    }
+
+    private fun dpToPx(context: Context, dp: Int): Int {
+        val density = context.resources.displayMetrics.density
+        return (dp * density).toInt()
+    }
+
+    inner class CustomItemDecoration(private val space: Int) : RecyclerView.ItemDecoration() {
+        override fun getItemOffsets(
+            outRect: Rect, view: View,
+            parent: RecyclerView, state: RecyclerView.State
+        ) {
+            val position = parent.getChildAdapterPosition(view)
+            val totalItemCount = parent.adapter?.itemCount ?: 0
+
+
+            if (position == totalItemCount - 1) {  // 마지막 아이템인 경우
+                outRect.bottom = space
+            }
+        }
     }
 
 
@@ -142,7 +137,6 @@ class MyPlaylistItemsFragment(): Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        activity.supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentLifecycleCallbacks)
         fbinding = null
     }
 }

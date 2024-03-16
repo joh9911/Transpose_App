@@ -130,9 +130,10 @@ class MyAudioFileSearchFragment: Fragment() {
             override fun onClick(v: View, position: Int) {
                 val myPlaylistItems = sharedViewModel.myAudioFiles.value ?: return
                 val mySearchedAudioFiles = sharedViewModel.mySearchedAudioFiles.value ?: return
+                if (position >= mySearchedAudioFiles.count()) return
 
                 val myPlaylistTitle = "MyAudioFiles"
-                val nowPlaylistModel = NowPlaylistModel(myPlaylistItems, mySearchedAudioFiles[position].second, myPlaylistTitle)
+                val nowPlaylistModel = NowPlaylistModel(myPlaylistItems, mySearchedAudioFiles[position].second, myPlaylistTitle, null)
                 hideKeyboard(activity)
                 activity.myFileSearchView.clearFocus()
                 activity.activatePlayerInMyAudioFilesMode(nowPlaylistModel)
@@ -141,10 +142,10 @@ class MyAudioFileSearchFragment: Fragment() {
             override fun optionButtonClick(v: View, position: Int) {
 
                 val popUp = PopupMenu(requireContext(), v)
-                popUp.menuInflater.inflate(R.menu.my_playlist_pop_up_menu, popUp.menu)
+                popUp.menuInflater.inflate(R.menu.delete_video_from_device_pop_up_menu_text, popUp.menu)
                 popUp.setOnMenuItemClickListener {
                     when (it.itemId) {
-                        R.id.delete_my_playlist -> {
+                        R.id.delete_video_from_device -> {
                             sharedViewModel.myAudioFilesOrigin.value?.let { items ->
                                 deletePosition = position
                                 requestMediaWritePermission(items[position].id)

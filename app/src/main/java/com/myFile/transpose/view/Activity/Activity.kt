@@ -1,6 +1,7 @@
 package com.myFile.transpose.view.Activity
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -23,6 +24,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -43,6 +45,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.onNavDestinationSelected
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.github.mikephil.charting.data.Entry
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.play.core.appupdate.AppUpdateManager
@@ -56,6 +59,7 @@ import com.myFile.transpose.MyApplication
 import com.myFile.transpose.R
 import com.myFile.transpose.databinding.MainBinding
 import com.myFile.transpose.data.model.*
+import com.myFile.transpose.others.constants.Actions
 import com.myFile.transpose.others.constants.Actions.TAG
 import com.myFile.transpose.others.constants.TimeTarget.REVIEW_TARGET_DURATION
 import com.myFile.transpose.service.MediaService
@@ -177,10 +181,9 @@ class Activity : AppCompatActivity() {
             val currentList = sharedViewModel.getAudioFileDataByIntent(this, it) ?: return
             Log.d("로그 확인","getMyAudioFileFromIntent")
             val myPlaylistTitle = "MyAudioFiles"
-            val nowPlaylistModel = NowPlaylistModel(currentList, 0, myPlaylistTitle)
+            val nowPlaylistModel = NowPlaylistModel(currentList, 0, myPlaylistTitle, null)
             activatePlayerInMyAudioFilesMode(nowPlaylistModel)
         }
-
     }
 
     private fun getMyVideoFileFromIntent(){
@@ -188,7 +191,7 @@ class Activity : AppCompatActivity() {
             val currentList = sharedViewModel.getVideoFileDataByIntent(this, it) ?: return
             Log.d("로그 확인","getMyVideoFileFromIntent")
             val myPlaylistTitle = "MyVideoFiles"
-            val nowPlaylistModel = NowPlaylistModel(currentList, 0, myPlaylistTitle)
+            val nowPlaylistModel = NowPlaylistModel(currentList, 0, myPlaylistTitle, null)
             activatePlayerInMyVideoFilesMode(nowPlaylistModel)
         }
     }
@@ -473,7 +476,15 @@ class Activity : AppCompatActivity() {
                     )
                 }
             }
-        registerReceiver(receiver, IntentFilter("YOUR_CUSTOM_ACTION"))
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(receiver, IntentFilter("YOUR_CUSTOM_ACTION"), Context.RECEIVER_NOT_EXPORTED)
+            } else{
+                registerReceiver(receiver, IntentFilter("YOUR_CUSTOM_ACTION"))
+            }
+
+
+
     }
 
     private fun checkUpdateInfo() {
@@ -507,7 +518,7 @@ class Activity : AppCompatActivity() {
         if (requestCode == 0) {
             if (resultCode != RESULT_OK) {
                 Log.e("MY_APP", "Update flow failed! Result code: $resultCode")
-                checkUpdateInfo()
+//                checkUpdateInfo()
             }
         }
     }
@@ -587,7 +598,8 @@ class Activity : AppCompatActivity() {
         animateViewsWhenSearchViewActivated()
         pasteLinkItem.isVisible = false
         searchViewItem.isVisible = false
-        myFileSearchItem.isVisible = false
+        if (::myFileSearchItem.isInitialized)
+            myFileSearchItem.isVisible = false
 //        settingIcon.isVisible = false
     }
 
@@ -601,7 +613,8 @@ class Activity : AppCompatActivity() {
 
         sharedViewModel.fromChildFragmentInNavFragment.value?.let{
             if (it == R.id.myVideoFileItemsFragment || it == R.id.myAudioFileItemsFragment){
-                myFileSearchItem.isVisible = true
+                if (::myFileSearchItem.isInitialized)
+                    myFileSearchItem.isVisible = true
             }
         }
 //        settingIcon.isVisible = true
@@ -1415,12 +1428,30 @@ class Activity : AppCompatActivity() {
 
     private fun initBroadcastReceiver() {
         receiver = MyBroadCastReceiver()
-        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
-        registerReceiver(receiver, filter)
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+        intentFilter.addAction(Actions.GET_EQUALIZER_INFO)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            registerReceiver(receiver, intentFilter, Context.RECEIVER_NOT_EXPORTED)
+        }
+        else{
+            registerReceiver(receiver, intentFilter)
+        }
     }
 
     inner class MyBroadCastReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Actions.GET_EQUALIZER_INFO){
+                Log.d("인텐트가 왔음","ㅎ")
+                val valuesToUpdate = arrayListOf<Entry>()
+                valuesToUpdate.add(Entry(0f,0f))
+                for (index in 0 until 5) {
+                    val value = intent.getStringExtra("$index")?.toFloatOrNull() ?: 0f
+                    valuesToUpdate.add(Entry(index + 1.0f, value / 1000)) // +1.0f는 Entry에서의 X 값이므로 조절이 필요합니다.
+                }
+                valuesToUpdate.add(Entry(6f,0f))
+                sharedViewModel.equalizerChartValueList = valuesToUpdate
+            }
             if (intent?.action == "YOUR_CUSTOM_ACTION") {
                 Log.d("인턴트가 왔잖아", "${intent.getStringExtra("status")}")
                 when (intent.getStringExtra("status")) {
@@ -1538,7 +1569,8 @@ class Activity : AppCompatActivity() {
 
     fun activatePlayerInPlaylistMode(nowPlaylistModel: NowPlaylistModel) {
         sharedViewModel.playbackMode = SharedViewModel.PlaybackMode.PLAYLIST
-        val previousVideo = sharedViewModel.currentPlayingVideo.value
+        val previousVideo = sharedViewModel.currentPlayingVideo.value?.videoDataModel
+        Log.d("로그 확인","$nowPlaylistModel")
         if (previousVideo != nowPlaylistModel.currentMusicModel())
             clearEachRecyclerView()
         sharedViewModel.nowPlaylistModel = nowPlaylistModel
@@ -1552,7 +1584,7 @@ class Activity : AppCompatActivity() {
 
     fun activatePlayerInMyVideoFilesMode(nowPlaylistModel: NowPlaylistModel){
         sharedViewModel.playbackMode = SharedViewModel.PlaybackMode.MYAUDIOFILES
-        val previousVideo = sharedViewModel.currentPlayingVideo.value
+        val previousVideo = sharedViewModel.currentPlayingVideo.value?.videoDataModel
         if (previousVideo != nowPlaylistModel.currentMusicModel())
             clearEachRecyclerView()
         sharedViewModel.nowPlaylistModel = nowPlaylistModel
@@ -1566,7 +1598,7 @@ class Activity : AppCompatActivity() {
 
     fun activatePlayerInMyAudioFilesMode(nowPlaylistModel: NowPlaylistModel) {
         sharedViewModel.playbackMode = SharedViewModel.PlaybackMode.MYAUDIOFILES
-        val previousVideo = sharedViewModel.currentPlayingVideo.value
+        val previousVideo = sharedViewModel.currentPlayingVideo.value?.videoDataModel
         if (previousVideo != nowPlaylistModel.currentMusicModel())
             clearEachRecyclerView()
         sharedViewModel.nowPlaylistModel = nowPlaylistModel
@@ -1707,44 +1739,58 @@ class Activity : AppCompatActivity() {
         sharedViewModel.currentPlayingVideo.observe(this) {
             if (it == null) return@observe
             val nowPlaylistModel = sharedViewModel.nowPlaylistModel ?: return@observe
-            // 저장공간 내 음악 파일을 재생할 때는, 타이틀과 다른 피치 템포 뷰만 띄우기
-            if (sharedViewModel.playbackMode == SharedViewModel.PlaybackMode.MYAUDIOFILES) {
-                Log.d("로그 확인","obsrver if")
-                setMiniViewInPlaylistMode(it)
-                playerPlaylistRecyclerViewAdapter.submitList(
-                    nowPlaylistModel.getPlayMusicList().toMutableList()
-                )
-
-                val newList = mutableListOf<PlayerMainRecyclerViewAdapter.PlayerFragmentMainItem>()
-                val headerTitleData =
-                    PlayerMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderTitleData(
-                        it.title ?: ""
+            // 저장 공간 내 음악 파일을 재생할 때는, 타이틀과 다른 피치 템포 뷰만 띄우기
+            when (sharedViewModel.playbackMode) {
+                SharedViewModel.PlaybackMode.MYAUDIOFILES -> {
+                    setMiniViewInPlaylistMode(it.videoDataModel)
+                    playerPlaylistRecyclerViewAdapter.submitList(
+                        nowPlaylistModel.getPlayMusicList().toMutableList()
                     )
-                val videoDetailDataModel = VideoDetailDataModel(
-                    videoTime = it.date,
-                    videoTitle = it.title,
-                    channelId = "",
-                    thumbnail = "",
-                    videoViewCount = String.format(resources.getString(R.string.view_count_under_thousand),0)
-                )
-                val channelDataModel = ChannelDataModel("My Music", "", "", "", String.format(resources.getString(R.string.view_count_under_thousand),0), "0", "0", "")
-                newList.add(headerTitleData)
-                val headerRestData =
-                    PlayerMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderRestData(
-                        videoDetailDataModel,
-                        channelDataModel
-                    )
-                newList.add(headerRestData)
-                mainRecyclerViewAdapter.submitList(newList)
 
-            } else {
-                Log.d("로그 확인","obsrver else")
-                setMiniViewInPlaylistMode(it)
-                sharedViewModel.fetchAllData(it.videoId)
-                playerPlaylistRecyclerViewAdapter.submitList(
-                    nowPlaylistModel.getPlayMusicList().toMutableList()
-                )
+                    val newList = mutableListOf<PlayerMainRecyclerViewAdapter.PlayerFragmentMainItem>()
+                    val headerTitleData =
+                        PlayerMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderTitleData(
+                            it.videoDataModel.title ?: ""
+                        )
+                    val videoDetailDataModel = VideoDetailDataModel(
+                        videoTime = it.videoDataModel.date,
+                        videoTitle = it.videoDataModel.title,
+                        channelId = "",
+                        thumbnail = "",
+                        videoViewCount = String.format(resources.getString(R.string.view_count_under_thousand),0)
+                    )
+                    val channelDataModel = ChannelDataModel("My Music", "", "", "", String.format(resources.getString(R.string.view_count_under_thousand),0), "0", "0", "")
+                    newList.add(headerTitleData)
+                    val headerRestData =
+                        PlayerMainRecyclerViewAdapter.PlayerFragmentMainItem.HeaderRestData(
+                            videoDetailDataModel,
+                            channelDataModel
+                        )
+                    newList.add(headerRestData)
+                    mainRecyclerViewAdapter.submitList(newList)
+                }
+                SharedViewModel.PlaybackMode.SINGLE_VIDEO -> {
+
+                }
+                SharedViewModel.PlaybackMode.PLAYLIST -> {
+                    Log.d("로그 확인","플레이리스트 모드")
+                    setMiniViewInPlaylistMode(it.videoDataModel)
+                    clearEachRecyclerView()
+                    playerPlaylistRecyclerViewAdapter.submitList(
+                        nowPlaylistModel.getPlayMusicList().toMutableList()
+                    )
+                    sharedViewModel.fetchAllData(it.videoDataModel.videoId)
+
+                    if (nowPlaylistModel.getAudioEffectList() != null){
+                        val audioEffects = nowPlaylistModel.getAudioEffectList() ?: return@observe
+                        Log.d("로그 확인","플레이리스트 모드 오디오이펙트")
+                        audioEffects[nowPlaylistModel.getCurrentPosition()]?.let{
+                            setAudioEffect(it)
+                        }
+                    }
+                }
             }
+
         }
 
         sharedViewModel.currentVideoDetailData.observe(this) {
@@ -1770,14 +1816,23 @@ class Activity : AppCompatActivity() {
         sharedViewModel.fromChildFragmentInNavFragment.observe(this){
             when(it){
                 R.id.myAudioFileItemsFragment -> {
-                    myFileSearchItem.isVisible = true
+                    if (::myFileSearchItem.isInitialized) {
+                        Log.d("로그 확인","fromChildFragmentInNavFragment 1번 째")
+                        myFileSearchItem.isVisible = true
+                    }
                 }
                 R.id.myVideoFileItemsFragment -> {
-                    myFileSearchItem.isVisible = true
+                    if (::myFileSearchItem.isInitialized) {
+                        Log.d("로그 확인","fromChildFragmentInNavFragment 2번 째")
+                        myFileSearchItem.isVisible = true
+                    }
                 }
                 else -> {
                     try{
-                        myFileSearchItem.isVisible = false
+                        if (::myFileSearchItem.isInitialized) {
+                            Log.d("로그 확인","fromChildFragmentInNavFragment 세번 째")
+                            myFileSearchItem.isVisible = false
+                        }
 
                     }catch (e: Exception){
 
@@ -2022,6 +2077,87 @@ class Activity : AppCompatActivity() {
         } else {
             return super.onBackPressed()
         }
+    }
+
+    private fun setAudioEffect(audioEffect: AudioEffectsDataModel){
+        sharedViewModel.setAudioEffectValues(audioEffect)
+        setPitch(audioEffect.pitchValue)
+        setTempo(audioEffect.tempoValue)
+        setBassBoost(audioEffect.bassBoostValue)
+        setLoudnessEnhancer(audioEffect.loudnessEnhancerValue)
+        setVirtualizer(audioEffect.virtualizerValue)
+        setPresetReverb(audioEffect.presetReverbIndexValue, audioEffect.presetReverbSendLevel)
+        setEqualizer(audioEffect.equalizerIndexValue)
+    }
+
+    fun setPitch(value: Int){
+        val controller = controller ?: return
+
+        val semitonesFromCenter = (value - 100) * 0.1
+        val adjustedPitch = 2.0.pow(semitonesFromCenter / 12.0).toFloat()
+        val currentTempoValue = controller.playbackParameters.speed
+        controller.playbackParameters = PlaybackParameters(currentTempoValue, adjustedPitch)
+    }
+
+    fun setTempo(value: Int){
+        val controller = controller ?: return
+
+        val semitonesFromCenter = (value - 100) * 0.1
+        val adjustedTempo = 2.0.pow(semitonesFromCenter / 12.0).toFloat()
+        val currentPitchValue = controller.playbackParameters.pitch
+        controller.playbackParameters = PlaybackParameters(adjustedTempo, currentPitchValue)
+    }
+
+    fun setBassBoost(value: Int){
+        Log.d("베이스","보냄")
+        val action = Actions.SET_BASS_BOOST
+        val bundle = Bundle().apply {
+            putInt("value", value)
+        }
+        val sessionCommand = SessionCommand(action, bundle)
+        controller?.sendCustomCommand(sessionCommand, bundle)
+    }
+
+    fun setLoudnessEnhancer(value: Int){
+        Log.d("라우드","보냄")
+        val action = Actions.SET_LOUDNESS_ENHANCER
+        val bundle = Bundle().apply {
+            putInt("value", value)
+        }
+        val sessionCommand = SessionCommand(action, bundle)
+        controller?.sendCustomCommand(sessionCommand, bundle)
+    }
+
+    fun setVirtualizer(value: Int){
+        Log.d("버튜얼","보냄")
+        val action = Actions.SET_VIRTUALIZER
+        val bundle = Bundle().apply {
+            putInt("value", value)
+        }
+        val sessionCommand = SessionCommand(action, bundle)
+        controller?.sendCustomCommand(sessionCommand, bundle)
+    }
+
+    private fun setPresetReverb(presetReverbValue: Int, sendLevel: Int){
+        if (!sharedViewModel.isPresetReverbEnabled) return
+        val action = Actions.SET_REVERB
+        val bundle = Bundle().apply {
+            putInt("value",presetReverbValue)
+            putInt("sendLevel",sendLevel)
+        }
+        val sessionCommand = SessionCommand(action, bundle)
+        controller?.sendCustomCommand(sessionCommand, bundle)
+    }
+
+    private fun setEqualizer(index: Int){
+        if (!sharedViewModel.isEqualizerEnabled) return
+
+        val action = Actions.SET_EQUALIZER
+        val bundle = Bundle().apply {
+            putInt("value",index)
+        }
+        val sessionCommand = SessionCommand(action, bundle)
+        controller?.sendCustomCommand(sessionCommand, bundle)
     }
 
     override fun onStop() {

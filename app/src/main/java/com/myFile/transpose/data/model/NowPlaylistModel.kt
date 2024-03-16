@@ -8,7 +8,8 @@ import kotlinx.coroutines.launch
 data class NowPlaylistModel (
     private var playMusicList: List<VideoDataModel> = emptyList(),
     private var currentPosition: Int = -1, // -1: 초기화 되지 않은 값
-    private var playlistTitle: String?
+    private var playlistTitle: String?,
+    private var audioEffectsDataModels: List<AudioEffectsDataModel?>?
 ){
     init {
         refreshPlaylist()
@@ -19,6 +20,10 @@ data class NowPlaylistModel (
 
     fun getPlayMusicList(): List<VideoDataModel>{
         return playMusicList
+    }
+
+    fun getAudioEffectList(): List<AudioEffectsDataModel?>? {
+        return audioEffectsDataModels
     }
 
     fun getPlaylistTitle(): String?{

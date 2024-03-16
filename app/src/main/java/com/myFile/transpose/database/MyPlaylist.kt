@@ -1,7 +1,8 @@
 package com.myFile.transpose.database
 
 import androidx.room.*
-import com.myFile.transpose.model.model.VideoDataModel
+import com.myFile.transpose.data.model.AudioEffectsDataModel
+import com.myFile.transpose.data.model.VideoDataModel
 
 
 @Entity
@@ -23,7 +24,8 @@ data class MyPlaylist(
 data class Musics(
     @PrimaryKey(autoGenerate = true) val musicId: Int,
     val musicData: VideoDataModel,
-    val playlistId: Int
+    val playlistId: Int,
+    val audioEffects: AudioEffectsDataModel?
 )
 
 

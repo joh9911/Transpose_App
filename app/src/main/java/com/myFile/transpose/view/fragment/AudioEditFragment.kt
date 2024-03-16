@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,7 +16,6 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.PlaybackParameters
@@ -484,14 +484,22 @@ class AudioEditFragment: Fragment() {
                         valuesToUpdate.add(Entry(index + 1.0f, value / 1000)) // +1.0f는 Entry에서의 X 값이므로 조절이 필요합니다.
                     }
                     valuesToUpdate.add(Entry(6f,0f))
+                    sharedViewModel.equalizerChartValueList = valuesToUpdate
 
                     updateChart(valuesToUpdate)
 
                 }
             }
         }
-        val filter = IntentFilter(Actions.GET_EQUALIZER_INFO)
-        requireActivity().registerReceiver(receiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val filter = IntentFilter(Actions.GET_EQUALIZER_INFO)
+            requireActivity().registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else{
+            val filter = IntentFilter(Actions.GET_EQUALIZER_INFO)
+            requireActivity().registerReceiver(receiver, filter)
+
+        }
+
     }
 
     private fun updateChart(newValues: ArrayList<Entry>){
@@ -523,6 +531,15 @@ class AudioEditFragment: Fragment() {
 
     private fun initEqualizerEvent(){
         setEqualizerVisibility()
+        if (sharedViewModel.isEqualizerEnabled){
+            binding.equalizerSwitch.isChecked = sharedViewModel.isEqualizerEnabled
+            setEqualizer(sharedViewModel.equalizerIndexValue)
+            sharedViewModel.equalizerChartValueList?.let{
+                updateChart(it)
+            }
+
+        }
+
         binding.equalizerLinearLayout.setOnClickListener {
             sharedViewModel.isEqualizerViewFolded = !sharedViewModel.isEqualizerViewFolded
             setEqualizerVisibility()
@@ -644,6 +661,7 @@ class AudioEditFragment: Fragment() {
                 clickedTextView.setTextColor(resources.getColor(R.color.blue_background))  // 현재 선택된 TextView의 색을 파란색으로 변경
                 clickedTextView.setTypeface(null, Typeface.BOLD)
                 selectedEqualizerTextView = clickedTextView
+
 
                 clickedTextView.post{
                     val scrollX = (clickedTextView.left - (horizontalScrollView.width / 2)) + (clickedTextView.width / 2)
