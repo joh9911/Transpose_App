@@ -10,6 +10,9 @@
     <string name="pitch_text">피치</string>
     <string name="tempo_text">템포</string>
     <string name="searchView_hint">Youtube 검색</string>
+    <string name="patch_title">패치 내역</string>
+    <string name="patch_description_1">무한 로딩이 되는 오류가 있었습니다.\n\n 유튜브 페이지에서 동영상 미리보기 설정을 꺼주세요.</string>
+    <string name="patch_description_4">왼쪽 하단에 있는 스킵 버튼을 눌러 패치 내역을 다시 보지 않도록 설정할 수 있습니다. \n\n오류 발견이나 건의 사항이 있으시면 joh99111@gmail.com으로 연락 주시면 감사하겠습니다.</string>
     <string name="my_file_searchView_hint">내 파일 검색</string>
     <string name="home_icon">홈</string>
     <string name="convert_icon">변환</string>
@@ -112,5 +115,7 @@
     <string name="my_audio_file_searchView_hint">내 음악 검색</string>
     <string name="my_video_file_searchView_hint">내 비디오 검색</string>
     <string name="my_file_search_view_hint">내 파일 검색</string>
+    <string name="patch_description_2">무한 로딩 문제를 해결하기 위해, YouTube 페이지에서 비디오 미리보기 설정을 끄는 단계를 따라 주세요:\n\n1. YouTube 페이지로 이동합니다.\n2. \"설정\"을 클릭합니다.\n3. \"비디오 미리보기\" 옵션을 끕니다.\n\n불편을 드려서 죄송합니다.\n 지속적인 개선을 위해 노력하겠습니다.</string>
+    <string name="patch_description_3">이제부터 플레이리스트에 저장할 때, \n현재 설정된 오디오 효과도 함께 저장됩니다. \n\n저장하기 전에 현재 오디오 효과 정보를 확인해 주세요.</string>
 
 </resources>

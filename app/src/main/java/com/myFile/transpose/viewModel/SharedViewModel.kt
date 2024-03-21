@@ -1,23 +1,20 @@
 package com.myFile.transpose.viewModel
 
-import android.content.ContentUris
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.*
+import com.github.mikephil.charting.data.Entry
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.myFile.transpose.MyApplication
 import com.myFile.transpose.data.model.*
-import com.myFile.transpose.others.constants.Actions
 import com.myFile.transpose.utils.YoutubeDataMapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.FileNotFoundException
 
 
 class SharedViewModel(application: MyApplication): ViewModel() {
@@ -42,8 +39,8 @@ class SharedViewModel(application: MyApplication): ViewModel() {
 
 
     // 현재 재생곡
-    private val _currentPlayingVideo: MutableLiveData<VideoDataModel?> = MutableLiveData()
-    val currentPlayingVideo: LiveData<VideoDataModel?> get() = _currentPlayingVideo
+    private val _currentPlayingVideo: MutableLiveData<CurrentVideoDataModel?> = MutableLiveData()
+    val currentPlayingVideo: LiveData<CurrentVideoDataModel?> get() = _currentPlayingVideo
 
     var nowPlaylistModel: NowPlaylistModel? = null
 
@@ -130,25 +127,82 @@ class SharedViewModel(application: MyApplication): ViewModel() {
     private val _tempoValue: MutableLiveData<Int> = MutableLiveData()
     val tempoValue get() = _tempoValue
 
-    var bassBoostValue = 0
+    private val _bassBoostValue = MutableLiveData(0)
+    val bassBoostValue: LiveData<Int> get() = _bassBoostValue
 
-    var loudnessEnhancerValue = 0
+    private val _loudnessEnhancerValue = MutableLiveData(0)
+    val loudnessEnhancerValue: LiveData<Int> get() = _loudnessEnhancerValue
 
-    var virtualizerValue = 0
+    private val _virtualizerValue = MutableLiveData(0)
+    val virtualizerValue: LiveData<Int> get() = _virtualizerValue
 
-    var presetReverbIndexValue = 0
+    private val _presetReverbIndexValue = MutableLiveData(0)
+    val presetReverbIndexValue: LiveData<Int> get() = _presetReverbIndexValue
 
-    var presetReverbSendLevel = 0
+    private val _presetReverbSendLevel = MutableLiveData(0)
+    val presetReverbSendLevel: LiveData<Int> get() = _presetReverbSendLevel
 
-    var equalizerIndexValue = 3
+    private val _equalizerIndexValue = MutableLiveData(3)
+    val equalizerIndexValue: LiveData<Int> get() = _equalizerIndexValue
 
-    var isEqualizerEnabled: Boolean = false
+    private val _isEqualizerEnabled = MutableLiveData(false)
+    val isEqualizerEnabled: LiveData<Boolean> get() = _isEqualizerEnabled
+
+    private val _isPresetReverbEnabled = MutableLiveData(false)
+    val isPresetReverbEnabled: LiveData<Boolean> get() = _isPresetReverbEnabled
+
+    fun setBassBoostValue(value: Int) {
+        _bassBoostValue.value = value
+    }
+
+    fun setLoudnessEnhancerValue(value: Int) {
+        _loudnessEnhancerValue.value = value
+    }
+
+    fun setVirtualizerValue(value: Int) {
+        _virtualizerValue.value = value
+    }
+
+    fun setPresetReverbIndexValue(value: Int) {
+        _presetReverbIndexValue.value = value
+    }
+
+    fun setPresetReverbSendLevel(value: Int) {
+        _presetReverbSendLevel.value = value
+    }
+
+    fun setEqualizerIndexValue(value: Int) {
+        _equalizerIndexValue.value = value
+    }
+
+    fun setIsPresetReverbEnabled(value: Boolean) {
+        Log.d("플레이리스트 추가","${value}  setIsPresetReverbEnabled")
+        _isPresetReverbEnabled.value = value
+    }
+
+    fun setIsEqualizerEnabled(value: Boolean) {
+        _isEqualizerEnabled.value = value
+    }
 
     var isEqualizerViewFolded: Boolean = true
 
-    var isPresetReverbEnabled: Boolean = false
+    var equalizerChartValueList: ArrayList<Entry>? = null
 
     var isPresetReverbViewFolded: Boolean = true
+
+    fun setAudioEffectValues(audioEffectsDataModel: AudioEffectsDataModel){
+        setPitchValue(audioEffectsDataModel.pitchValue)
+        setTempoValue(audioEffectsDataModel.tempoValue)
+        setBassBoostValue(audioEffectsDataModel.bassBoostValue)
+        setLoudnessEnhancerValue(audioEffectsDataModel.loudnessEnhancerValue)
+        setVirtualizerValue(audioEffectsDataModel.virtualizerValue)
+        setPresetReverbIndexValue(audioEffectsDataModel.presetReverbIndexValue)
+        setPresetReverbSendLevel(audioEffectsDataModel.presetReverbSendLevel)
+        setEqualizerIndexValue(audioEffectsDataModel.equalizerIndexValue)
+        setIsPresetReverbEnabled(audioEffectsDataModel.isPresetReverbEnabled)
+        setIsEqualizerEnabled(audioEffectsDataModel.isEqualizerEnabled)
+
+    }
 
     // MyFile 들을 위한 변수
 
@@ -197,34 +251,36 @@ class SharedViewModel(application: MyApplication): ViewModel() {
         )
 
         val musicCursor = contentResolver.query(musicUri, projection, selection, null, null)
+        try{
+            musicCursor?.use {
+                val idColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID) // 추가
+                val pathColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+                val titleColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+                val artistColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+                val albumIdColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+                val dateColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
 
-        musicCursor?.use {
-            val idColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID) // 추가
-            val pathColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
-            val titleColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
-            val artistColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-            val albumIdColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
-            val dateColumn = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+                while (it.moveToNext()) {
+                    val id = it.getLong(idColumn) // 추가
+                    val path = it.getString(pathColumn)
+                    val title = it.getString(titleColumn)
+                    val artist = it.getString(artistColumn)
+                    val albumId = it.getLong(albumIdColumn)
 
-            while (it.moveToNext()) {
-                val id = it.getLong(idColumn) // 추가
-                val path = it.getString(pathColumn)
-                val title = it.getString(titleColumn)
-                val artist = it.getString(artistColumn)
-                val albumId = it.getLong(albumIdColumn)
-
-                val dateAddedInSeconds = it.getLong(dateColumn)
+                    val dateAddedInSeconds = it.getLong(dateColumn)
 
 
-                musicFilesList.add(MusicFileDataModel(id, path, title, artist, albumId, dateAddedInSeconds))
+                    musicFilesList.add(MusicFileDataModel(id, path, title, artist, albumId, dateAddedInSeconds))
+                }
             }
+            isMyAudioFileLoaded = true
+
+            _myAudioFilesOrigin.postValue(musicFilesList)
+
+            _myAudioFiles.postValue(youtubeDataMapper.mapMyAudioFileToVideoDataModel(musicFilesList))
+        }catch (e: Exception){
+            Log.d("로그 확인","fetchMusicFiles ${e.message}")
         }
-
-        isMyAudioFileLoaded = true
-
-        _myAudioFilesOrigin.postValue(musicFilesList)
-
-        _myAudioFiles.postValue(youtubeDataMapper.mapMyAudioFileToVideoDataModel(musicFilesList))
     }
 
     fun getAudioFileDataByIntent(context: Context, audioUri: Uri): List<VideoDataModel>? {
@@ -239,28 +295,33 @@ class SharedViewModel(application: MyApplication): ViewModel() {
             MediaStore.Audio.Media.ALBUM_ID,
             MediaStore.Audio.Media.DATE_ADDED
         )
+        try{
+            contentResolver.query(audioUri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+                    val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+                    val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+                    val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+                    val albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+                    val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
 
-        contentResolver.query(audioUri, projection, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-                val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
-                val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
-                val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-                val albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
-                val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
-
-                val id = cursor.getLong(idColumn)
-                val path = cursor.getString(pathColumn)
-                val title = cursor.getString(titleColumn)
-                val artist = cursor.getString(artistColumn)
-                val albumId = cursor.getLong(albumIdColumn)
-                val date = cursor.getLong(dateColumn)
+                    val id = cursor.getLong(idColumn)
+                    val path = cursor.getString(pathColumn)
+                    val title = cursor.getString(titleColumn)
+                    val artist = cursor.getString(artistColumn)
+                    val albumId = cursor.getLong(albumIdColumn)
+                    val date = cursor.getLong(dateColumn)
 
 
-                musicFilesList.add(MusicFileDataModel(id, path, title, artist, albumId, date))
+                    musicFilesList.add(MusicFileDataModel(id, path, title, artist, albumId, date))
 
-                return youtubeDataMapper.mapMyAudioFileToVideoDataModel(musicFilesList)
+                    return youtubeDataMapper.mapMyAudioFileToVideoDataModel(musicFilesList)
+                }
             }
+        }catch (e: Exception){
+            Toast.makeText(context,"getAudioFileDataByIntent Error", Toast.LENGTH_SHORT).show()
+            Log.d("로그 확인","getAudioFileDataByIntent ${e.message}")
+            return null
         }
 
         return null
@@ -343,37 +404,42 @@ class SharedViewModel(application: MyApplication): ViewModel() {
 
         val videoCursor = contentResolver.query(videoUri, projection, null, null, null)
 
-        videoCursor?.use {
+        try{
+            videoCursor?.use {
 
-            val idColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-            val pathColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
-            val titleColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)
-            val durationColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
-            val dateColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+                val idColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+                val pathColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
+                val titleColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)
+                val durationColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+                val dateColumn = it.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
 
 
-            while (it.moveToNext()) {
-                val id = it.getLong(idColumn)
-                val path = it.getString(pathColumn)
-                val title = it.getString(titleColumn)
-                val thumbnail = null
-                val dateAddedInSeconds = it.getLong(dateColumn)
+                while (it.moveToNext()) {
+                    val id = it.getLong(idColumn)
+                    val path = it.getString(pathColumn)
+                    val title = it.getString(titleColumn)
+                    val thumbnail = null
+                    val dateAddedInSeconds = it.getLong(dateColumn)
 
-                videoFilesList.add(
-                    VideoFileDataModel(
-                        id,
-                        path,
-                        title,
-                        thumbnail,
-                        dateAddedInSeconds
+                    videoFilesList.add(
+                        VideoFileDataModel(
+                            id,
+                            path,
+                            title,
+                            thumbnail,
+                            dateAddedInSeconds
+                        )
                     )
-                )
 
+                }
             }
+            isMyVideoFileLoaded = true
+            _myVideoFilesOrigin.postValue(videoFilesList)
+            _myVideoFiles.postValue(youtubeDataMapper.mapMyVideoFileToVideoDataModel(videoFilesList))
+        }catch (e: Exception){
+            Log.d("로그 확인","fetchVideoFiles ${e.message}")
         }
-        isMyVideoFileLoaded = true
-        _myVideoFilesOrigin.postValue(videoFilesList)
-        _myVideoFiles.postValue(youtubeDataMapper.mapMyVideoFileToVideoDataModel(videoFilesList))
+
     }
 
     fun getVideoFileDataByIntent(context: Context, videoUri: Uri): List<VideoDataModel>? {
@@ -387,39 +453,40 @@ class SharedViewModel(application: MyApplication): ViewModel() {
             MediaStore.Video.Media.DURATION,
             MediaStore.Video.Media.DATE_ADDED
         )
+        try{
+            contentResolver.query(videoUri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+                    val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
+                    val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)
+                    val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+                    val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
 
-        contentResolver.query(videoUri, projection, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-                val pathColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
-                val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)
-                val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
-                val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
+                    val id = cursor.getLong(idColumn)
+                    val path = cursor.getString(pathColumn)
+                    val title = cursor.getString(titleColumn)
+                    val thumbnail = null
+                    val dateAddedInSeconds = cursor.getLong(dateAddedColumn)
 
-                val id = cursor.getLong(idColumn)
-                val path = cursor.getString(pathColumn)
-                val title = cursor.getString(titleColumn)
-                val thumbnail = null
-                val dateAddedInSeconds = cursor.getLong(dateAddedColumn)
+                    videoFilesList.add(VideoFileDataModel(
+                        id,
+                        path,
+                        title,
+                        thumbnail,
+                        dateAddedInSeconds
+                    ))
 
-                videoFilesList.add(VideoFileDataModel(
-                    id,
-                    path,
-                    title,
-                    thumbnail,
-                    dateAddedInSeconds
-                ))
-
+                }
+                return youtubeDataMapper.mapMyVideoFileToVideoDataModel(videoFilesList)
             }
-            return youtubeDataMapper.mapMyVideoFileToVideoDataModel(videoFilesList)
+        }catch (e: Exception){
+            Toast.makeText(context,"getVideoFileDataByIntent Error", Toast.LENGTH_SHORT).show()
+            Log.d("로그 확인","getVideoFileDataByIntent ${e.message}")
+            return null
         }
 
         return null
     }
-
-
-
-
 
 
     fun setPitchValue(value: Int){
@@ -465,8 +532,8 @@ class SharedViewModel(application: MyApplication): ViewModel() {
         val nowPlaylistCurrentVideo = nowPlaylistModel?.currentMusicModel() ?: return
         // 피치 조절 뷰가 두번 나오는거 방지
         val currentVideo = currentPlayingVideo.value
-        if (currentVideo != nowPlaylistCurrentVideo){
-            _currentPlayingVideo.value = nowPlaylistCurrentVideo
+        if (currentVideo?.videoDataModel != nowPlaylistCurrentVideo){
+            _currentPlayingVideo.value = CurrentVideoDataModel(nowPlaylistCurrentVideo, System.currentTimeMillis())
         }
 
     }

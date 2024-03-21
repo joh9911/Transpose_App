@@ -64,7 +64,6 @@ class MyPlaylistItemsFragment(): Fragment() {
             viewModel.getPlaylistItemsByPlaylistId(it)
         }
         viewModel.myPlaylistItems.observe(viewLifecycleOwner){ myPlaylistItems ->
-            Log.d("마이 플레이리스트","$myPlaylistItems")
             myPlaylistItemRecyclerAdapter.submitList(myPlaylistItems.map{it.musicData}.toMutableList())
         }
     }

@@ -53,6 +53,11 @@ class AudioEditFragment: Fragment() {
     private lateinit var viewModel: AudioEditViewModel
     private lateinit var sharedViewModel: SharedViewModel
 
+    private lateinit var equalizerTextViewList: MutableList<TextView>
+    private lateinit var presetReverbTextViewList: MutableList<TextView>
+
+
+
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -102,24 +107,99 @@ class AudioEditFragment: Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        Log.d("플레이리스트 추가 ","onResume")
+    }
+
     private fun initAudioEffectValue(){
         binding.pitchSeekBar.progress = sharedViewModel.pitchValue.value ?: 100
         binding.tempoSeekBar.progress = sharedViewModel.tempoValue.value ?: 100
-        binding.bassSeekBar.progress = sharedViewModel.bassBoostValue
-        binding.loudnessSeekBar.progress = sharedViewModel.loudnessEnhancerValue
-        binding.virtualizerSeekBar.progress = sharedViewModel.virtualizerValue
-        binding.equalizerSwitch.isChecked = sharedViewModel.isEqualizerEnabled
-        binding.presetReverbLevelSeekBar.progress = sharedViewModel.presetReverbSendLevel
-        binding.presetReverbSwitch.isChecked = sharedViewModel.isPresetReverbEnabled
+        binding.bassSeekBar.progress = sharedViewModel.bassBoostValue.value ?: 0
+        binding.loudnessSeekBar.progress = sharedViewModel.loudnessEnhancerValue.value ?: 0
+        binding.virtualizerSeekBar.progress = sharedViewModel.virtualizerValue.value ?: 0
+        binding.equalizerSwitch.isChecked = sharedViewModel.isEqualizerEnabled.value ?: false
+        binding.presetReverbLevelSeekBar.progress = sharedViewModel.presetReverbSendLevel.value ?: 0
+        binding.presetReverbSwitch.isChecked = sharedViewModel.isPresetReverbEnabled.value ?: false
     }
 
     private fun initObserver(){
         sharedViewModel.pitchValue.observe(viewLifecycleOwner){
             binding.pitchSeekBar.progress = it
+            setPitch(it)
         }
         sharedViewModel.tempoValue.observe(viewLifecycleOwner){
             binding.tempoSeekBar.progress = it
+            setTempo(it)
         }
+
+        sharedViewModel.isEqualizerEnabled.observe(viewLifecycleOwner){ isEnabled ->
+            binding.equalizerSwitch.isChecked = isEnabled
+            if (isEnabled){
+                Log.d("이퀼","$isEnabled")
+                setEqualizerVisibility()
+                setEqualizer(sharedViewModel.equalizerIndexValue.value ?: 3)
+                sharedViewModel.equalizerChartValueList?.let{
+                    updateChart(it)
+                }
+            }
+            else{
+
+                setEqualizer(-1)
+            }
+        }
+        sharedViewModel.equalizerIndexValue.observe(viewLifecycleOwner){
+            val selectedTextView = equalizerTextViewList[it]
+            changeFocusToSelectedEqualizerTextView(selectedTextView)
+            val isEnabled = sharedViewModel.isEqualizerEnabled.value ?: false
+            if (isEnabled){
+                setEqualizer(it)
+            }
+        }
+
+        sharedViewModel.isPresetReverbEnabled.observe(viewLifecycleOwner){ isEnabled ->
+            Log.d("플레이리스트 추가,enable","$isEnabled")
+            binding.presetReverbSwitch.isChecked = isEnabled
+            if (isEnabled) {
+                Log.d("플레이리스트 추가,enable","조건문 안인데")
+                setPresetReverbVisibility()
+                setPresetReverb(sharedViewModel.presetReverbIndexValue.value ?: 0, binding.presetReverbLevelSeekBar.progress)
+            }else {
+                setPresetReverb(-1, -1)
+            }
+        }
+        sharedViewModel.presetReverbIndexValue.observe(viewLifecycleOwner){
+            val selectedTextView = presetReverbTextViewList[it]
+            changeFocusToSelectedPresetReverbTextView(selectedTextView)
+            val isEnabled = sharedViewModel.isPresetReverbEnabled.value ?: false
+            if (isEnabled){
+                setPresetReverb(it, sharedViewModel.presetReverbSendLevel.value ?: 0)
+            }
+        }
+        sharedViewModel.presetReverbSendLevel.observe(viewLifecycleOwner){
+            binding.presetReverbLevelSeekBar.progress = it
+            val isEnabled = sharedViewModel.isPresetReverbEnabled.value ?: false
+            if (isEnabled){
+                setPresetReverb(sharedViewModel.presetReverbIndexValue.value ?: 0, it)
+            }
+
+        }
+
+        sharedViewModel.bassBoostValue.observe(viewLifecycleOwner){
+            binding.bassSeekBar.progress = it
+            setBassBoost(it)
+        }
+
+        sharedViewModel.loudnessEnhancerValue.observe(viewLifecycleOwner){
+            binding.loudnessSeekBar.progress = it
+            setLoudnessEnhancer(it)
+        }
+
+        sharedViewModel.virtualizerValue.observe(viewLifecycleOwner){
+            binding.virtualizerSeekBar.progress = it
+            setVirtualizer(it)
+        }
+
     }
 
 
@@ -142,15 +222,12 @@ class AudioEditFragment: Fragment() {
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 p0?.let {
                     sharedViewModel.setPitchValue(it.progress)
-                    setPitch(it.progress)
                 }
             }
 
         })
         binding.pitchInitButton.setOnClickListener {
-            binding.pitchSeekBar.progress = 100
             sharedViewModel.setPitchValue(100)
-            setPitch(100)
         }
     }
 
@@ -172,21 +249,18 @@ class AudioEditFragment: Fragment() {
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 p0?.let {
                     sharedViewModel.setTempoValue(it.progress)
-                    setTempo(it.progress)
                 }
 
             }
 
         })
         binding.tempoInitButton.setOnClickListener {
-            binding.tempoSeekBar.progress = 100
             sharedViewModel.setTempoValue(100)
-            setTempo(100)
         }
 
     }
 
-    fun setPitch(value: Int){
+    private fun setPitch(value: Int){
         val controller = activity.controller ?: return
 
         val semitonesFromCenter = (value - 100) * 0.1
@@ -195,7 +269,7 @@ class AudioEditFragment: Fragment() {
         controller.playbackParameters = PlaybackParameters(currentTempoValue, adjustedPitch)
     }
 
-    fun setTempo(value: Int){
+    private fun setTempo(value: Int){
         val controller = activity.controller ?: return
 
         val semitonesFromCenter = (value - 100) * 0.1
@@ -220,20 +294,17 @@ class AudioEditFragment: Fragment() {
 
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 p0?.let {
-                    sharedViewModel.bassBoostValue = it.progress
-                    setBassBoost(it.progress)
+                    sharedViewModel.setBassBoostValue(it.progress)
                 }
 
             }
         })
         binding.bassInitButton.setOnClickListener {
-            binding.bassSeekBar.progress = 0
-            sharedViewModel.bassBoostValue = 0
-            setBassBoost(0)
+            sharedViewModel.setBassBoostValue(0)
         }
     }
 
-    fun setBassBoost(value: Int){
+    private fun setBassBoost(value: Int){
         Log.d("베이스","보냄")
         val action = Actions.SET_BASS_BOOST
         val bundle = Bundle().apply {
@@ -259,16 +330,13 @@ class AudioEditFragment: Fragment() {
 
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 p0?.let {
-                    sharedViewModel.loudnessEnhancerValue = it.progress
-                    setLoudnessEnhancer(it.progress)
+                    sharedViewModel.setLoudnessEnhancerValue(it.progress)
                 }
             }
 
         })
         binding.loudnessInitButton.setOnClickListener {
-            binding.loudnessSeekBar.progress = 0
-            sharedViewModel.loudnessEnhancerValue = 0
-            setLoudnessEnhancer(0)
+            sharedViewModel.setLoudnessEnhancerValue(0)
         }
     }
 
@@ -297,16 +365,13 @@ class AudioEditFragment: Fragment() {
 
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 p0?.let {
-                    sharedViewModel.virtualizerValue = it.progress
-                    setVirtualizer(it.progress)
+                    sharedViewModel.setVirtualizerValue(it.progress)
                 }
             }
 
         })
         binding.virtualizerInitButton.setOnClickListener {
-            binding.virtualizerSeekBar.progress = 0
-            sharedViewModel.virtualizerValue = 0
-            setVirtualizer(0)
+            sharedViewModel.setVirtualizerValue(0)
         }
     }
 
@@ -332,8 +397,7 @@ class AudioEditFragment: Fragment() {
 
             override fun onStopTrackingTouch(p0: SeekBar?) {
                 p0?.let {
-                    sharedViewModel.presetReverbSendLevel = it.progress
-                    setPresetReverb(sharedViewModel.presetReverbIndexValue,it.progress)
+                    sharedViewModel.setPresetReverbSendLevel(it.progress)
                 }
             }
 
@@ -349,9 +413,7 @@ class AudioEditFragment: Fragment() {
         }
 
         binding.presetReverbSendLevelInitButton.setOnClickListener {
-            binding.presetReverbLevelSeekBar.progress = 0
-            sharedViewModel.presetReverbSendLevel = 0
-            setPresetReverb(sharedViewModel.presetReverbIndexValue, 0)
+            sharedViewModel.setPresetReverbSendLevel(0)
         }
         initPresetReverbSwitch()
         initPresetReverbSendLevelSeekbar()
@@ -359,24 +421,16 @@ class AudioEditFragment: Fragment() {
     }
 
     private fun initPresetReverbSwitch(){
-        binding.presetReverbSwitch.setOnCheckedChangeListener { compoundButton, isChecked ->
-            if (isChecked){
-                sharedViewModel.isPresetReverbEnabled = isChecked
-                setPresetReverb(sharedViewModel.presetReverbIndexValue, binding.presetReverbLevelSeekBar.progress)
-            }
-            else{
-                Log.d("프리셋 리버브","스위치끔")
-                // disable Equalizer
-                setPresetReverb(-1, -1)
-                sharedViewModel.isPresetReverbEnabled = isChecked
-            }
+        binding.presetReverbSwitch.setOnClickListener {
+            sharedViewModel.setIsPresetReverbEnabled(binding.presetReverbSwitch.isChecked)
+
         }
+
     }
 
     private fun initPresetScrollView(){
-        val horizontalScrollView = binding.presetReverbValueScrollView
         val linearLayout = binding.presetReverbScrollViewLinearLayout
-
+        presetReverbTextViewList = mutableListOf()
         val items = resources.getStringArray(R.array.preset_reverb_labels)
 
         items.forEachIndexed { index, name ->
@@ -389,44 +443,35 @@ class AudioEditFragment: Fragment() {
             ).apply {
                 setMargins(40, 0, 40, 0)
             }
-            if (index == sharedViewModel.presetReverbIndexValue){
-                selectedPresetReverbTextView?.setTextColor(resources.getColor(R.color.description_color))
-                selectedPresetReverbTextView?.setTypeface(null, Typeface.NORMAL)
-
-                val clickedTextView = textView
-                clickedTextView.setTextColor(resources.getColor(R.color.blue_background))  // 현재 선택된 TextView의 색을 파란색으로 변경
-                clickedTextView.setTypeface(null, Typeface.BOLD)
-                selectedPresetReverbTextView = clickedTextView
-
-                clickedTextView.post{
-                    val scrollX = (clickedTextView.left - (horizontalScrollView.width / 2)) + (clickedTextView.width / 2)
-                    horizontalScrollView.smoothScrollTo(scrollX, 0)
-                }
-
+            if (index == (sharedViewModel.presetReverbIndexValue.value ?: 0)){
+                changeFocusToSelectedPresetReverbTextView(textView)
             }
 
             textView.setOnClickListener {
-                sharedViewModel.presetReverbIndexValue = index
-                setPresetReverb(index, binding.presetReverbLevelSeekBar.progress)
-
-                selectedPresetReverbTextView?.setTextColor(resources.getColor(R.color.description_color))
-                selectedPresetReverbTextView?.setTypeface(null, Typeface.NORMAL)
-
-                val clickedTextView = it as TextView
-                clickedTextView.setTextColor(resources.getColor(R.color.blue_background))  // 현재 선택된 TextView의 색을 파란색으로 변경
-                clickedTextView.setTypeface(null, Typeface.BOLD)
-                selectedPresetReverbTextView = clickedTextView
-
-                val scrollX = (it.left - (horizontalScrollView.width / 2)) + (it.width / 2)
-                horizontalScrollView.smoothScrollTo(scrollX, 0)
+                sharedViewModel.setPresetReverbIndexValue(index)
+                changeFocusToSelectedPresetReverbTextView(it)
             }
-
+            presetReverbTextViewList.add(textView)
             linearLayout.addView(textView)
+        }
+    }
+    private fun changeFocusToSelectedPresetReverbTextView(view: View) {
+        selectedPresetReverbTextView?.setTextColor(resources.getColor(R.color.description_color))
+        selectedPresetReverbTextView?.setTypeface(null, Typeface.NORMAL)
+
+        val clickedTextView = view as TextView
+        clickedTextView.setTextColor(resources.getColor(R.color.blue_background))  // 현재 선택된 TextView의 색을 파란색으로 변경
+        clickedTextView.setTypeface(null, Typeface.BOLD)
+        selectedPresetReverbTextView = clickedTextView
+
+        clickedTextView.post{
+            val scrollX = (clickedTextView.left - (binding.presetReverbValueScrollView.width / 2)) + (clickedTextView.width / 2)
+            binding.presetReverbValueScrollView.smoothScrollTo(scrollX, 0)
         }
     }
 
     private fun setPresetReverb(presetReverbValue: Int, sendLevel: Int){
-        if (!sharedViewModel.isPresetReverbEnabled) return
+
         val action = Actions.SET_REVERB
         val bundle = Bundle().apply {
             putInt("value",presetReverbValue)
@@ -446,7 +491,6 @@ class AudioEditFragment: Fragment() {
             // 뷰들을 보임
             binding.presetReverbVisibilitySettingLinearLayout.visibility = View.VISIBLE
             binding.presetReverbWarningTextView.visibility = View.VISIBLE
-
             binding.presetReverbArrowImageView.setImageDrawable(ResourcesCompat.getDrawable(resources,R.drawable.baseline_keyboard_arrow_up_24_black, null))
         }
     }
@@ -531,35 +575,15 @@ class AudioEditFragment: Fragment() {
 
     private fun initEqualizerEvent(){
         setEqualizerVisibility()
-        if (sharedViewModel.isEqualizerEnabled){
-            binding.equalizerSwitch.isChecked = sharedViewModel.isEqualizerEnabled
-            setEqualizer(sharedViewModel.equalizerIndexValue)
-            sharedViewModel.equalizerChartValueList?.let{
-                updateChart(it)
-            }
-
-        }
 
         binding.equalizerLinearLayout.setOnClickListener {
             sharedViewModel.isEqualizerViewFolded = !sharedViewModel.isEqualizerViewFolded
             setEqualizerVisibility()
         }
-
-        binding.equalizerSwitch.setOnCheckedChangeListener { compoundButton, isChecked ->
-
-            if (isChecked){
-                sharedViewModel.isEqualizerEnabled = isChecked
-                setEqualizer(sharedViewModel.equalizerIndexValue)
-            }
-            else{
-                Log.d("이퀼라이저","스위치끔")
-                // disable Equalizer
-                setEqualizer(-1)
-                sharedViewModel.isEqualizerEnabled = isChecked
-
-            }
-
+        binding.equalizerSwitch.setOnClickListener {
+            sharedViewModel.setIsEqualizerEnabled(binding.equalizerSwitch.isChecked)
         }
+
     }
 
 
@@ -638,8 +662,8 @@ class AudioEditFragment: Fragment() {
     }
 
     private fun initEqualizerScrollViw(){
-        val horizontalScrollView = binding.valueScrollView
         val linearLayout = binding.equalizerScrollViewLinearLayout
+        equalizerTextViewList = mutableListOf()
 
         val items = resources.getStringArray(R.array.equalizer_label)
 
@@ -653,45 +677,36 @@ class AudioEditFragment: Fragment() {
             ).apply {
                 setMargins(40, 0, 40, 0)
             }
-            if (index == sharedViewModel.equalizerIndexValue){
-                selectedEqualizerTextView?.setTextColor(resources.getColor(R.color.description_color))
-                selectedEqualizerTextView?.setTypeface(null, Typeface.NORMAL)
-
-                val clickedTextView = textView
-                clickedTextView.setTextColor(resources.getColor(R.color.blue_background))  // 현재 선택된 TextView의 색을 파란색으로 변경
-                clickedTextView.setTypeface(null, Typeface.BOLD)
-                selectedEqualizerTextView = clickedTextView
-
-
-                clickedTextView.post{
-                    val scrollX = (clickedTextView.left - (horizontalScrollView.width / 2)) + (clickedTextView.width / 2)
-                    horizontalScrollView.smoothScrollTo(scrollX, 0)
-                }
-
+            if (index == (sharedViewModel.equalizerIndexValue.value ?: 0)){
+                changeFocusToSelectedEqualizerTextView(textView)
             }
 
             textView.setOnClickListener {
-                sharedViewModel.equalizerIndexValue = index
-                setEqualizer(index)
-
-                selectedEqualizerTextView?.setTextColor(resources.getColor(R.color.description_color))
-                selectedEqualizerTextView?.setTypeface(null, Typeface.NORMAL)
-
-                val clickedTextView = it as TextView
-                clickedTextView.setTextColor(resources.getColor(R.color.blue_background))  // 현재 선택된 TextView의 색을 파란색으로 변경
-                clickedTextView.setTypeface(null, Typeface.BOLD)
-                selectedEqualizerTextView = clickedTextView
-
-                val scrollX = (it.left - (horizontalScrollView.width / 2)) + (it.width / 2)
-                horizontalScrollView.smoothScrollTo(scrollX, 0)
+                sharedViewModel.setEqualizerIndexValue(index)
+                changeFocusToSelectedEqualizerTextView(it)
             }
-
+            equalizerTextViewList.add(textView)
             linearLayout.addView(textView)
+        }
+    }
+    private fun changeFocusToSelectedEqualizerTextView(view: View){
+        selectedEqualizerTextView?.setTextColor(resources.getColor(R.color.description_color))
+        selectedEqualizerTextView?.setTypeface(null, Typeface.NORMAL)
+
+        val clickedTextView = view as TextView
+        clickedTextView.setTextColor(resources.getColor(R.color.blue_background))  // 현재 선택된 TextView의 색을 파란색으로 변경
+        clickedTextView.setTypeface(null, Typeface.BOLD)
+        selectedEqualizerTextView = clickedTextView
+
+        clickedTextView.post{
+            val scrollX = (clickedTextView.left - (binding.valueScrollView.width / 2)) + (clickedTextView.width / 2)
+            binding.valueScrollView.smoothScrollTo(scrollX, 0)
         }
     }
 
     private fun setEqualizer(index: Int){
-        if (!sharedViewModel.isEqualizerEnabled) return
+
+        Log.d("이퀼","setEqualizer$index")
 
         val action = Actions.SET_EQUALIZER
         val bundle = Bundle().apply {

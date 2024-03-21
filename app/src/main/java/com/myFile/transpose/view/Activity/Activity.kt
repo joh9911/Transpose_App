@@ -95,6 +95,7 @@ class Activity : AppCompatActivity() {
 
     private lateinit var appUsageTimeChecker: AppUsageTimeChecker
     private lateinit var appUpdateManager: AppUpdateManager
+    private lateinit var appUsageSharedPreferences: AppUsageSharedPreferences
 
     var toastMessage: Toast? = null
 
@@ -130,6 +131,7 @@ class Activity : AppCompatActivity() {
         initBroadcastReceiver()
         appUsageTimeSave()
         initObserver()
+        showPatchNotes()
         Log.d("로그 확인","액티비티 온크레이트")
 
     }
@@ -409,12 +411,19 @@ class Activity : AppCompatActivity() {
         }
     }
 
+    private fun showPatchNotes(){
+        if (appUsageSharedPreferences.isNewVersionForUsers()){
+            val intent = Intent(this, MyCustomAppIntro::class.java)
+            startActivity(intent)
+        }
+    }
+
     // 앱 세팅 부분
     private fun appUsageTimeSave() {
         /**
          * 처음 앱을 접속했을 때 시작 일수 저장
          */
-        val appUsageSharedPreferences = AppUsageSharedPreferences(this)
+        appUsageSharedPreferences = AppUsageSharedPreferences(this)
         appUsageSharedPreferences.saveAppUsageStartTime()
         appUsageTimeChecker = AppUsageTimeChecker(this)
     }
@@ -2080,7 +2089,10 @@ class Activity : AppCompatActivity() {
     }
 
     private fun setAudioEffect(audioEffect: AudioEffectsDataModel){
+        Log.d("플레이리스트 추가setAudioEffect", "$audioEffect")
         sharedViewModel.setAudioEffectValues(audioEffect)
+        Log.d("플레이리스트 추가setAudioEffect","${sharedViewModel.pitchValue.value} ${sharedViewModel.equalizerIndexValue.value} ${sharedViewModel.isEqualizerEnabled.value} ${sharedViewModel.presetReverbIndexValue.value} ${sharedViewModel.isPresetReverbEnabled.value} ${sharedViewModel.presetReverbSendLevel.value} ${sharedViewModel.equalizerIndexValue.value}")
+
         setPitch(audioEffect.pitchValue)
         setTempo(audioEffect.tempoValue)
         setBassBoost(audioEffect.bassBoostValue)
@@ -2139,7 +2151,7 @@ class Activity : AppCompatActivity() {
     }
 
     private fun setPresetReverb(presetReverbValue: Int, sendLevel: Int){
-        if (!sharedViewModel.isPresetReverbEnabled) return
+
         val action = Actions.SET_REVERB
         val bundle = Bundle().apply {
             putInt("value",presetReverbValue)
@@ -2150,7 +2162,7 @@ class Activity : AppCompatActivity() {
     }
 
     private fun setEqualizer(index: Int){
-        if (!sharedViewModel.isEqualizerEnabled) return
+
 
         val action = Actions.SET_EQUALIZER
         val bundle = Bundle().apply {

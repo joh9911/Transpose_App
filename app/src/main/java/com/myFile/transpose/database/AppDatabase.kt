@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [MyPlaylist::class, Musics::class,CashedKeyword::class, YoutubeCashedData::class, PageToken::class], version = 7)
+@Database(entities = [MyPlaylist::class, Musics::class,CashedKeyword::class, YoutubeCashedData::class, PageToken::class], version = 8)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase(){
     abstract fun myPlaylistDao(): MyPlaylistDao
