@@ -11,6 +11,7 @@
     <string name="tempo_text">템포</string>
     <string name="searchView_hint">Youtube 검색</string>
     <string name="patch_title">패치 내역</string>
+    <string name="app_usage_guide">앱 사용법 안내</string>
     <string name="patch_description_1">무한 로딩이 되는 오류가 있었습니다.\n\n 유튜브 페이지에서 동영상 미리보기 설정을 꺼주세요.</string>
     <string name="patch_description_4">왼쪽 하단에 있는 스킵 버튼을 눌러 패치 내역을 다시 보지 않도록 설정할 수 있습니다. \n\n오류 발견이나 건의 사항이 있으시면 joh99111@gmail.com으로 연락 주시면 감사하겠습니다.</string>
     <string name="my_file_searchView_hint">내 파일 검색</string>

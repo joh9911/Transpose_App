@@ -170,6 +170,7 @@
 
     <string name="my_file_delete_message">The file has been successfully deleted</string>
     <string name="patch_title">Patch Notes</string>
+    <string name="app_usage_guide">App Usage Guide</string>
     <string name="patch_description_1">There was an issue with infinite loading. \n\nPlease turn off the video preview setting on the YouTube page.</string>
     <string name="patch_description_2">To address the infinite loading issue, please follow these steps to turn off the video previews on YouTube:\n\n1. Navigate to the YouTube page.\n2. Click on "Settings."\n3. Turn off the "Video Previews" option.\n\nI apologize for the inconvenience.\n I will continue to strive for improvement.</string>
     <string name="patch_description_3">From now on, when saving to a playlist, the currently set audio effects will also be saved.\n\n Please check the current audio effects information before saving.</string>

@@ -1,7 +1,6 @@
 package com.myFile.transpose.view.Activity
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -24,7 +23,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -413,7 +411,7 @@ class Activity : AppCompatActivity() {
 
     private fun showPatchNotes(){
         if (appUsageSharedPreferences.isNewVersionForUsers()){
-            val intent = Intent(this, MyCustomAppIntro::class.java)
+            val intent = Intent(this, AppIntroForPatchNote::class.java)
             startActivity(intent)
         }
     }
@@ -524,12 +522,19 @@ class Activity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 0) {
-            if (resultCode != RESULT_OK) {
-                Log.e("MY_APP", "Update flow failed! Result code: $resultCode")
+        when(requestCode) {
+            0 -> {
+                if (resultCode != RESULT_OK) {
+                    Log.e("MY_APP", "Update flow failed! Result code: $resultCode")
 //                checkUpdateInfo()
+                }
+            }
+            1 -> {
+                Log.d("이게 왜","안될까?")
+                controlChildNavFragment(R.id.searchResultFragment)
             }
         }
+
     }
 
 
@@ -562,17 +567,36 @@ class Activity : AppCompatActivity() {
             }
         if (destinationId == currentDestinationId) return
         try{
-            if (destinationId != null) {
-                when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
-                    is HomeFragment -> currentFragment.navController.navigate(destinationId)
-                    is ConvertFragment -> currentFragment.navController.navigate(destinationId)
-                    is LibraryFragment -> currentFragment.navController.navigate(destinationId)
+            when (destinationId) {
+                null -> {
+                    when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
+                        is HomeFragment -> currentFragment.navController.navigateUp()
+                        is ConvertFragment -> currentFragment.navController.navigateUp()
+                        is LibraryFragment -> currentFragment.navController.navigateUp()
+                    }
                 }
-            } else {
-                when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
-                    is HomeFragment -> currentFragment.navController.navigateUp()
-                    is ConvertFragment -> currentFragment.navController.navigateUp()
-                    is LibraryFragment -> currentFragment.navController.navigateUp()
+                R.id.searchResultFragment -> {
+                    if (appUsageSharedPreferences.getDoNotShowAgain()){
+                        Log.d("이게 왜","적절히 실행1")
+                        when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
+                            is HomeFragment -> currentFragment.navController.navigate(destinationId)
+                            is ConvertFragment -> currentFragment.navController.navigate(destinationId)
+                            is LibraryFragment -> currentFragment.navController.navigate(destinationId)
+                        }
+                    }
+                    else{
+                        Log.d("이게 왜","적절히 실행")
+
+                        val intent = Intent(this, AppIntroForYoutubePage::class.java)
+                        startActivityForResult(intent, 1)
+                    }
+                }
+                else -> {
+                    when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
+                        is HomeFragment -> currentFragment.navController.navigate(destinationId)
+                        is ConvertFragment -> currentFragment.navController.navigate(destinationId)
+                        is LibraryFragment -> currentFragment.navController.navigate(destinationId)
+                    }
                 }
             }
         } catch (e: Exception){
