@@ -81,7 +81,8 @@ class SearchResultFragment: Fragment() {
                 view: WebView?,
                 request: WebResourceRequest?
             ): Boolean {
-                val urlString = request?.url.toString()
+                Log.d("shouldOverride", request?.url.toString())
+
 
                 return super.shouldOverrideUrlLoading(view, request)
             }
@@ -93,7 +94,8 @@ class SearchResultFragment: Fragment() {
                 val urlString = request?.url.toString()
 
                 Log.d("요청된 url","$urlString")
-                if (urlString.contains("m.youtube.com/api/stats/qoe") && urlString.contains("docid=")) {
+                if (urlString.contains("m.youtube.com/api/stats/qoe") && urlString.contains("docid=") && urlString.contains("&view=")) {
+
                     Log.d("서치 리저트 선택된 url","${urlString}")
 
                     if (!searchResultViewModel.isIntercepted){
@@ -135,6 +137,10 @@ class SearchResultFragment: Fragment() {
 
 
         binding.webView.settings.javaScriptEnabled = true
+
+
+        binding.webView.settings.useWideViewPort = false
+        binding.webView.settings.loadWithOverviewMode = true
         binding.webView.settings.mediaPlaybackRequiresUserGesture = true
         binding.webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE
 

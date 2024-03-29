@@ -10,7 +10,7 @@ import com.github.appintro.AppIntroFragment
 import com.myFile.transpose.R
 import com.myFile.transpose.utils.AppUsageSharedPreferences
 
-class MyCustomAppIntro : AppIntro() {
+class AppIntroForPatchNote : AppIntro() {
 
     private lateinit var appUsageSharedPreferences: AppUsageSharedPreferences
 
@@ -25,6 +25,8 @@ class MyCustomAppIntro : AppIntro() {
         // Call addSlide passing your Fragments.
         // You can use AppIntroFragment to use a pre-built fragment
 
+        isSkipButtonEnabled = true
+
         setColorDoneText(getColor(R.color.blue_background))
         setColorSkipButton(getColor(R.color.blue_background))
         setNextArrowColor(getColor(R.color.blue_background))
@@ -32,32 +34,13 @@ class MyCustomAppIntro : AppIntro() {
             selectedIndicatorColor = getColor(R.color.blue_background),
             unselectedIndicatorColor = getColor(R.color.black)
         )
-        addSlide(AppIntroFragment.createInstance(
-            title = getString(R.string.patch_title),
-            description = getString(R.string.patch_description_1),
-            imageDrawable = R.drawable.description_1,
 
-            titleColorRes = R.color.black,
-            descriptionColorRes = R.color.black,
-            titleTypefaceFontRes = androidx.media3.ui.R.font.roboto_medium_numbers,
-            backgroundColorRes = R.color.white,
-        ))
+
 
         addSlide(AppIntroFragment.createInstance(
             title = getString(R.string.patch_title),
-            description = getString(R.string.patch_description_2),
-            imageDrawable = R.drawable.description_2,
-
-            titleColorRes = R.color.black,
-            descriptionColorRes = R.color.black,
-            titleTypefaceFontRes = androidx.media3.ui.R.font.roboto_medium_numbers,
-            backgroundColorRes = R.color.white,
-        ))
-
-        addSlide(AppIntroFragment.createInstance(
-            title = getString(R.string.patch_title),
-            description = getString(R.string.patch_description_3),
-            imageDrawable = R.drawable.description_3,
+            description = getString(R.string.patch_description_5),
+            imageDrawable = R.drawable.description_5,
             titleColorRes = R.color.black,
             descriptionColorRes = R.color.black,
             titleTypefaceFontRes = androidx.media3.ui.R.font.roboto_medium_numbers,
