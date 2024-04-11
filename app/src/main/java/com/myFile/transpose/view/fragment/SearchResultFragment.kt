@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
@@ -58,6 +59,8 @@ class SearchResultFragment: Fragment() {
     private fun initWebView(){
         val searchKeyword = sharedViewModel.searchKeyword
         val encodedSearchTerm = URLEncoder.encode(searchKeyword, "UTF-8")
+
+
 
         binding.webView.webViewClient = object : WebViewClient() {
 
@@ -113,10 +116,6 @@ class SearchResultFragment: Fragment() {
                                         view.loadUrl("https://www.youtube.com/results?search_query=$encodedSearchTerm")
                                     },0)
 
-                                    Handler(Looper.getMainLooper()).postDelayed({
-                                        searchResultViewModel.isIntercepted = false
-
-                                    }, 3000) // 3000ms = 3s
                                 }
                             }
                             else{
@@ -138,6 +137,12 @@ class SearchResultFragment: Fragment() {
 
         binding.webView.settings.javaScriptEnabled = true
 
+        binding.webView.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                searchResultViewModel.isIntercepted = false
+            }
+            false // 이벤트를 다음 대상으로 전달하기 위해 false 반환
+        }
 
         binding.webView.settings.useWideViewPort = false
         binding.webView.settings.loadWithOverviewMode = true
@@ -162,6 +167,17 @@ class SearchResultFragment: Fragment() {
             }
         }
     }
+
+    override fun onPause() {
+        searchResultViewModel.isIntercepted = true
+        super.onPause()
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+    }
+
 
     fun extractVideoIdFromUrl(url: String): String? {
         // 정규식 패턴들
@@ -254,20 +270,20 @@ class SearchResultFragment: Fragment() {
 //        }
 //    }
 
-    override fun onResume() {
-        super.onResume()
-//        if (parentFragment is HomeFragment){
-//            val fragment =  parentFragment as HomeFragment
-//            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
-//            fragment.searchView.setQuery(searchKeyword,false)
-//        }
-//
-//        if (parentFragment is MyPlaylistsFragment){
-//            val fragment = parentFragment as MyPlaylistsFragment
-//            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
-//            fragment.searchView.setQuery(searchKeyword,false)
-//        }
-    }
+//    override fun onResume() {
+//        super.onResume()
+////        if (parentFragment is HomeFragment){
+////            val fragment =  parentFragment as HomeFragment
+////            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
+////            fragment.searchView.setQuery(searchKeyword,false)
+////        }
+////
+////        if (parentFragment is MyPlaylistsFragment){
+////            val fragment = parentFragment as MyPlaylistsFragment
+////            val searchKeyword = searchResultViewModel.searchKeyword.value ?: ""
+////            fragment.searchView.setQuery(searchKeyword,false)
+////        }
+//    }
 //
 //    private fun initRecyclerView(){
 //        activity.binding.bottomNavigationView.visibility = View.VISIBLE
@@ -397,7 +413,6 @@ class SearchResultFragment: Fragment() {
     }
     override fun onDestroyView() {
         super.onDestroyView()
-        searchResultViewModel.isIntercepted = false
         binding.webView.stopLoading()
         binding.webView.destroy()
         fbinding = null

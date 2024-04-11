@@ -575,22 +575,6 @@ class Activity : AppCompatActivity() {
                         is LibraryFragment -> currentFragment.navController.navigateUp()
                     }
                 }
-                R.id.searchResultFragment -> {
-                    if (appUsageSharedPreferences.getDoNotShowAgain()){
-                        Log.d("이게 왜","적절히 실행1")
-                        when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
-                            is HomeFragment -> currentFragment.navController.navigate(destinationId)
-                            is ConvertFragment -> currentFragment.navController.navigate(destinationId)
-                            is LibraryFragment -> currentFragment.navController.navigate(destinationId)
-                        }
-                    }
-                    else{
-                        Log.d("이게 왜","적절히 실행")
-
-                        val intent = Intent(this, AppIntroForYoutubePage::class.java)
-                        startActivityForResult(intent, 1)
-                    }
-                }
                 else -> {
                     when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
                         is HomeFragment -> currentFragment.navController.navigate(destinationId)
@@ -605,6 +589,7 @@ class Activity : AppCompatActivity() {
     }
 
     private fun saveFromFragment() {
+
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.main_nav_host) as NavHostFragment?
         when (val currentFragment = navHostFragment?.childFragmentManager?.fragments?.get(0)) {
@@ -1405,8 +1390,11 @@ class Activity : AppCompatActivity() {
     }
 
     fun pitchPlusButtonClick() {
+
+
         controller ?: return
 
+        
         val currentPitchValue = sharedViewModel.pitchValue.value ?: 100
         sharedViewModel.setPitchValue(currentPitchValue + 10)
 
@@ -2076,6 +2064,7 @@ class Activity : AppCompatActivity() {
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                Log.d("에러가 뭘까","${error.cause}")
                 showToastMessage("failed to get stream url")
                 super.onPlayerError(error)
             }

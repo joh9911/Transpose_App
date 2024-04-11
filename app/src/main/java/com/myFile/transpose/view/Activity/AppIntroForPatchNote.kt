@@ -39,7 +39,7 @@ class AppIntroForPatchNote : AppIntro() {
 
         addSlide(AppIntroFragment.createInstance(
             title = getString(R.string.patch_title),
-            description = getString(R.string.patch_description_5),
+            description = getString(R.string.patch_description_6),
             imageDrawable = R.drawable.description_5,
             titleColorRes = R.color.black,
             descriptionColorRes = R.color.black,

@@ -14,6 +14,8 @@
     <string name="app_usage_guide">앱 사용법 안내</string>
     <string name="patch_description_1">무한 로딩이 되는 오류가 있었습니다.\n\n 유튜브 페이지에서 동영상 미리보기 설정을 꺼주세요.</string>
     <string name="patch_description_4">왼쪽 하단에 있는 스킵 버튼을 눌러 패치 내역을 다시 보지 않도록 설정할 수 있습니다. \n\n오류 발견이나 건의 사항이 있으시면 joh99111@gmail.com으로 연락 주시면 감사하겠습니다.</string>
+    <string name="patch_description_5">유튜브 페이지에서 발생하던 무한 로딩 문제가 성공적으로 해결되었습니다. 이제 더 이상 동영상 미리보기 설정을 비활성화하지 않아도 모든 기능이 원활하게 작동합니다. 또한, 동영상을 직접 클릭하지 않아도 미리보기 기능을 통해 영상을 쉽게 재생할 수 있게 되었습니다.</string>
+    <string name="patch_description_6">다른 페이지나 홈 화면으로 이동한 후 YouTube 페이지로 돌아왔을 때 발생하던 무한 로딩 문제를 해결했습니다.</string>
     <string name="my_file_searchView_hint">내 파일 검색</string>
     <string name="home_icon">홈</string>
     <string name="convert_icon">변환</string>

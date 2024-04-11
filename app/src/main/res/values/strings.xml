@@ -175,4 +175,7 @@
     <string name="patch_description_2">To address the infinite loading issue, please follow these steps to turn off the video previews on YouTube:\n\n1. Navigate to the YouTube page.\n2. Click on "Settings."\n3. Turn off the "Video Previews" option.\n\nI apologize for the inconvenience.\n I will continue to strive for improvement.</string>
     <string name="patch_description_3">From now on, when saving to a playlist, the currently set audio effects will also be saved.\n\n Please check the current audio effects information before saving.</string>
     <string name="patch_description_4">You can choose not to see the patch notes again by pressing the skip button \nlocated at the bottom left.\n\n If you encounter any errors or have suggestions, please feel free to send them to joh99111@gmail.com.\n Thank you.</string>
+    <string name="patch_description_5">The issue with infinite loading on the YouTube page has been successfully resolved. \n\nNow, all functionalities work smoothly without the need to disable the video preview settings. \n\nAdditionally, videos can be played easily through the preview feature without having to click on them directly.</string>
+    <string name="patch_description_6">Resolved an issue causing infinite loading \nwhen returning to the YouTube page from another page or home screen.</string>
+
 </resources>
