@@ -1,5 +1,6 @@
 package com.myFile.transpose.view.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,12 +8,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.myFile.transpose.R
 import com.myFile.transpose.databinding.*
-import com.myFile.transpose.model.model.ChannelDataModel
-import com.myFile.transpose.model.model.CommentDataModel
-import com.myFile.transpose.model.model.VideoDetailDataModel
+import com.myFile.transpose.data.model.ChannelDataModel
+import com.myFile.transpose.data.model.CommentDataModel
+import com.myFile.transpose.data.model.VideoDetailDataModel
 
-class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainRecyclerViewAdapter.PlayerFragmentMainItem, RecyclerView.ViewHolder>(diffUtil) {
+class PlayerMainRecyclerViewAdapter: ListAdapter<PlayerMainRecyclerViewAdapter.PlayerFragmentMainItem, RecyclerView.ViewHolder>(diffUtil) {
 
     sealed class PlayerFragmentMainItem{
         object LoadingHeader: PlayerFragmentMainItem()
@@ -97,6 +100,8 @@ class PlayerFragmentMainRecyclerViewAdapter: ListAdapter<PlayerFragmentMainRecyc
                 Glide.with(binding.authorImage)
                     .load(commentData.authorImage)
                     .circleCrop()
+                    .placeholder(R.color.white)
+                    .transition(DrawableTransitionOptions.withCrossFade())
                     .into(binding.authorImage)
             }
         }

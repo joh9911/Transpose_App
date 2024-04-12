@@ -9,15 +9,16 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.myFile.transpose.R
-import com.myFile.transpose.databinding.MyPlaylistItemRecyclerViewItemBinding
-import com.myFile.transpose.model.model.VideoDataModel
+import com.myFile.transpose.databinding.VideoItemBinding
+import com.myFile.transpose.data.model.VideoDataModel
 
-class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoDataModel, MyPlaylistItemRecyclerViewAdapter.MyViewHolder>(
+class PlayerPlaylistRecyclerViewAdapter: ListAdapter<VideoDataModel, PlayerPlaylistRecyclerViewAdapter.MyViewHolder>(
     diffUtil
 ) {
 
-    inner class MyViewHolder(private val binding: MyPlaylistItemRecyclerViewItemBinding): RecyclerView.ViewHolder(binding.root) {
+    inner class MyViewHolder(private val binding: VideoItemBinding): RecyclerView.ViewHolder(binding.root) {
         init {
             itemView.setOnClickListener {
                 if (bindingAdapterPosition != RecyclerView.NO_POSITION)
@@ -43,6 +44,8 @@ class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoDataModel, MyPlaylistI
             binding.videoDetailText.text = videoData.date
             Glide.with(binding.thumbnailImageView)
                 .load(videoData.thumbnail)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .placeholder(R.color.placeholder_blur_blue)
                 .into(binding.thumbnailImageView)
             if (videoData.isPlaying)
                 selected()
@@ -53,7 +56,7 @@ class MyPlaylistItemRecyclerViewAdapter: ListAdapter<VideoDataModel, MyPlaylistI
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = MyPlaylistItemRecyclerViewItemBinding.inflate(
+        val binding = VideoItemBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false)
