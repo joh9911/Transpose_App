@@ -4,17 +4,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     >
     <item
-        android:id="@+id/home_icon"
+        android:id="@+id/homeFragment"
         android:title="@string/home_icon"
         android:icon="@drawable/bottom_navi_home_selector"
         app:showAsAction="always"/>
     <item
-        android:id="@+id/transpose_icon"
+        android:id="@+id/convertFragment"
         android:title="@string/convert_icon"
         android:icon="@drawable/bottom_navi_transpose_selector"
         app:showAsAction="always"/>
     <item
-        android:id="@+id/my_playlist_icon"
+        android:id="@+id/libraryFragment"
         android:title="@string/library_icon"
         android:icon="@drawable/bottom_navi_playlist_selector"
         app:showAsAction="always"/>
