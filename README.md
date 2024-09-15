@@ -102,38 +102,38 @@ Transpose는 유튜브 컨텐츠를 실시간으로 다양한 오디오 효과�
 📈 성장 지표
 <table>
   <tr>
-    <td width="50%">
+    <td width="50%" align="center">
       <strong>파이어베이스 분석</strong><br>
-      <img src="assets/firebase_analytics.png" width="100%"/>
+      <img src="assets/firebase_analytics.png" width="95%" style="max-width: 500px; border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin-top: 10px;" />
     </td>
-    <td width="50%">
+    <td width="50%" align="center">
       <strong>플레이스토어 통계</strong><br>
-      <img src="assets/play_console.jpeg" width="100%"/>
+      <img src="assets/play_console.jpeg" width="95%" style="max-width: 500px; border: 1px solid #ddd; border-radius: 4px; padding: 5px; margin-top: 10px;" />
     </td>
   </tr>
 </table>
 
-💌 주요 사용자 피드백
-사용자들의 소중한 의견은 앱 개선의 핵심 동력이 되었습니다. 메일과 플레이스토어 리뷰를 통해 다양한 피드백을 받았습니다.
+<h3>💌 주요 사용자 피드백</h3>
+<p>사용자들의 소중한 의견은 앱 개선의 핵심 동력이 되었습니다. 메일과 플레이스토어 리뷰를 통해 다양한 피드백을 받았습니다.</p>
 <table>
   <tr>
-    <td width="50%">
+    <td width="50%" align="center">
       <strong>이메일 피드백 1</strong><br>
-      <img src="assets/mail_review_1.png" width="100%"/>
+      <img src="assets/mail_review_1.png" width="95%" style="max-width: 500px; border: 1px solid #ddd; border-radius: 4px; padding: 5px;" />
     </td>
-    <td width="50%">
+    <td width="50%" align="center">
       <strong>플레이스토어 리뷰 1</strong><br>
-      <img src="assets/playstore_review_1.jpeg" width="100%"/>
+      <img src="assets/playstore_review_1.jpeg" width="95%" style="max-width: 500px; border: 1px solid #ddd; border-radius: 4px; padding: 5px;" />
     </td>
   </tr>
   <tr>
-    <td width="50%">
+    <td width="50%" align="center">
       <strong>이메일 피드백 2</strong><br>
-      <img src="assets/mail_review_2.png" width="100%"/>
+      <img src="assets/mail_review_2.png" width="95%" style="max-width: 500px; border: 1px solid #ddd; border-radius: 4px; padding: 5px;" />
     </td>
-    <td width="50%">
+    <td width="50%" align="center">
       <strong>플레이스토어 리뷰 2</strong><br>
-      <img src="assets/playstore_review_2.jpg" width="100%"/>
+      <img src="assets/playstore_review_2.jpeg" width="95%" style="max-width: 500px; border: 1px solid #ddd; border-radius: 4px; padding: 5px;" />
     </td>
   </tr>
 </table>
