@@ -83,7 +83,7 @@ Transpose는 유튜브 컨텐츠를 실시간으로 다양한 오디오 효과�
     </tr>
     <tr>
         <td><img src="assets/exoPlayer_expandable.gif" width="70%" /></td>
-        <td><img src="assets/youtubeSharedLink-ezgif.com-video-to-gif-converter%20(1).gif" width="70%"/></td>
+        <td><img src="assets/search_mode.gif" width="70%"/></td>
     </tr>
 </table>
 
