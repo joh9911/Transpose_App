@@ -65,7 +65,7 @@ Transpose는 유튜브 컨텐츠를 실시간으로 다양한 오디오 효과�
 ### 추가 기능
 <table>
     <tr>
-        <th>알람 컨트롤</th>
+        <th>백그라운드 음정 조절</th>
         <th>공유 링크 기능</th>
         <th>로컬 파일 조회</th>
     </tr>
@@ -73,6 +73,17 @@ Transpose는 유튜브 컨텐츠를 실시간으로 다양한 오디오 효과�
         <td><img src="assets/notification-ezgif.com-video-to-gif-converter.gif" width="100%" /></td>
         <td><img src="assets/youtubeSharedLink-ezgif.com-video-to-gif-converter%20(1).gif" width="100%"/></td>
         <td><img src="assets/localfile-ezgif.com-video-to-gif-converter.gif" width="100%"/></td>
+    </tr>
+</table>
+
+<table>
+    <tr>
+        <th>전체화면 모드</th>
+        <th>페이지에 따른 검색 모드 변경</th>
+    </tr>
+    <tr>
+        <td><img src="assets/notification-ezgif.com-video-to-gif-converter.gif" width="100%" /></td>
+        <td><img src="assets/youtubeSharedLink-ezgif.com-video-to-gif-converter%20(1).gif" width="100%"/></td>
     </tr>
 </table>
 
