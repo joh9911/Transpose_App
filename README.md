@@ -20,18 +20,7 @@ Transpose는 유튜브 컨텐츠를 실시간으로 다양한 오디오 효과�
     - 🎧 백그라운드 재생
     - 📋 재생목록 관리
     - 🌍 주요 국가 음원 순위 조회
-
-## 🛠 기술 스택
-
-- ViewModel
-- Navigation
-- Room
-- LiveData
-- RXJava
-- Retrofit2
-- MVVM + Repository pattern
-- Media3
-
+ 
 ## 🖼 스크린샷
 
 ### 메인 기능
@@ -86,6 +75,19 @@ Transpose는 유튜브 컨텐츠를 실시간으로 다양한 오디오 효과�
         <td><img src="assets/search_mode.gif" width="70%"/></td>
     </tr>
 </table>
+
+## 🛠 기술 스택
+
+- ViewModel
+- Navigation
+- Room
+- LiveData
+- RXJava
+- Retrofit2
+- MVVM + Repository pattern
+- Media3
+
+
 
 ## 📝 개발 과정 및 도전 과제
 
